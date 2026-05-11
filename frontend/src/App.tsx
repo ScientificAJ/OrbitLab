@@ -57,6 +57,7 @@ export default function App() {
   const [targets, setTargets] = useState<SearchResult[]>([]);
   const [selectedTarget, setSelectedTarget] = useState<SearchResult | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [job, setJob] = useState<AnalysisJob | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -118,6 +119,7 @@ export default function App() {
     setTargets([]);
     setSelectedTarget(null);
     setProducts([]);
+    setProductsLoading(false);
     setSelectedProduct(null);
     setJob(null);
     setResult(null);
@@ -136,6 +138,7 @@ export default function App() {
     setSelectedTarget(null);
     setSelectedProduct(null);
     setProducts([]);
+    setProductsLoading(false);
     setResult(null);
     setSelectedId(undefined);
     try {
@@ -154,6 +157,7 @@ export default function App() {
     setSelectedTarget(target);
     setSelectedProduct(null);
     setProducts([]);
+    setProductsLoading(true);
     try {
       const payload = await fetchProducts(target.target_id, mission);
       setProducts(payload);
@@ -161,6 +165,8 @@ export default function App() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setWorkflow('failed');
+    } finally {
+      setProductsLoading(false);
     }
   }
 
@@ -302,6 +308,7 @@ export default function App() {
 
   async function handleCreateApertureMask() {
     if (!selectedTarget || !selectedProduct || !tpfPreview) return;
+    setError(null);
     if (!apertureMask.flat().some(p => p)) {
       setError('Please select at least one pixel for the aperture mask.');
       return;
@@ -315,6 +322,7 @@ export default function App() {
       });
       setSelectedApertureMaskId(created.aperture_mask_id);
       setShowApertureModal(false);
+      setError(null);
       setSuccess('Custom aperture mask created.');
       window.setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -354,6 +362,7 @@ export default function App() {
 
   async function handleCreateArtifactMask() {
     if (!selectedTarget || !result) return;
+    setError(null);
     if (cadenceEnd < cadenceStart) {
       setError('Invalid cadence range.');
       return;
@@ -366,6 +375,7 @@ export default function App() {
         reason: 'User selected noisy cadence range',
       });
       setSelectedArtifactMaskId(created.mask_id);
+      setError(null);
       setSuccess('Artifact mask created and will be applied to the next run.');
       window.setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -385,7 +395,8 @@ export default function App() {
         </div>
         <div className="search-strip">
           <Search size={16} />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} aria-label="target search" placeholder="Try TIC 307210830, Kepler-10, TOI-700..." />
+          <label className="sr-only" htmlFor="target-search">Target search</label>
+          <input id="target-search" name="target-search" value={query} onChange={(event) => setQuery(event.target.value)} aria-label="target search" placeholder="Try TIC 307210830, Kepler-10, TOI-700..." />
           <button onClick={runSearch} disabled={!query.trim() || workflow === 'searching'}>
             <Search size={15} /> Search
           </button>
@@ -401,13 +412,13 @@ export default function App() {
         <aside className="left-rail">
           <div className="rail-section">
             <h2>Target</h2>
-            <label>Mission</label>
-            <select value={mission} onChange={(event) => changeMission(event.target.value as 'TESS' | 'Kepler' | 'K2')}>
+            <label htmlFor="mission-select">Mission</label>
+            <select id="mission-select" name="mission" value={mission} onChange={(event) => changeMission(event.target.value as 'TESS' | 'Kepler' | 'K2')}>
               <option value="TESS">TESS</option>
               <option value="Kepler">Kepler</option>
               <option value="K2">K2</option>
             </select>
-            <label>Matches</label>
+            <div className="field-label">Matches</div>
             <div className="selection-list">
               {targets.map((target) => (
                 <button
@@ -421,7 +432,7 @@ export default function App() {
               ))}
               {!targets.length && <p className="quiet">Search for a target first.</p>}
             </div>
-            <label>Product</label>
+            <div className="field-label">Product</div>
             <div className="selection-list">
               {products.map((product) => (
                 <button
@@ -433,7 +444,10 @@ export default function App() {
                   <small>{product.description}</small>
                 </button>
               ))}
-              {!products.length && <p className="quiet">Select a target first.</p>}
+              {productsLoading && <p className="quiet">Loading products...</p>}
+              {!productsLoading && !products.length && (
+                <p className="quiet">{selectedTarget ? 'No target pixel products found.' : 'Select a target first.'}</p>
+              )}
             </div>
           </div>
           <div className="rail-section">
@@ -489,7 +503,7 @@ export default function App() {
             {result && result.result_id !== 'preview' && (
               <div className="artifact-toolbar">
                 <Layers size={14} />
-                <label>Mask Range (index):</label>
+                <span className="field-label">Mask Range (index):</span>
                 <input type="number" value={cadenceStart} onChange={e => setCadenceStart(Number(e.target.value))} />
                 <span>to</span>
                 <input type="number" value={cadenceEnd} onChange={e => setCadenceEnd(Number(e.target.value))} />
@@ -604,10 +618,10 @@ export default function App() {
               <button onClick={() => setShowBlsModal(false)}><X size={20}/></button>
             </header>
             <div className="modal-content">
-              <label>Min Period (days)</label>
-              <input type="number" value={minPeriod} onChange={(e) => setMinPeriod(Number(e.target.value))} step="0.1" />
-              <label>Max Period (days)</label>
-              <input type="number" value={maxPeriod} onChange={(e) => setMaxPeriod(Number(e.target.value))} step="1" />
+              <label htmlFor="min-period">Min Period (days)</label>
+              <input id="min-period" name="min-period" type="number" value={minPeriod} onChange={(e) => setMinPeriod(Number(e.target.value))} step="0.1" />
+              <label htmlFor="max-period">Max Period (days)</label>
+              <input id="max-period" name="max-period" type="number" value={maxPeriod} onChange={(e) => setMaxPeriod(Number(e.target.value))} step="1" />
               {blsRunning && <p className="quiet">Searching grid...</p>}
             </div>
             <footer>

@@ -19,7 +19,7 @@ export function SciencePlot({ title, x, y, xLabel, yLabel, mode = 'lines' }: Pro
         {
           x,
           y,
-          type: 'scattergl',
+          type: 'scatter',
           mode,
           line: { color: '#78dce8', width: 1.4 },
           marker: { color: '#78dce8', size: 3 }

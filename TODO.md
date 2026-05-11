@@ -34,4 +34,4 @@
 - Keep CI green on backend tests and frontend builds.
 - Add lightweight linting once formatting conventions settle.
 - Add issue labels and a milestone plan after the hackathon.
-- Convert direct-push workflow to PR review when the team grows.
+- [x] Convert direct-push workflow to PR review when the team grows.

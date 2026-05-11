@@ -58,7 +58,17 @@ def list_tpf_products(target_id: str, *, mission: str | None = None) -> list[Pro
         import lightkurve as lk
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("lightkurve is required for live TPF product search") from exc
-    search = lk.search_targetpixelfile(target_id, mission=mission)
+    target_name = target_id.strip()
+    mission_upper = (mission or "").upper()
+    if target_name.isdigit():
+        if mission_upper == "TESS":
+            target_name = f"TIC {target_name}"
+        elif mission_upper == "KEPLER":
+            target_name = f"KIC {target_name}"
+        elif mission_upper == "K2":
+            target_name = f"EPIC {target_name}"
+
+    search = lk.search_targetpixelfile(target_name, mission=mission)
     if len(search) > 0:
         summaries: list[ProductSummary] = []
         for row in search.table:
@@ -80,7 +90,7 @@ def list_tpf_products(target_id: str, *, mission: str | None = None) -> list[Pro
         from astroquery.mast import Observations
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("astroquery is required for live MAST product listing") from exc
-    criteria = {"target_name": target_id, "dataproduct_type": "timeseries"}
+    criteria = {"target_name": target_name, "dataproduct_type": "timeseries"}
     if mission:
         criteria["obs_collection"] = "Kepler" if mission == "K2" else mission
     obs = Observations.query_criteria(**criteria)
