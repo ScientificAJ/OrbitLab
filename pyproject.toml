@@ -37,7 +37,7 @@ ml = [
   "tensorflow>=2.16",
 ]
 dev = [
-  "pytest>=8.2",
+  "pytest>=9.0.3",
   "httpx>=0.27",
 ]
 
