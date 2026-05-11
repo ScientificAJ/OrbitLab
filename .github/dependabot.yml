@@ -2,15 +2,102 @@ version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
+    open-pull-requests-limit: 2
     schedule:
       interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
   - package-ecosystem: "npm"
     directory: "/frontend"
+    open-pull-requests-limit: 3
     schedule:
       interval: "weekly"
+    groups:
+      frontend-runtime:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+        update-types:
+          - "minor"
+          - "patch"
+      frontend-tooling:
+        patterns:
+          - "typescript"
+          - "vite"
+          - "@vitejs/*"
+        update-types:
+          - "minor"
+          - "patch"
+      frontend-libraries:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
 
   - package-ecosystem: "pip"
     directory: "/"
+    open-pull-requests-limit: 3
     schedule:
       interval: "weekly"
+    groups:
+      backend-runtime:
+        patterns:
+          - "fastapi"
+          - "uvicorn*"
+          - "sqlalchemy"
+          - "celery"
+          - "redis"
+          - "psycopg*"
+        update-types:
+          - "minor"
+          - "patch"
+      science-stack:
+        patterns:
+          - "numpy"
+          - "astropy"
+          - "astroquery"
+          - "lightkurve"
+          - "scipy"
+          - "batman-package"
+        update-types:
+          - "minor"
+          - "patch"
+      ml-stack:
+        patterns:
+          - "h5py"
+          - "joblib"
+          - "onnxruntime"
+          - "pandas"
+          - "scikit-learn"
+          - "tensorflow"
+        update-types:
+          - "minor"
+          - "patch"
+      test-tooling:
+        patterns:
+          - "pytest"
+          - "httpx"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
