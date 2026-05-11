@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+
+# OrbitLab local runtime state
+.orbitlab/
+orbitlab.db
+*.sqlite
+*.sqlite3
+
+# Downloaded science/model artifacts
+*.fits
+*.fits.gz
+*.h5
+*.hdf5
+*.keras
+*.joblib
+*.ckpt
+*.ckpt-*
+*.npz
+*.onnx
+
+# Local scratch/debug output
+repodump.txt
+core
+core.*
+*.log
+
+# OS/editor noise
+.DS_Store
+.idea/
+.vscode/

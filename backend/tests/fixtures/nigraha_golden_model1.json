@@ -1,0 +1,6 @@
+{
+  "artifact": "ExoplanetML/Nigraha models_1.hdf5 original Keras forward pass",
+  "input_tensor_checksum": "1e7cede943d01f86ec38f818759ba6d846dc4973ff3c8a7dbf7e16638596434e",
+  "probability": 8.75651089272076e-27,
+  "absolute_tolerance": 1e-4
+}

@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orbitlab"
+version = "0.1.0"
+description = "Real-data exoplanet analysis workbench with TPF-first pipelines and pretrained AstroNet inference."
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.26",
+  "pydantic>=2.7",
+]
+
+[project.optional-dependencies]
+api = [
+  "fastapi>=0.111",
+  "uvicorn[standard]>=0.30",
+  "sqlalchemy>=2.0",
+  "celery>=5.4",
+  "redis>=5.0",
+  "psycopg[binary]>=3.2",
+]
+science = [
+  "astropy>=6.1",
+  "astroquery>=0.4.7",
+  "lightkurve>=2.5",
+  "scipy>=1.13",
+  "batman-package>=2.4",
+]
+ml = [
+  "h5py>=3.11",
+  "joblib>=1.4",
+  "onnxruntime>=1.18",
+  "pandas>=2.2",
+  "scikit-learn==1.7.2",
+  "tensorflow>=2.16",
+]
+dev = [
+  "pytest>=8.2",
+  "httpx>=0.27",
+]
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+addopts = "-q"

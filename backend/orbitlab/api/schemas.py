@@ -1,0 +1,134 @@
+from __future__ import annotations
+
+from datetime import datetime
+from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel, Field, model_validator
+
+
+class JobStatus(str, Enum):
+    queued = "queued"
+    running = "running"
+    complete = "complete"
+    failed = "failed"
+
+
+class SearchResult(BaseModel):
+    target_id: str
+    ra: float | None = None
+    dec: float | None = None
+    catalog: str
+
+
+class Product(BaseModel):
+    product_id: str
+    mission: str
+    description: str
+    size: int | None = None
+    product_uri: str
+
+
+class AnalysisJobCreate(BaseModel):
+    target_id: str
+    product_uri: str
+    mission: str = Field(pattern="^(TESS|Kepler|K2)$")
+    aperture_mask_id: str | None = None
+    artifact_mask_id: str | None = None
+    max_candidates: int = Field(default=4, ge=1, le=8)
+    stellar_radius_solar: float | None = Field(default=None, gt=0)
+    stellar_mass_solar: float | None = Field(default=None, gt=0)
+
+
+class BlsPreviewCreate(BaseModel):
+    product_uri: str
+    mission: str = Field(pattern="^(TESS|Kepler|K2)$")
+    aperture_mask_id: str | None = None
+    min_period: float = Field(default=0.5, gt=0)
+    max_period: float = Field(default=30.0, gt=0)
+    max_candidates: int = Field(default=4, ge=1, le=8)
+
+    @model_validator(mode="after")
+    def validate_period_range(self):
+        if self.min_period >= self.max_period:
+            raise ValueError("min_period must be less than max_period")
+        return self
+
+
+class AnalysisJob(BaseModel):
+    job_id: str
+    status: JobStatus
+    created_at: datetime
+    result_id: str | None = None
+    error: str | None = None
+
+
+class CandidatePayload(BaseModel):
+    candidate_id: str
+    period: float
+    epoch: float
+    duration: float
+    depth: float
+    signal_to_noise: float
+    physics: dict[str, Any] | None = None
+    validation: dict[str, Any] | None = None
+    ml: dict[str, Any] | None = None
+
+
+class AnalysisResult(BaseModel):
+    result_id: str
+    target_id: str
+    mission: str
+    candidates: list[CandidatePayload]
+    periodogram: dict[str, list[float]]
+    folded_curves: dict[str, dict[str, list[float]]]
+    light_curve: dict[str, list[float]]
+
+
+class MaskCreate(BaseModel):
+    target_id: str
+    indices: list[int]
+    reason: str
+
+
+class ApertureMaskCreate(BaseModel):
+    target_id: str
+    product_uri: str
+    mask: list[list[bool]]
+    reason: str
+
+
+class ArtifactMaskResponse(BaseModel):
+    mask_id: str
+    target_id: str
+    indices: list[int]
+    reason: str
+    created_at: datetime | str
+
+
+class ApertureMaskResponse(BaseModel):
+    aperture_mask_id: str
+    target_id: str
+    product_uri: str
+    mask: list[list[bool]]
+    reason: str
+    created_at: datetime | str
+
+
+class ReportResponse(BaseModel):
+    report_id: str
+    generated_at: str
+    format: str
+    result: dict[str, Any]
+
+
+class SavedSession(BaseModel):
+    session_id: str
+    name: str
+    payload: dict[str, Any]
+    created_at: datetime
+
+
+class SavedSessionCreate(BaseModel):
+    name: str
+    payload: dict[str, Any]

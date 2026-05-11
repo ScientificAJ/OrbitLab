@@ -1,0 +1,19 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: orbitlab
+      POSTGRES_USER: orbitlab
+      POSTGRES_PASSWORD: orbitlab
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - orbitlab-postgres:/var/lib/postgresql/data
+
+volumes:
+  orbitlab-postgres:
+
