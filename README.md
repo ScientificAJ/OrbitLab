@@ -1,6 +1,8 @@
 # OrbitLab
 
 [![CI](https://github.com/ScientificAJ/OrbitLab/actions/workflows/ci.yml/badge.svg)](https://github.com/ScientificAJ/OrbitLab/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/ScientificAJ/OrbitLab/actions/workflows/codeql.yml/badge.svg)](https://github.com/ScientificAJ/OrbitLab/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/ScientificAJ/OrbitLab?include_prereleases&label=release)](https://github.com/ScientificAJ/OrbitLab/releases/tag/v0.1.0-mvp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](pyproject.toml)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI-009688.svg)](backend/orbitlab/api/main.py)
