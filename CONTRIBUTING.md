@@ -1,14 +1,14 @@
 # Contributing
 
-OrbitLab is in hackathon direct-push mode. Keep the pace high, but keep the science and repo hygiene visible.
+OrbitLab uses a branch-and-PR workflow. Keep the pace high, but keep the science and repo hygiene visible.
 
-## Direct-Push Workflow
+## Branch-and-PR Workflow
 
-1. Pull before starting work.
+1. Create a feature branch for your changes (e.g., `feature/description` or `fix/description`).
 2. Keep commits small and named for the user-visible change.
-3. Run `scripts/preflight.sh` before pushing.
-4. Coordinate risky changes in issues or chat before editing shared surfaces.
-5. Use a short branch for dangerous or speculative changes.
+3. Run `scripts/preflight.sh` locally before pushing your branch.
+4. Push your branch and open a Pull Request to `main`.
+5. Coordinate risky changes in issues or chat before editing shared surfaces.
 6. Do not commit downloaded model artifacts, MAST cache data, databases, logs, virtual environments, frontend build output, or local runtime state.
 
 ## Local Setup
