@@ -23,6 +23,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,science,api,ml]"
 
+      - name: Fetch Nigraha test artifact
+        run: python scripts/fetch_nigraha_weights.py
+
       - name: Run backend tests
         run: pytest
 
