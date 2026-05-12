@@ -38,8 +38,28 @@ def test_kepler_search_falls_back_when_catalog_adapter_is_missing(monkeypatch: p
     monkeypatch.setitem(sys.modules, "astroquery.mast", mast)
 
     assert search_targets("Kepler-10", mission="Kepler") == [
-        {"target_id": "Kepler-10", "ra": None, "dec": None, "catalog": "KIC"}
+        {"target_id": "Kepler-10", "ra": None, "dec": None, "catalog": "NAME"}
     ]
+
+
+def test_named_tess_search_includes_exact_query_before_nearby_catalog_rows(monkeypatch: pytest.MonkeyPatch):
+    class FakeRow(dict):
+        colnames = ["ID", "ra", "dec"]
+
+    class Catalogs:
+        @staticmethod
+        def query_object(*args, **kwargs):
+            return [FakeRow(ID="278892590", ra=346.6, dec=-5.04)]
+
+    mast = ModuleType("astroquery.mast")
+    mast.Catalogs = Catalogs
+    monkeypatch.setitem(sys.modules, "astroquery", ModuleType("astroquery"))
+    monkeypatch.setitem(sys.modules, "astroquery.mast", mast)
+
+    results = search_targets("TRAPPIST-1", mission="TESS")
+
+    assert results[0] == {"target_id": "TRAPPIST-1", "ra": None, "dec": None, "catalog": "NAME"}
+    assert results[1]["target_id"] == "278892590"
 
 
 def test_pipeline_extraction_uses_threshold_mask_when_pipeline_mask_is_empty(
