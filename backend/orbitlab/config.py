@@ -5,6 +5,10 @@ import os
 from pathlib import Path
 
 
+def _csv_env(name: str, default: str) -> tuple[str, ...]:
+    return tuple(value.strip() for value in os.getenv(name, default).split(",") if value.strip())
+
+
 @dataclass(frozen=True)
 class Settings:
     database_url: str = os.getenv("DATABASE_URL", "sqlite:///./.orbitlab/orbitlab.db")
@@ -24,6 +28,10 @@ class Settings:
     run_jobs_inline: bool = os.getenv("ORBITLAB_RUN_JOBS_INLINE", "1").strip().lower() in {"1", "true", "yes"}
     mast_cache_dir: Path = Path(os.getenv("ORBITLAB_MAST_CACHE_DIR", ".orbitlab/mast")).resolve()
     model_registry_path: Path = Path(os.getenv("ORBITLAB_MODEL_REGISTRY", ".orbitlab/models.json")).resolve()
+    cors_origins: tuple[str, ...] = _csv_env(
+        "ORBITLAB_CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173",
+    )
     api_prefix: str = "/api/v1"
 
 

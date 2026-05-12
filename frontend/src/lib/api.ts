@@ -98,7 +98,7 @@ export type SavedSession = {
   created_at: string;
 };
 
-const API = '/api/v1';
+const API = (import.meta.env.VITE_API_BASE_URL ?? '/api/v1').replace(/\/$/, '');
 
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {

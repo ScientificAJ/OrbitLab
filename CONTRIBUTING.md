@@ -2,6 +2,10 @@
 
 OrbitLab uses a branch-and-PR workflow. Keep the pace high, but keep the science and repo hygiene visible.
 
+## Team
+
+See [TEAM.md](TEAM.md) for the current OrbitLab team roster and GitHub usernames.
+
 ## Branch-and-PR Workflow
 
 1. Create a feature branch for your changes (e.g., `feature/description` or `fix/description`).
