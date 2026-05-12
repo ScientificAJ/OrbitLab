@@ -41,22 +41,29 @@ def search_targets(query: str, *, mission: str | None = None, limit: int = 20) -
         catalog = "EPIC"
     else:
         catalog = "TIC"
+    results: list[dict] = []
+    if query and not query.isdigit():
+        results.append({"target_id": query, "ra": None, "dec": None, "catalog": "NAME"})
     try:
         table = Catalogs.query_object(query, catalog=catalog, radius=0.02)
     except Exception:
         if mission_upper not in {"KEPLER", "K2"}:
             raise
-        return [{"target_id": query, "ra": None, "dec": None, "catalog": catalog}]
+        return results or [{"target_id": query, "ra": None, "dec": None, "catalog": catalog}]
     rows = table[:limit]
-    return [
-        {
+    seen = {(item["catalog"], item["target_id"]) for item in results}
+    for row in rows:
+        item = {
             "target_id": str(row_value(row, "ID", row_value(row, "TICID", ""))),
             "ra": float(row_value(row, "ra")) if "ra" in row.colnames else None,
             "dec": float(row_value(row, "dec")) if "dec" in row.colnames else None,
             "catalog": catalog,
         }
-        for row in rows
-    ]
+        key = (item["catalog"], item["target_id"])
+        if key not in seen:
+            results.append(item)
+            seen.add(key)
+    return results
 
 
 def list_tpf_products(target_id: str, *, mission: str | None = None) -> list[ProductSummary]:

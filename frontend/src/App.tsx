@@ -51,6 +51,9 @@ const setupCommands: Record<string, string> = {
   k2_astronet: 'No public K2 checkpoint registered yet.',
 };
 
+const MIN_PERIOD_FLOOR = 0.2;
+const MAX_PERIOD_CEILING = 60;
+
 export default function App() {
   const [mission, setMission] = useState<'TESS' | 'Kepler' | 'K2'>('TESS');
   const [query, setQuery] = useState('');
@@ -139,6 +142,16 @@ export default function App() {
     setApertureMask([]);
     setShowApertureModal(false);
     setShowBlsModal(false);
+  }
+
+  function updateMinPeriod(value: number) {
+    const next = Math.min(Math.max(value, MIN_PERIOD_FLOOR), maxPeriod - 0.1);
+    setMinPeriod(Number(next.toFixed(2)));
+  }
+
+  function updateMaxPeriod(value: number) {
+    const next = Math.max(Math.min(value, MAX_PERIOD_CEILING), minPeriod + 0.1);
+    setMaxPeriod(Number(next.toFixed(2)));
   }
 
   async function runSearch() {
@@ -376,6 +389,10 @@ export default function App() {
   async function runBlsPreview() {
     if (!selectedProduct) return;
     setError(null);
+    if (minPeriod >= maxPeriod) {
+      setError('Minimum period must be lower than maximum period.');
+      return;
+    }
     setBlsRunning(true);
     try {
       const payload = await fetchBlsPreview({
@@ -661,10 +678,54 @@ export default function App() {
               <button onClick={() => setShowBlsModal(false)}><X size={20}/></button>
             </header>
             <div className="modal-content">
-              <label htmlFor="min-period">Min Period (days)</label>
-              <input id="min-period" name="min-period" type="number" value={minPeriod} onChange={(e) => setMinPeriod(Number(e.target.value))} step="0.1" />
-              <label htmlFor="max-period">Max Period (days)</label>
-              <input id="max-period" name="max-period" type="number" value={maxPeriod} onChange={(e) => setMaxPeriod(Number(e.target.value))} step="1" />
+              <div className="period-control">
+                <label htmlFor="min-period">Min Period (days)</label>
+                <div className="range-row">
+                  <input
+                    id="min-period"
+                    name="min-period"
+                    type="range"
+                    min={MIN_PERIOD_FLOOR}
+                    max={Math.max(MIN_PERIOD_FLOOR, maxPeriod - 0.1)}
+                    value={minPeriod}
+                    onChange={(event) => updateMinPeriod(Number(event.target.value))}
+                    step="0.1"
+                  />
+                  <input
+                    aria-label="minimum period value"
+                    type="number"
+                    min={MIN_PERIOD_FLOOR}
+                    max={Math.max(MIN_PERIOD_FLOOR, maxPeriod - 0.1)}
+                    value={minPeriod}
+                    onChange={(event) => updateMinPeriod(Number(event.target.value))}
+                    step="0.1"
+                  />
+                </div>
+              </div>
+              <div className="period-control">
+                <label htmlFor="max-period">Max Period (days)</label>
+                <div className="range-row">
+                  <input
+                    id="max-period"
+                    name="max-period"
+                    type="range"
+                    min={MIN_PERIOD_FLOOR}
+                    max={MAX_PERIOD_CEILING}
+                    value={maxPeriod}
+                    onChange={(event) => updateMaxPeriod(Number(event.target.value))}
+                    step="0.1"
+                  />
+                  <input
+                    aria-label="maximum period value"
+                    type="number"
+                    min={Math.min(MAX_PERIOD_CEILING, minPeriod + 0.1)}
+                    max={MAX_PERIOD_CEILING}
+                    value={maxPeriod}
+                    onChange={(event) => updateMaxPeriod(Number(event.target.value))}
+                    step="0.1"
+                  />
+                </div>
+              </div>
               {blsRunning && <p className="quiet">Searching grid...</p>}
             </div>
             <footer>
