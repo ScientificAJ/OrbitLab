@@ -29,6 +29,7 @@ def row_value(row, key: str, default=None):
 
 
 def search_targets(query: str, *, mission: str | None = None, limit: int = 20) -> list[dict]:
+    query = query.strip()
     try:
         from astroquery.mast import Catalogs
     except ImportError as exc:  # pragma: no cover - optional science install
@@ -40,7 +41,12 @@ def search_targets(query: str, *, mission: str | None = None, limit: int = 20) -
         catalog = "EPIC"
     else:
         catalog = "TIC"
-    table = Catalogs.query_object(query, catalog=catalog, radius=0.02)
+    try:
+        table = Catalogs.query_object(query, catalog=catalog, radius=0.02)
+    except Exception:
+        if mission_upper not in {"KEPLER", "K2"}:
+            raise
+        return [{"target_id": query, "ra": None, "dec": None, "catalog": catalog}]
     rows = table[:limit]
     return [
         {
@@ -173,10 +179,23 @@ def extract_light_curve_from_tpf(
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("lightkurve is required for TPF extraction") from exc
     tpf_path = resolve_tpf_path(product_uri)
-    mask = np.asarray(aperture_mask, dtype=bool) if isinstance(aperture_mask, list) else aperture_mask
     tpf = lk.read(str(tpf_path))
     if not hasattr(tpf, "to_lightcurve"):
         raise TypeError(f"file is not a Lightkurve target pixel file: {tpf_path}")
+    if isinstance(aperture_mask, list):
+        mask = np.asarray(aperture_mask, dtype=bool)
+        if mask.shape != tuple(tpf.flux.shape[1:]):
+            raise ValueError(f"aperture mask shape {mask.shape} does not match TPF shape {tuple(tpf.flux.shape[1:])}")
+        if not mask.any():
+            raise ValueError("aperture mask must select at least one pixel")
+    elif aperture_mask == "pipeline":
+        mask = np.asarray(getattr(tpf, "pipeline_mask", []), dtype=bool)
+        if mask.shape != tuple(tpf.flux.shape[1:]) or not mask.any():
+            mask = np.asarray(tpf.create_threshold_mask(threshold=3), dtype=bool)
+        if mask.shape != tuple(tpf.flux.shape[1:]) or not mask.any():
+            raise ValueError("TPF has no usable pipeline or threshold aperture pixels")
+    else:
+        mask = aperture_mask
     lc = tpf.to_lightcurve(aperture_mask=mask)
     quality = getattr(lc, "quality", None)
     time = np.asarray(lc.time.value, dtype=np.float32)

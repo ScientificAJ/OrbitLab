@@ -86,6 +86,8 @@ export default function App() {
   const [cadenceEnd, setCadenceEnd] = useState<number>(0);
 
   const analysisToken = useRef<number>(0);
+  const searchToken = useRef<number>(0);
+  const productToken = useRef<number>(0);
 
   useEffect(() => {
     refreshModelStatus();
@@ -115,6 +117,9 @@ export default function App() {
   }, [tpfPreview]);
 
   function changeMission(next: 'TESS' | 'Kepler' | 'K2') {
+    searchToken.current += 1;
+    productToken.current += 1;
+    analysisToken.current += 1;
     setMission(next);
     setTargets([]);
     setSelectedTarget(null);
@@ -124,14 +129,24 @@ export default function App() {
     setJob(null);
     setResult(null);
     setSelectedId(undefined);
+    setJob(null);
     setWorkflow('idle');
     setError(null);
     setSuccess(null);
     setSelectedApertureMaskId(undefined);
     setSelectedArtifactMaskId(undefined);
+    setTpfPreview(null);
+    setApertureMask([]);
+    setShowApertureModal(false);
+    setShowBlsModal(false);
   }
 
   async function runSearch() {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery) return;
+    const token = ++searchToken.current;
+    productToken.current += 1;
+    analysisToken.current += 1;
     setError(null);
     setSuccess(null);
     setWorkflow('searching');
@@ -141,40 +156,68 @@ export default function App() {
     setProductsLoading(false);
     setResult(null);
     setSelectedId(undefined);
+    setJob(null);
+    setSelectedApertureMaskId(undefined);
+    setSelectedArtifactMaskId(undefined);
+    setTpfPreview(null);
+    setApertureMask([]);
     try {
-      const payload = await searchTargets(query, mission);
+      const payload = await searchTargets(trimmedQuery, mission);
+      if (token !== searchToken.current) return;
       setTargets(payload);
       setWorkflow('idle');
     } catch (err) {
+      if (token !== searchToken.current) return;
       setError(err instanceof Error ? err.message : String(err));
       setWorkflow('failed');
     }
   }
 
   async function chooseTarget(target: SearchResult) {
+    const token = ++productToken.current;
+    analysisToken.current += 1;
     setError(null);
     setSuccess(null);
     setSelectedTarget(target);
     setSelectedProduct(null);
     setProducts([]);
+    setResult(null);
+    setSelectedId(undefined);
+    setJob(null);
+    setSelectedApertureMaskId(undefined);
+    setSelectedArtifactMaskId(undefined);
+    setTpfPreview(null);
+    setApertureMask([]);
     setProductsLoading(true);
     try {
       const payload = await fetchProducts(target.target_id, mission);
+      if (token !== productToken.current) return;
       setProducts(payload);
       setWorkflow('idle');
     } catch (err) {
+      if (token !== productToken.current) return;
       setError(err instanceof Error ? err.message : String(err));
       setWorkflow('failed');
     } finally {
-      setProductsLoading(false);
+      if (token === productToken.current) {
+        setProductsLoading(false);
+      }
     }
   }
 
   function chooseProduct(product: Product) {
+    analysisToken.current += 1;
     setSelectedProduct(product);
     setWorkflow('product-selected');
+    setJob(null);
+    setResult(null);
+    setSelectedId(undefined);
     setSelectedApertureMaskId(undefined);
     setSelectedArtifactMaskId(undefined);
+    setTpfPreview(null);
+    setApertureMask([]);
+    setCadenceStart(0);
+    setCadenceEnd(0);
   }
 
   async function runAnalysis() {

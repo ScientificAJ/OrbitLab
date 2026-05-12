@@ -59,6 +59,28 @@ def test_bls_preview_rejects_invalid_period_range():
         })
         assert response.status_code == 422 # Pydantic validation error
 
+def test_aperture_mask_rejects_empty_selection():
+    with TestClient(app) as client:
+        response = client.post("/api/v1/aperture-masks", json={
+            "target_id": "test",
+            "product_uri": "mast:test",
+            "mask": [[False, False], [False, False]],
+            "reason": "empty test mask",
+        })
+        assert response.status_code == 422
+        assert "aperture mask must select at least one pixel" in response.text
+
+def test_aperture_mask_rejects_ragged_grid():
+    with TestClient(app) as client:
+        response = client.post("/api/v1/aperture-masks", json={
+            "target_id": "test",
+            "product_uri": "mast:test",
+            "mask": [[True], [False, True]],
+            "reason": "ragged test mask",
+        })
+        assert response.status_code == 422
+        assert "aperture mask rows must all have the same length" in response.text
+
 def test_analysis_job_accepts_artifact_mask_id():
     with TestClient(app) as client:
         # We won't run it, just check creation

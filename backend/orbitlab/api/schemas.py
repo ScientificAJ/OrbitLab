@@ -97,6 +97,17 @@ class ApertureMaskCreate(BaseModel):
     mask: list[list[bool]]
     reason: str
 
+    @model_validator(mode="after")
+    def validate_mask(self):
+        if not self.mask or not self.mask[0]:
+            raise ValueError("aperture mask must be a non-empty 2D grid")
+        width = len(self.mask[0])
+        if any(len(row) != width for row in self.mask):
+            raise ValueError("aperture mask rows must all have the same length")
+        if not any(pixel for row in self.mask for pixel in row):
+            raise ValueError("aperture mask must select at least one pixel")
+        return self
+
 
 class ArtifactMaskResponse(BaseModel):
     mask_id: str
