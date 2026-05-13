@@ -84,7 +84,7 @@ fi
 log "starting Docker services from docker-compose.yml"
 docker compose up -d
 wait_port 127.0.0.1 6379 redis
-wait_port 127.0.0.1 5432 postgres
+wait_port 127.0.0.1 5435 postgres
 
 log "ensuring Kepler/K1 TensorFlow Docker runtime image exists"
 docker image inspect "$TF_IMAGE" >/dev/null 2>&1 || docker pull "$TF_IMAGE"
@@ -109,7 +109,7 @@ then
   scripts/fetch_k2_exomac_kkt.py
 fi
 
-export DATABASE_URL="${DATABASE_URL:-postgresql+psycopg://orbitlab:orbitlab@127.0.0.1:5432/orbitlab}"
+export DATABASE_URL="${DATABASE_URL:-postgresql+psycopg://orbitlab:orbitlab@127.0.0.1:5435/orbitlab}"
 export REDIS_URL="${REDIS_URL:-redis://127.0.0.1:6379/0}"
 export ORBITLAB_RUN_JOBS_INLINE="${ORBITLAB_RUN_JOBS_INLINE:-1}"
 
