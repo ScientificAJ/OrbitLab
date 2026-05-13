@@ -12,7 +12,7 @@ from orbitlab.ml.exomac_service import ExoMACService, build_exomac_features
 from orbitlab.ml.exomac_service import ExoMACVerdict
 from orbitlab.science import pipeline
 from orbitlab.ml.service import AstroNetService
-from orbitlab.science.bls import TransitCandidate
+from orbitlab.science.bls import BlsResult, TransitCandidate
 
 
 class TinyExoMACModel:
@@ -168,15 +168,34 @@ def test_exomac_service_loads_registered_joblib_bundle(tmp_path: Path):
 
 def test_k2_pipeline_uses_exomac_service(monkeypatch: pytest.MonkeyPatch):
     candidate = TransitCandidate(period=10.0, epoch=1.0, duration=0.125, depth=0.001, power=9.0, signal_to_noise=12.0)
-    monkeypatch.setattr(
-        pipeline,
-        "run_bls",
-        lambda clean_time, clean_flux: (candidate, {"period": np.asarray([10.0]), "power": np.asarray([9.0])}),
-    )
+
+    def fake_run_bls(clean_time, clean_flux):
+        return BlsResult(
+            candidate=candidate,
+            periodogram={
+                "period": np.asarray([10.0], dtype=np.float32),
+                "power": np.asarray([9.0], dtype=np.float32),
+                "duration": np.asarray([0.125], dtype=np.float32),
+            },
+            search_time=np.asarray(clean_time, dtype=np.float32),
+            search_flux=np.asarray(clean_flux, dtype=np.float32),
+            clean_time=np.asarray(clean_time, dtype=np.float32),
+            clean_flux=np.asarray(clean_flux, dtype=np.float32),
+            metadata={
+                "min_period_days": 0.5,
+                "max_period_days": 10.0,
+                "baseline_days": 20.0,
+                "cadence_days": 0.1,
+                "period_grid_source": "test",
+            },
+        )
+
+    monkeypatch.setattr(pipeline, "run_bls", fake_run_bls)
+
     monkeypatch.setattr(
         pipeline,
         "find_multi_planet_candidates",
-        lambda clean_time, clean_flux, max_candidates, initial_candidate: [initial_candidate],
+        lambda clean_time, clean_flux, max_candidates, initial_candidate, min_period, max_period: [initial_candidate],
     )
 
     result = pipeline.analyze_light_curve_arrays(

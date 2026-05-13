@@ -132,25 +132,30 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
             aperture_mask = record.mask_json
         time, flux, quality = extract_light_curve_from_tpf(payload.product_uri, aperture_mask=aperture_mask)
         clean_time, clean_flux = clean_light_curve(time, flux, quality)
-        candidate, periodogram = run_bls(
+        bls_result = run_bls(
             clean_time,
             clean_flux,
             min_period=payload.min_period,
             max_period=payload.max_period,
-            period_samples=1024,
+            period_samples=4096,
         )
+        candidate = bls_result.candidate
+        periodogram = bls_result.periodogram
+
         candidates = find_multi_planet_candidates(
             clean_time,
             clean_flux,
             max_candidates=payload.max_candidates,
             initial_candidate=candidate,
-            period_samples=1024,
+            min_period=payload.min_period,
+            max_period=payload.max_period,
+            period_samples=4096,
         )
 
         folded_curves = {}
         for index, c in enumerate(candidates, start=1):
             candidate_id = f"preview-{index}"
-            phase, folded_flux = phase_fold(clean_time, clean_flux, c.period, c.epoch)
+            phase, folded_flux = phase_fold(bls_result.search_time, bls_result.search_flux, c.period, c.epoch)
             binned_phase, binned_flux = bin_phase_curve(phase, folded_flux, 401)
             folded_curves[candidate_id] = {
                 "phase": binned_phase.astype(float).tolist(),
@@ -161,6 +166,7 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
             "periodogram": {
                 "period": periodogram["period"].astype(float).tolist(),
                 "power": periodogram["power"].astype(float).tolist(),
+                "duration": periodogram["duration"].astype(float).tolist(),
             },
             "candidates": [
                 {
@@ -174,6 +180,11 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
                 for i, c in enumerate(candidates, start=1)
             ],
             "folded_curves": folded_curves,
+            "bls_light_curve": {
+                "time": bls_result.search_time.astype(float).tolist(),
+                "flux": bls_result.search_flux.astype(float).tolist(),
+            },
+            "preprocessing": bls_result.metadata,
         }
     except HTTPException:
         raise

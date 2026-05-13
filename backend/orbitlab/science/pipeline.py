@@ -34,8 +34,19 @@ def analyze_light_curve_arrays(
     k2_service: ExoMACService | None = None,
 ) -> dict:
     clean_time, clean_flux = clean_light_curve(time, flux, quality)
-    primary, periodogram = run_bls(clean_time, clean_flux)
-    candidates = find_multi_planet_candidates(clean_time, clean_flux, max_candidates=max_candidates, initial_candidate=primary)
+
+    bls_result = run_bls(clean_time, clean_flux)
+    primary = bls_result.candidate
+    periodogram = bls_result.periodogram
+
+    candidates = find_multi_planet_candidates(
+        clean_time,
+        clean_flux,
+        max_candidates=max_candidates,
+        initial_candidate=primary,
+        min_period=bls_result.metadata["min_period_days"],
+        max_period=bls_result.metadata["max_period_days"],
+    )
 
     folded_curves: dict[str, dict[str, list[float]]] = {}
     candidate_payloads = []
@@ -50,7 +61,7 @@ def analyze_light_curve_arrays(
         k2_service = ExoMACService()
     for index, candidate in enumerate(candidates, start=1):
         candidate_id = f"{mission.lower()}-{target_id}-{index}"
-        phase, folded_flux = phase_fold(clean_time, clean_flux, candidate.period, candidate.epoch)
+        phase, folded_flux = phase_fold(bls_result.search_time, bls_result.search_flux, candidate.period, candidate.epoch)
         binned_phase, binned_flux = bin_phase_curve(phase, folded_flux, 401)
         folded_curves[candidate_id] = {
             "phase": binned_phase.astype(float).tolist(),
@@ -124,10 +135,16 @@ def analyze_light_curve_arrays(
         "periodogram": {
             "period": periodogram["period"].astype(float).tolist(),
             "power": periodogram["power"].astype(float).tolist(),
+            "duration": periodogram["duration"].astype(float).tolist(),
         },
         "folded_curves": folded_curves,
         "light_curve": {
             "time": clean_time.astype(float).tolist(),
             "flux": clean_flux.astype(float).tolist(),
         },
+        "bls_light_curve": {
+            "time": bls_result.search_time.astype(float).tolist(),
+            "flux": bls_result.search_flux.astype(float).tolist(),
+        },
+        "preprocessing": bls_result.metadata,
     }
