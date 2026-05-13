@@ -83,6 +83,8 @@ class AnalysisResult(BaseModel):
     periodogram: dict[str, list[float]]
     folded_curves: dict[str, dict[str, list[float]]]
     light_curve: dict[str, list[float]]
+    bls_light_curve: dict[str, list[float]] | None = None
+    preprocessing: dict[str, Any] | None = None
 
 
 class MaskCreate(BaseModel):
