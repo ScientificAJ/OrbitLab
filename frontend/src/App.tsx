@@ -8,6 +8,7 @@ import {
   Candidate,
   Product,
   SearchResult,
+  TpfPreview,
   createAnalysisJob,
   fetchAnalysisJob,
   fetchModelStatus,
@@ -71,7 +72,7 @@ export default function App() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const [showApertureModal, setShowApertureModal] = useState(false);
-  const [tpfPreview, setTpfPreview] = useState<{ shape: number[]; image: number[][] } | null>(null);
+  const [tpfPreview, setTpfPreview] = useState<TpfPreview | null>(null);
   const [apertureMask, setApertureMask] = useState<boolean[][]>([]);
   const [selectedApertureMaskId, setSelectedApertureMaskId] = useState<string | undefined>();
 
@@ -91,6 +92,8 @@ export default function App() {
   const analysisToken = useRef<number>(0);
   const searchToken = useRef<number>(0);
   const productToken = useRef<number>(0);
+  const apertureToken = useRef<number>(0);
+  const blsPreviewToken = useRef<number>(0);
 
   useEffect(() => {
     refreshModelStatus();
@@ -114,16 +117,31 @@ export default function App() {
   const activeModelStatus = typeof activeModel?.status === 'string' ? activeModel.status : 'unknown';
   const activeModelSource = typeof activeModel?.source === 'string' ? activeModel.source : typeof activeModel?.detail === 'string' ? activeModel.detail : 'n/a';
 
-  const maxPixelValue = useMemo(() => {
-    if (!tpfPreview) return 1;
+  const pixelScale = useMemo(() => {
+    if (!tpfPreview) return { min: 0, span: 1 };
+
     const finitePixels = tpfPreview.image.flat().filter(Number.isFinite);
-    return Math.max(...finitePixels, 1);
+    const fallbackMin = finitePixels.length ? Math.min(...finitePixels) : 0;
+    const fallbackMax = finitePixels.length ? Math.max(...finitePixels) : 1;
+
+    const min = Number.isFinite(tpfPreview.finite_min) ? Number(tpfPreview.finite_min) : fallbackMin;
+    const max = Number.isFinite(tpfPreview.finite_max) ? Number(tpfPreview.finite_max) : fallbackMax;
+
+    return { min, span: max > min ? max - min : 1 };
   }, [tpfPreview]);
+
+  function aperturePixelOpacity(value: number) {
+    if (!Number.isFinite(value)) return 0.2;
+    const normalized = Math.min(1, Math.max(0, (value - pixelScale.min) / pixelScale.span));
+    return 0.2 + normalized * 0.8;
+  }
 
   function changeMission(next: 'TESS' | 'Kepler' | 'K2') {
     searchToken.current += 1;
     productToken.current += 1;
     analysisToken.current += 1;
+    apertureToken.current += 1;
+    blsPreviewToken.current += 1;
     setMission(next);
     setTargets([]);
     setSelectedTarget(null);
@@ -161,6 +179,8 @@ export default function App() {
     const token = ++searchToken.current;
     productToken.current += 1;
     analysisToken.current += 1;
+    apertureToken.current += 1;
+    blsPreviewToken.current += 1;
     setError(null);
     setSuccess(null);
     setWorkflow('searching');
@@ -190,6 +210,8 @@ export default function App() {
   async function chooseTarget(target: SearchResult) {
     const token = ++productToken.current;
     analysisToken.current += 1;
+    apertureToken.current += 1;
+    blsPreviewToken.current += 1;
     setError(null);
     setSuccess(null);
     setSelectedTarget(target);
@@ -221,6 +243,8 @@ export default function App() {
 
   function chooseProduct(product: Product) {
     analysisToken.current += 1;
+    apertureToken.current += 1;
+    blsPreviewToken.current += 1;
     setSelectedProduct(product);
     setWorkflow('product-selected');
     setJob(null);
@@ -351,9 +375,9 @@ export default function App() {
   }
 
   async function openApertureModal() {
-    if (!selectedProduct) return;
+    if (!selectedProduct || workflow === 'running') return;
 
-    const token = ++analysisToken.current;
+    const token = ++apertureToken.current;
     const productUri = selectedProduct.product_uri;
 
     setError(null);
@@ -361,13 +385,13 @@ export default function App() {
     try {
       const preview = await fetchTpfPreview(productUri);
 
-      if (token !== analysisToken.current) return;
+      if (token !== apertureToken.current) return;
 
       setTpfPreview(preview);
       setApertureMask(Array.from({ length: preview.shape[0] }, () => Array(preview.shape[1]).fill(false)));
       setShowApertureModal(true);
     } catch (err) {
-      if (token !== analysisToken.current) return;
+      if (token !== apertureToken.current) return;
       setError(err instanceof Error ? err.message : String(err));
     }
   }
@@ -397,9 +421,9 @@ export default function App() {
   }
 
   async function runBlsPreview() {
-    if (!selectedProduct) return;
+    if (!selectedProduct || workflow === 'running') return;
 
-    const token = ++analysisToken.current;
+    const token = ++blsPreviewToken.current;
     const productUri = selectedProduct.product_uri;
     const targetId = selectedTarget?.target_id ?? 'unknown';
     const missionAtRequest = mission;
@@ -424,7 +448,7 @@ export default function App() {
         max_period: maxPeriod,
       });
 
-      if (token !== analysisToken.current) return;
+      if (token !== blsPreviewToken.current) return;
 
       setResult({
         result_id: 'preview',
@@ -442,11 +466,11 @@ export default function App() {
       setWorkflow('complete');
       setShowBlsModal(false);
     } catch (err) {
-      if (token !== analysisToken.current) return;
+      if (token !== blsPreviewToken.current) return;
       setError(err instanceof Error ? err.message : String(err));
       setWorkflow('failed');
     } finally {
-      if (token === analysisToken.current) {
+      if (token === blsPreviewToken.current) {
         setBlsRunning(false);
       }
     }
@@ -569,13 +593,12 @@ export default function App() {
           </div>
           <div className="rail-section">
             <h2>Pipeline</h2>
-            <button disabled={!selectedProduct} onClick={openApertureModal} className={selectedApertureMaskId ? 'active-pill' : ''}>
+            <button disabled={!selectedProduct || workflow === 'running'} onClick={openApertureModal} className={selectedApertureMaskId ? 'active-pill' : ''}>
               <SlidersHorizontal size={15} /> Aperture {selectedApertureMaskId ? '(Custom)' : ''}
             </button>
-            <button disabled={!selectedProduct} onClick={() => setShowBlsModal(true)}>
+            <button disabled={!selectedProduct || workflow === 'running'} onClick={() => setShowBlsModal(true)}>
               <FlaskConical size={15} /> BLS Search
-            </button>
-            <button disabled={!selectedProduct?.product_uri || workflow === 'running'} onClick={runAnalysis}>
+            </button>            <button disabled={!selectedProduct?.product_uri || workflow === 'running'} onClick={runAnalysis}>
               <Play size={15} /> Run Analysis
             </button>
             <button onClick={() => setShowModelModal(true)}>
@@ -709,8 +732,7 @@ export default function App() {
                   <button
                     key={`${i}-${j}`}
                     className={`pixel ${apertureMask[i][j] ? 'selected' : ''}`}
-                    style={{ opacity: 0.2 + (val / maxPixelValue) * 0.8 }}
-                    onClick={() => {
+                    style={{ opacity: aperturePixelOpacity(val) }}                    onClick={() => {
                       const next = [...apertureMask];
                       next[i] = [...next[i]];
                       next[i][j] = !next[i][j];

@@ -40,6 +40,13 @@ export type FluxSeries = {
   flux: number[];
 };
 
+export type TpfPreview = {
+  shape: number[];
+  image: number[][];
+  finite_min?: number;
+  finite_max?: number;
+};
+
 export type AnalysisResult = {
   result_id: string;
   target_id: string;
@@ -107,19 +114,49 @@ export type SavedSession = {
 
 const API = (import.meta.env.VITE_API_BASE_URL ?? '/api/v1').replace(/\/$/, '');
 
+function formatApiErrorDetail(detail: unknown, fallback: string): string {
+  if (typeof detail === 'string') return detail;
+
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => {
+        if (!item || typeof item !== 'object') return String(item);
+        const record = item as Record<string, unknown>;
+        const location = Array.isArray(record.loc) ? record.loc.join('.') : undefined;
+        const message = typeof record.msg === 'string' ? record.msg : JSON.stringify(record);
+        return location ? `${location}: ${message}` : message;
+      })
+      .join('; ');
+  }
+
+  if (detail && typeof detail === 'object') {
+    return JSON.stringify(detail);
+  }
+
+  return fallback || 'Request failed';
+}
+
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const text = await response.text();
+
     try {
       const parsed = JSON.parse(text);
-      throw new Error(parsed.detail || text);
-    } catch (e) {
-      if (e instanceof Error && e.message !== text && !e.message.startsWith('Unexpected token') && !e.message.startsWith('JSON.parse:')) {
-        throw e;
+      throw new Error(formatApiErrorDetail(parsed.detail, text));
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message !== text &&
+        !error.message.startsWith('Unexpected token') &&
+        !error.message.startsWith('JSON.parse:')
+      ) {
+        throw error;
       }
-      throw new Error(text);
+
+      throw new Error(text || `Request failed with status ${response.status}`);
     }
   }
+
   return response.json();
 }
 
@@ -181,10 +218,10 @@ export async function fetchReport(reportId: string): Promise<Record<string, unkn
   return readJson<Record<string, unknown>>(response);
 }
 
-export async function fetchTpfPreview(productUri: string): Promise<{ shape: number[]; image: number[][] }> {
+export async function fetchTpfPreview(productUri: string): Promise<TpfPreview> {
   const params = new URLSearchParams({ product_uri: productUri });
   const response = await fetch(`${API}/tpf-preview?${params.toString()}`);
-  return readJson<{ shape: number[]; image: number[][] }>(response);
+  return readJson<TpfPreview>(response);
 }
 
 export async function createApertureMask(payload: {

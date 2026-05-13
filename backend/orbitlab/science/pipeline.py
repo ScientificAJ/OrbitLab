@@ -69,6 +69,9 @@ def analyze_light_curve_arrays(
     folded_curves: dict[str, dict[str, list[float]]] = {}
     candidate_payloads = []
     mission_upper = mission.upper()
+    if mission_upper not in {"TESS", "KEPLER", "K2"}:
+        raise ValueError(f"unsupported mission: {mission}")
+
     service = ml_service
     tess_service = nigraha_service
 
@@ -137,9 +140,9 @@ def analyze_light_curve_arrays(
                 ml = asdict(k2_service.predict(exomac_features))
 
             else:
-                raise ValueError(f"unsupported mission: {mission}")
+                raise AssertionError(f"unreachable mission branch: {mission_upper}")
 
-        except (ModelArtifactError, KeyError, FileNotFoundError, RuntimeError, ImportError) as exc:
+        except (ModelArtifactError, KeyError, FileNotFoundError, RuntimeError, ImportError, ValueError) as exc:
             ml = _ml_unavailable_payload(mission_upper, exc)
 
         candidate_payloads.append(

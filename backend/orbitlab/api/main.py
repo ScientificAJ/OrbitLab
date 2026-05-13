@@ -8,7 +8,7 @@ from typing import Any
 from uuid import uuid4
 
 try:
-    from fastapi import FastAPI, HTTPException, Query, Depends
+    from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Depends
     from fastapi.middleware.cors import CORSMiddleware
     from sqlalchemy.orm import Session
 except ImportError as exc:  # pragma: no cover - import guard for minimal environments
@@ -204,7 +204,11 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
 
 
 @app.post(f"{settings.api_prefix}/analysis-jobs", response_model=AnalysisJob, status_code=201)
-async def create_analysis_job(payload: AnalysisJobCreate, db: Session = Depends(get_db)):
+async def create_analysis_job(
+    payload: AnalysisJobCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     job_id = str(uuid4())
     record = AnalysisJobRecord(
         id=job_id,
@@ -224,23 +228,13 @@ async def create_analysis_job(payload: AnalysisJobCreate, db: Session = Depends(
         raise HTTPException(status_code=404, detail="artifact mask not found")
     db.add(record)
     db.commit()
-    inline_errors: list[str] = []
     if settings.run_jobs_inline:
-        try:
-            await asyncio.to_thread(run_analysis_job, job_id)
-        except Exception as exc:
-            inline_errors.append(str(exc) or exc.__class__.__name__)
+        background_tasks.add_task(run_analysis_job, job_id)
     else:
         celery_app.send_task("orbitlab.worker.run_analysis_job", args=[job_id])
-    stored = db.get(AnalysisJobRecord, job_id)
-    if stored is None:
-        raise HTTPException(status_code=500, detail="job record disappeared")
-    if inline_errors and stored.status != JobStatus.failed.value:
-        stored.status = JobStatus.failed.value
-        stored.error = inline_errors[-1]
-        db.commit()
-        db.refresh(stored)
-    return _job_payload(stored)
+
+    db.refresh(record)
+    return _job_payload(record)
 
 
 @app.get(f"{settings.api_prefix}/analysis-jobs/{{job_id}}", response_model=AnalysisJob)
