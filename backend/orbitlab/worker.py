@@ -49,13 +49,19 @@ def run_analysis_job(self, job_id: str) -> str:
                 record = db.get(ArtifactMaskRecord, job.artifact_mask_id)
                 if record is None:
                     raise ValueError(f"artifact mask not found: {job.artifact_mask_id}")
+
                 indices = json.loads(record.indices_json) if isinstance(record.indices_json, str) else record.indices_json
-                mask = np.zeros_like(time, dtype=bool)
+
+                clean_time, clean_flux = clean_light_curve(time, flux, quality)
+
+                mask = np.zeros(clean_time.shape, dtype=bool)
                 index_array = np.asarray(indices, dtype=int)
+
                 if index_array.size and (index_array.min() < 0 or index_array.max() >= mask.size):
-                    raise ValueError("artifact mask indices are outside the light curve cadence range")
+                    raise ValueError("artifact mask indices are outside the cleaned light curve cadence range")
+
                 mask[index_array] = True
-                time, flux, _ = apply_manual_jitter_mask(time, flux, mask, reason=record.reason)
+                time, flux, _ = apply_manual_jitter_mask(clean_time, clean_flux, mask, reason=record.reason)
                 quality = None
 
             logger.info("Analyzing light curve arrays for job: %s", job_id)

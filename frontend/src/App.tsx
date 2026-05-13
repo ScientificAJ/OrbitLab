@@ -31,6 +31,12 @@ function formatNumber(value: number | null | undefined, digits = 3) {
   return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(digits) : 'n/a';
 }
 
+function formatTriState(value: unknown, trueLabel: string, falseLabel: string) {
+  if (value === true) return trueLabel;
+  if (value === false) return falseLabel;
+  return 'n/a';
+}
+
 function formatScientific(value: number | null | undefined, digits = 3) {
   return typeof value === 'number' && Number.isFinite(value) ? value.toExponential(digits) : 'n/a';
 }
@@ -55,8 +61,10 @@ const setupCommands: Record<string, string> = {
 const MIN_PERIOD_FLOOR = 0.2;
 const MAX_PERIOD_CEILING = 60;
 
+type Mission = 'TESS' | 'Kepler' | 'K2';
+
 export default function App() {
-  const [mission, setMission] = useState<'TESS' | 'Kepler' | 'K2'>('TESS');
+  const [mission, setMission] = useState<Mission>('TESS');
   const [query, setQuery] = useState('');
   const [targets, setTargets] = useState<SearchResult[]>([]);
   const [selectedTarget, setSelectedTarget] = useState<SearchResult | null>(null);
@@ -290,7 +298,7 @@ export default function App() {
       }
       if (!current.result_id) {
         setWorkflow('running');
-        setError('Analysis is still running. You can refresh the job status later.');
+        setError('Analysis is still running. Use Refresh Job Status to continue polling this job.');
         return;
       }
       const payload = await fetchResult(current.result_id);
@@ -304,6 +312,41 @@ export default function App() {
     }
   }
 
+  async function refreshCurrentJob() {
+    if (!job) return;
+
+    const token = ++analysisToken.current;
+    setError(null);
+
+    try {
+      const current = await fetchAnalysisJob(job.job_id);
+      if (token !== analysisToken.current) return;
+
+      setJob(current);
+
+      if (current.status === 'failed') {
+        setWorkflow('failed');
+        setError(current.error ?? 'Analysis failed.');
+        return;
+      }
+
+      if (current.status !== 'complete' || !current.result_id) {
+        setWorkflow('running');
+        return;
+      }
+
+      const payload = await fetchResult(current.result_id);
+      if (token !== analysisToken.current) return;
+
+      setResult(payload);
+      setSelectedId(payload.candidates[0]?.candidate_id);
+      setWorkflow('complete');
+    } catch (err) {
+      if (token !== analysisToken.current) return;
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
   async function handleSaveSession() {
     if (!selectedTarget) return;
     setError(null);
@@ -314,8 +357,13 @@ export default function App() {
         payload: {
           mission,
           query,
+          products,
           selectedTarget,
           selectedProduct,
+          selectedApertureMaskId,
+          selectedArtifactMaskId,
+          minPeriod,
+          maxPeriod,
           result,
           selectedId,
           workflow,
@@ -339,16 +387,41 @@ export default function App() {
   }
 
   function restoreSession(session: SavedSession) {
-    const payload = session.payload as any;
-    setMission(payload.mission ?? 'TESS');
-    setQuery(payload.query ?? '');
-    setSelectedTarget(payload.selectedTarget ?? null);
-    setSelectedProduct(payload.selectedProduct ?? null);
-    setResult(payload.result ?? null);
-    setSelectedId(payload.selectedId);
-    setWorkflow(payload.workflow ?? 'idle');
+    const payload = session.payload as Record<string, unknown>;
+
+    analysisToken.current += 1;
+    searchToken.current += 1;
+    productToken.current += 1;
+    apertureToken.current += 1;
+    blsPreviewToken.current += 1;
+
+    const restoredResult = (payload.result as AnalysisResult | null | undefined) ?? null;
+    const restoredProduct = (payload.selectedProduct as Product | null | undefined) ?? null;
+    const restoredTarget = (payload.selectedTarget as SearchResult | null | undefined) ?? null;
+
+    setMission((payload.mission as Mission) ?? 'TESS');
+    setQuery(typeof payload.query === 'string' ? payload.query : '');
+    setProducts(Array.isArray(payload.products) ? (payload.products as Product[]) : []);
+    setSelectedTarget(restoredTarget);
+    setSelectedProduct(restoredProduct);
+    setSelectedApertureMaskId(typeof payload.selectedApertureMaskId === 'string' ? payload.selectedApertureMaskId : undefined);
+    setSelectedArtifactMaskId(typeof payload.selectedArtifactMaskId === 'string' ? payload.selectedArtifactMaskId : undefined);
+    setMinPeriod(Number.isFinite(payload.minPeriod) ? Number(payload.minPeriod) : 0.5);
+    setMaxPeriod(Number.isFinite(payload.maxPeriod) ? Number(payload.maxPeriod) : 30);
+    setResult(restoredResult);
+    setSelectedId(typeof payload.selectedId === 'string' ? payload.selectedId : restoredResult?.candidates[0]?.candidate_id);
+    setJob(null);
+
+    if (restoredResult) {
+      setWorkflow('complete');
+    } else if (restoredProduct) {
+      setWorkflow('product-selected');
+    } else {
+      setWorkflow('idle');
+    }
+
     setShowSessionsModal(false);
-    setSuccess(`Restored session: ${session.name}`);
+    setSuccess(`Restored session ${session.name}`);
     window.setTimeout(() => setSuccess(null), 3000);
   }
 
@@ -604,7 +677,16 @@ export default function App() {
             <button onClick={() => setShowModelModal(true)}>
               <Gauge size={15} /> ML Status {activeModelStatus}
             </button>
-            {job && <p className="quiet">Job {job.status}{job.result_id ? ` · ${job.result_id.slice(0, 8)}` : ''}</p>}
+            {job && (
+              <div className="job-status-row">
+                <p className="quiet">Job {job.status}{job.result_id ? ` · ${job.result_id.slice(0, 8)}` : ''}</p>
+                {job.status !== 'complete' && job.status !== 'failed' && (
+                  <button className="quiet-action" onClick={refreshCurrentJob} title="Refresh Status">
+                    <RefreshCw size={14} />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <div className="rail-section">
             <h2>Candidates</h2>
@@ -691,11 +773,13 @@ export default function App() {
               <dt>Radius</dt><dd>{formatNumber(selected?.physics?.planet_radius_earth, 2)} R⊕</dd>
               <dt>Distance</dt><dd>{formatNumber(selected?.physics?.semi_major_axis_au, 4)} AU</dd>
               <dt>T_eq</dt><dd>{formatNumber(selected?.physics?.equilibrium_temperature_k, 1)} K</dd>
-              <dt>HZ Zone</dt><dd className={selected?.physics?.is_in_habitable_zone ? 'status-ready' : ''}>
-                {selected?.physics?.is_in_habitable_zone ? 'Inside' : 'Outside'}
+              <dt>HZ Zone</dt>
+              <dd className={selected?.physics?.is_in_habitable_zone ? 'status-ready' : ''}>
+                {formatTriState(selected?.physics?.is_in_habitable_zone, 'Inside', 'Outside')}
               </dd>
-              <dt>Habitable</dt><dd className={selected?.physics?.is_temperature_habitable ? 'status-ready' : ''}>
-                {selected?.physics?.is_temperature_habitable ? 'Potential' : 'Unlikely'}
+              <dt>Habitable</dt>
+              <dd className={selected?.physics?.is_temperature_habitable ? 'status-ready' : ''}>
+                {formatTriState(selected?.physics?.is_temperature_habitable, 'Potential', 'Unlikely')}
               </dd>
             </dl>
           </div>

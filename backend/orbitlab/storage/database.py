@@ -42,8 +42,16 @@ def _ensure_analysis_job_columns() -> None:
     inspector = inspect(engine)
     if "analysis_jobs" not in inspector.get_table_names():
         return
+
     columns = {column["name"] for column in inspector.get_columns("analysis_jobs")}
-    if "artifact_mask_id" in columns:
-        return
+    expected_columns = {
+        "artifact_mask_id": "VARCHAR(64)",
+        "max_candidates": "INTEGER DEFAULT 4",
+        "stellar_radius_solar": "FLOAT",
+        "stellar_mass_solar": "FLOAT",
+    }
+
     with engine.begin() as conn:
-        conn.execute(text("ALTER TABLE analysis_jobs ADD COLUMN artifact_mask_id VARCHAR(64)"))
+        for column_name, ddl in expected_columns.items():
+            if column_name not in columns:
+                conn.execute(text(f"ALTER TABLE analysis_jobs ADD COLUMN {column_name} {ddl}"))

@@ -85,9 +85,11 @@ def list_tpf_products(target_id: str, *, mission: str | None = None) -> list[Pro
     if len(search) > 0:
         summaries: list[ProductSummary] = []
         for row in search.table:
+            product_uri = str(row_value(row, "dataURI", "") or "")
+            if not product_uri:
+                continue
             filename = str(row_value(row, "productFilename", row_value(row, "obs_id", "")))
             description = str(row_value(row, "description", "Target Pixel File"))
-            product_uri = str(row_value(row, "dataURI", ""))
             summaries.append(
                 ProductSummary(
                     product_id=str(row_value(row, "obsID", row_value(row, "obs_id", filename))),
@@ -114,6 +116,9 @@ def list_tpf_products(target_id: str, *, mission: str | None = None) -> list[Pro
         return []
     summaries: list[ProductSummary] = []
     for row in products:
+        product_uri = str(row_value(row, "dataURI", "") or "")
+        if not product_uri:
+            continue
         description = str(row_value(row, "description", ""))
         filename = str(row_value(row, "productFilename", ""))
         product_type = str(row_value(row, "productType", ""))
@@ -133,7 +138,7 @@ def list_tpf_products(target_id: str, *, mission: str | None = None) -> list[Pro
                 mission=str(row_value(row, "obs_collection", mission or "")),
                 description=description,
                 size=int(row_value(row, "size")) if row_value(row, "size") else None,
-                product_uri=str(row_value(row, "dataURI", "")),
+                product_uri=product_uri,
             )
         )
     return summaries

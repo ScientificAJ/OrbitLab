@@ -37,3 +37,29 @@ def test_run_bls_keeps_detected_period_near_injected_period():
 
     assert abs(result.candidate.period - 3.0) < 0.15
     assert result.candidate.signal_to_noise > 0
+
+
+def test_multi_candidate_search_preserves_primary_when_residual_is_too_small(monkeypatch):
+    from orbitlab.science import bls
+    from orbitlab.science.bls import TransitCandidate, find_multi_planet_candidates
+
+    primary = TransitCandidate(
+        period=2.0,
+        epoch=0.5,
+        duration=0.4,
+        depth=0.01,
+        power=10.0,
+        signal_to_noise=8.0,
+    )
+
+    def exploding_run_bls(*args, **kwargs):
+        raise ValueError("residual too small")
+
+    monkeypatch.setattr(bls, "run_bls", exploding_run_bls)
+
+    time = np.linspace(0, 5, 80)
+    flux = 1.0 + 0.001 * np.sin(time)
+
+    candidates = find_multi_planet_candidates(time, flux, initial_candidate=primary)
+
+    assert candidates == [primary]

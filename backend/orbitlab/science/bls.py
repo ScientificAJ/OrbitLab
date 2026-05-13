@@ -129,14 +129,24 @@ def _adaptive_duration_grid(
             raise ValueError("duration_grid must contain at least one positive finite duration")
         return np.unique(durations)
 
-    min_duration = max(2.0 * cadence_days, 0.02)
-    max_duration = min(0.3, 0.2 * max_period)
-    max_duration = max(max_duration, min(0.2 * min_period, 4.0 * min_duration))
+    max_allowed_duration = max(1e-4, 0.8 * min_period)
+
+    min_duration = min(max(2.0 * cadence_days, 0.02), max_allowed_duration / 3.0)
+    max_duration = min(0.3, 0.2 * max_period, max_allowed_duration)
 
     if max_duration <= min_duration:
-        max_duration = min_duration * 4.0
+        max_duration = min(
+            max_allowed_duration,
+            max(min_duration * 2.0, min_duration + 1e-4),
+        )
 
-    return np.geomspace(min_duration, max_duration, 16).astype(np.float64)
+    durations = np.geomspace(min_duration, max_duration, 16)
+    durations = durations[np.isfinite(durations) & (durations > 0) & (durations < min_period)]
+
+    if durations.size == 0:
+        durations = np.asarray([max_allowed_duration * 0.5], dtype=np.float64)
+
+    return np.unique(durations).astype(np.float64)
 
 
 def _build_period_grid(
@@ -312,14 +322,21 @@ def find_multi_planet_candidates(
             return []
 
     for _ in range(max_candidates):
-        bls_result = run_bls(
-            residual_time,
-            residual_flux,
-            min_period=min_period,
-            max_period=max_period,
-            duration_grid=duration_grid,
-            period_samples=period_samples,
-        )
+        if residual_time.size < 128:
+            break
+
+        try:
+            bls_result = run_bls(
+                residual_time,
+                residual_flux,
+                min_period=min_period,
+                max_period=max_period,
+                duration_grid=duration_grid,
+                period_samples=period_samples,
+            )
+        except (ValueError, RuntimeError):
+            break
+
         candidate = bls_result.candidate
 
         if candidate.signal_to_noise < 6.0:
@@ -327,8 +344,5 @@ def find_multi_planet_candidates(
 
         candidates.append(candidate)
         residual_time, residual_flux = mask_transit_windows(residual_time, residual_flux, candidate)
-
-        if residual_time.size < 128:
-            break
 
     return candidates

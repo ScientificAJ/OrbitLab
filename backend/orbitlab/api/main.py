@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from contextlib import asynccontextmanager
 import json
 from datetime import datetime
@@ -140,6 +139,8 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
             record = db.get(ApertureMaskRecord, payload.aperture_mask_id)
             if record is None:
                 raise HTTPException(status_code=404, detail="aperture mask not found")
+            if record.product_uri != payload.product_uri:
+                raise HTTPException(status_code=409, detail="aperture mask belongs to a different product")
             aperture_mask = record.mask_json
         time, flux, quality = extract_light_curve_from_tpf(payload.product_uri, aperture_mask=aperture_mask)
         clean_time, clean_flux = clean_light_curve(time, flux, quality)
@@ -222,10 +223,19 @@ async def create_analysis_job(
         stellar_mass_solar=payload.stellar_mass_solar,
         status=JobStatus.queued.value,
     )
-    if payload.aperture_mask_id and db.get(ApertureMaskRecord, payload.aperture_mask_id) is None:
-        raise HTTPException(status_code=404, detail="aperture mask not found")
-    if payload.artifact_mask_id and db.get(ArtifactMaskRecord, payload.artifact_mask_id) is None:
-        raise HTTPException(status_code=404, detail="artifact mask not found")
+    if payload.aperture_mask_id:
+        aperture_record = db.get(ApertureMaskRecord, payload.aperture_mask_id)
+        if aperture_record is None:
+            raise HTTPException(status_code=404, detail="aperture mask not found")
+        if aperture_record.target_id != payload.target_id or aperture_record.product_uri != payload.product_uri:
+            raise HTTPException(status_code=409, detail="aperture mask belongs to a different target or product")
+
+    if payload.artifact_mask_id:
+        artifact_record = db.get(ArtifactMaskRecord, payload.artifact_mask_id)
+        if artifact_record is None:
+            raise HTTPException(status_code=404, detail="artifact mask not found")
+        if artifact_record.target_id != payload.target_id:
+            raise HTTPException(status_code=409, detail="artifact mask belongs to a different target")
     db.add(record)
     db.commit()
     if settings.run_jobs_inline:
