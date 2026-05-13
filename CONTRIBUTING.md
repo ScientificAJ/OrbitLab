@@ -15,6 +15,8 @@ See [TEAM.md](TEAM.md) for the current OrbitLab team roster and GitHub usernames
 5. Coordinate risky changes in issues or chat before editing shared surfaces.
 6. Do not commit downloaded model artifacts, MAST cache data, databases, logs, virtual environments, frontend build output, or local runtime state.
 
+> **Note:** A relaxed repository ruleset is available in `.github/rulesets/main.json`. This ruleset allows Administrators to bypass branch protections and supports all merge methods (Squash, Merge, Rebase).
+
 ## Local Setup
 
 ```bash
