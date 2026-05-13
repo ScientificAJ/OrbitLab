@@ -89,8 +89,15 @@ class AnalysisResult(BaseModel):
 
 class MaskCreate(BaseModel):
     target_id: str
-    indices: list[int]
+    indices: list[int] = Field(min_length=1)
     reason: str
+
+    @model_validator(mode="after")
+    def validate_indices(self):
+        if any(index < 0 for index in self.indices):
+            raise ValueError("artifact mask indices must be non-negative")
+        self.indices = sorted(set(self.indices))
+        return self
 
 
 class ApertureMaskCreate(BaseModel):

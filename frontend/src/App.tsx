@@ -116,7 +116,8 @@ export default function App() {
 
   const maxPixelValue = useMemo(() => {
     if (!tpfPreview) return 1;
-    return Math.max(...tpfPreview.image.flat(), 1);
+    const finitePixels = tpfPreview.image.flat().filter(Number.isFinite);
+    return Math.max(...finitePixels, 1);
   }, [tpfPreview]);
 
   function changeMission(next: 'TESS' | 'Kepler' | 'K2') {
@@ -351,13 +352,22 @@ export default function App() {
 
   async function openApertureModal() {
     if (!selectedProduct) return;
+
+    const token = ++analysisToken.current;
+    const productUri = selectedProduct.product_uri;
+
     setError(null);
+
     try {
-      const preview = await fetchTpfPreview(selectedProduct.product_uri);
+      const preview = await fetchTpfPreview(productUri);
+
+      if (token !== analysisToken.current) return;
+
       setTpfPreview(preview);
       setApertureMask(Array.from({ length: preview.shape[0] }, () => Array(preview.shape[1]).fill(false)));
       setShowApertureModal(true);
     } catch (err) {
+      if (token !== analysisToken.current) return;
       setError(err instanceof Error ? err.message : String(err));
     }
   }
@@ -388,53 +398,100 @@ export default function App() {
 
   async function runBlsPreview() {
     if (!selectedProduct) return;
+
+    const token = ++analysisToken.current;
+    const productUri = selectedProduct.product_uri;
+    const targetId = selectedTarget?.target_id ?? 'unknown';
+    const missionAtRequest = mission;
+    const apertureMaskId = selectedApertureMaskId;
+
     setError(null);
+    setSuccess(null);
+
     if (minPeriod >= maxPeriod) {
       setError('Minimum period must be lower than maximum period.');
       return;
     }
+
     setBlsRunning(true);
+
     try {
       const payload = await fetchBlsPreview({
-        product_uri: selectedProduct.product_uri,
-        mission,
-        aperture_mask_id: selectedApertureMaskId,
+        product_uri: productUri,
+        mission: missionAtRequest,
+        aperture_mask_id: apertureMaskId,
         min_period: minPeriod,
         max_period: maxPeriod,
       });
-      setResult((prev) => ({
+
+      if (token !== analysisToken.current) return;
+
+      setResult({
         result_id: 'preview',
-        target_id: selectedTarget?.target_id ?? 'unknown',
-        mission,
+        target_id: targetId,
+        mission: missionAtRequest,
         candidates: payload.candidates,
         periodogram: payload.periodogram,
         folded_curves: payload.folded_curves,
-        light_curve: prev?.light_curve ?? { time: [], flux: [] },
-      }));
+        light_curve: payload.bls_light_curve,
+        bls_light_curve: payload.bls_light_curve,
+        preprocessing: payload.preprocessing,
+      });
+
       setSelectedId(payload.candidates[0]?.candidate_id);
-      setBlsRunning(false);
+      setWorkflow('complete');
       setShowBlsModal(false);
     } catch (err) {
+      if (token !== analysisToken.current) return;
       setError(err instanceof Error ? err.message : String(err));
-      setBlsRunning(false);
+      setWorkflow('failed');
+    } finally {
+      if (token === analysisToken.current) {
+        setBlsRunning(false);
+      }
     }
   }
 
   async function handleCreateArtifactMask() {
     if (!selectedTarget || !result) return;
+
     setError(null);
-    if (cadenceEnd < cadenceStart) {
-      setError('Invalid cadence range.');
+
+    const cadenceCount = result.light_curve.time.length;
+    const start = Math.floor(cadenceStart);
+    const end = Math.floor(cadenceEnd);
+
+    if (!Number.isFinite(start) || !Number.isFinite(end)) {
+      setError('Cadence range must contain valid numbers.');
       return;
     }
+
+    if (end < start) {
+      setError('Invalid cadence range. End cadence must be greater than or equal to start cadence.');
+      return;
+    }
+
+    if (cadenceCount <= 0) {
+      setError('No cadence data is available for masking.');
+      return;
+    }
+
+    if (start < 0 || end >= cadenceCount) {
+      setError(`Cadence range must be between 0 and ${cadenceCount - 1}.`);
+      return;
+    }
+
     try {
-      const indices = Array.from({ length: cadenceEnd - cadenceStart + 1 }, (_, i) => cadenceStart + i);
+      const indices = Array.from({ length: end - start + 1 }, (_, i) => start + i);
       const created = await createArtifactMask({
         target_id: selectedTarget.target_id,
         indices,
         reason: 'User selected noisy cadence range',
       });
+
       setSelectedArtifactMaskId(created.mask_id);
+      setCadenceStart(start);
+      setCadenceEnd(end);
       setError(null);
       setSuccess('Artifact mask created and will be applied to the next run.');
       window.setTimeout(() => setSuccess(null), 3000);

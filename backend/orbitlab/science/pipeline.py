@@ -15,6 +15,24 @@ from orbitlab.science.physics import infer_planet_physics
 from orbitlab.science.validation import validate_candidate
 
 
+from orbitlab.exceptions import ModelArtifactError
+
+
+def _ml_unavailable_payload(mission: str, exc: Exception) -> dict:
+    detail = str(exc) or exc.__class__.__name__
+    return {
+        "probability": None,
+        "threshold": None,
+        "label": "ml-unavailable",
+        "model_version": "unavailable",
+        "model_source": f"{mission} model artifact unavailable",
+        "input_tensor_checksum": None,
+        "preprocessing_compatible": False,
+        "citation": "Model artifact unavailable; OrbitLab preserved BLS, physics, and validation outputs.",
+        "detail": detail,
+    }
+
+
 def analyze_light_curve_arrays(
     *,
     target_id: str,
@@ -53,12 +71,7 @@ def analyze_light_curve_arrays(
     mission_upper = mission.upper()
     service = ml_service
     tess_service = nigraha_service
-    if mission_upper == "TESS" and tess_service is None:
-        tess_service = NigrahaService()
-    if mission_upper == "KEPLER" and service is None:
-        service = KeplerAstroNetService()
-    if mission_upper == "K2" and k2_service is None:
-        k2_service = ExoMACService()
+
     for index, candidate in enumerate(candidates, start=1):
         candidate_id = f"{mission.lower()}-{target_id}-{index}"
         phase, folded_flux = phase_fold(bls_result.search_time, bls_result.search_flux, candidate.period, candidate.epoch)
@@ -79,41 +92,56 @@ def analyze_light_curve_arrays(
                 )
             )
         validation = asdict(validate_candidate(clean_time, clean_flux, candidate))
-        if mission_upper == "TESS":
-            tensors = build_nigraha_tensors(
-                clean_time,
-                clean_flux,
-                candidate,
-                stellar_teff=stellar_teff,
-                stellar_radius_solar=stellar_radius_solar,
-                stellar_logg=stellar_logg,
-                stellar_mass_solar=stellar_mass_solar,
-                stellar_luminosity_solar=stellar_luminosity_solar,
-                stellar_density_solar=stellar_density_solar,
-            )
-            ml = asdict(tess_service.predict(tensors))
-        elif mission_upper == "KEPLER":
-            tensors = build_astronet_tensors(
-                clean_time,
-                clean_flux,
-                candidate,
-                stellar_radius_solar=stellar_radius_solar,
-                stellar_mass_solar=stellar_mass_solar,
-            )
-            ml = asdict(service.predict(tensors))
-        elif mission_upper == "K2":
-            exomac_features = build_exomac_features(
-                candidate,
-                stellar_radius_solar=stellar_radius_solar,
-                stellar_mass_solar=stellar_mass_solar,
-                stellar_teff=stellar_teff,
-                stellar_logg=stellar_logg,
-                planet_radius_earth=physics.get("planet_radius_earth") if physics else None,
-                semi_major_axis_au=physics.get("semi_major_axis_au") if physics else None,
-            )
-            ml = asdict(k2_service.predict(exomac_features))
-        else:
-            raise ValueError(f"unsupported mission: {mission}")
+
+        try:
+            if mission_upper == "TESS":
+                tensors = build_nigraha_tensors(
+                    clean_time,
+                    clean_flux,
+                    candidate,
+                    stellar_teff=stellar_teff,
+                    stellar_radius_solar=stellar_radius_solar,
+                    stellar_logg=stellar_logg,
+                    stellar_mass_solar=stellar_mass_solar,
+                    stellar_luminosity_solar=stellar_luminosity_solar,
+                    stellar_density_solar=stellar_density_solar,
+                )
+                if tess_service is None:
+                    tess_service = NigrahaService()
+                ml = asdict(tess_service.predict(tensors))
+
+            elif mission_upper == "KEPLER":
+                tensors = build_astronet_tensors(
+                    clean_time,
+                    clean_flux,
+                    candidate,
+                    stellar_radius_solar=stellar_radius_solar,
+                    stellar_mass_solar=stellar_mass_solar,
+                )
+                if service is None:
+                    service = KeplerAstroNetService()
+                ml = asdict(service.predict(tensors))
+
+            elif mission_upper == "K2":
+                exomac_features = build_exomac_features(
+                    candidate,
+                    stellar_radius_solar=stellar_radius_solar,
+                    stellar_mass_solar=stellar_mass_solar,
+                    stellar_teff=stellar_teff,
+                    stellar_logg=stellar_logg,
+                    planet_radius_earth=physics.get("planet_radius_earth") if physics else None,
+                    semi_major_axis_au=physics.get("semi_major_axis_au") if physics else None,
+                )
+                if k2_service is None:
+                    k2_service = ExoMACService()
+                ml = asdict(k2_service.predict(exomac_features))
+
+            else:
+                raise ValueError(f"unsupported mission: {mission}")
+
+        except (ModelArtifactError, KeyError, FileNotFoundError, RuntimeError, ImportError) as exc:
+            ml = _ml_unavailable_payload(mission_upper, exc)
+
         candidate_payloads.append(
             {
                 "candidate_id": candidate_id,

@@ -24,7 +24,7 @@ celery_app = Celery("orbitlab", broker=settings.redis_url, backend=settings.redi
 celery_app.conf.task_routes = {"orbitlab.worker.run_analysis_job": {"queue": "analysis"}}
 
 
-@celery_app.task(name="orbitlab.worker.run_analysis_job", bind=True, autoretry_for=(Exception,), retry_backoff=True)
+@celery_app.task(name="orbitlab.worker.run_analysis_job", bind=True)
 def run_analysis_job(self, job_id: str) -> str:
     logger.info("Starting analysis job: %s", job_id)
     with SessionLocal() as db:

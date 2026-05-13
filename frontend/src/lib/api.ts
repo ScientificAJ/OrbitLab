@@ -35,14 +35,21 @@ export type Candidate = {
   };
 };
 
+export type FluxSeries = {
+  time: number[];
+  flux: number[];
+};
+
 export type AnalysisResult = {
   result_id: string;
   target_id: string;
   mission: string;
   candidates: Candidate[];
-  periodogram: { period: number[]; power: number[] };
+  periodogram: { period: number[]; power: number[]; duration?: number[] };
   folded_curves: Record<string, { phase: number[]; flux: number[] }>;
-  light_curve: { time: number[]; flux: number[] };
+  light_curve: FluxSeries;
+  bls_light_curve?: FluxSeries;
+  preprocessing?: Record<string, unknown>;
 };
 
 export type ModelStatus = {
@@ -202,9 +209,11 @@ export async function createApertureMask(payload: {
 }
 
 export type BlsPreviewResult = {
-  periodogram: { period: number[]; power: number[] };
+  periodogram: { period: number[]; power: number[]; duration?: number[] };
   candidates: Candidate[];
   folded_curves: Record<string, { phase: number[]; flux: number[] }>;
+  bls_light_curve: FluxSeries;
+  preprocessing: Record<string, unknown>;
 };
 
 export async function fetchBlsPreview(payload: {

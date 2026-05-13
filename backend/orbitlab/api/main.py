@@ -110,10 +110,22 @@ def tpf_preview(product_uri: str):
         path = resolve_tpf_path(product_uri)
         tpf = lk.read(str(path))
         image = np.nanmedian(np.asarray(tpf.flux.value, dtype=float), axis=0)
+
+        finite = np.isfinite(image)
+        if not finite.any():
+            raise HTTPException(status_code=422, detail="TPF preview image has no finite flux pixels")
+
+        fill_value = float(np.nanmedian(image[finite]))
+        image = np.where(finite, image, fill_value).astype(float)
+
         return {
             "shape": list(image.shape),
             "image": image.tolist(),
+            "finite_min": float(np.nanmin(image)),
+            "finite_max": float(np.nanmax(image)),
         }
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
