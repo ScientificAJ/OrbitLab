@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 from contextlib import asynccontextmanager
 import json
-from dataclasses import asdict
 from datetime import datetime
 from typing import Any
 from uuid import uuid4
