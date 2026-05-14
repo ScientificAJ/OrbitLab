@@ -1,5 +1,5 @@
 import { Activity, Database, Download, FlaskConical, Gauge, History, Layers, Play, RefreshCw, Save, Search, SlidersHorizontal, Trash2, X } from 'lucide-react';
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { OrbitScene } from './components/OrbitScene';
 import { SciencePlot } from './components/SciencePlot';
 import {
@@ -43,11 +43,47 @@ function formatScientific(value: number | null | undefined, digits = 3) {
 
 function CandidateCard({ candidate, active, onSelect }: { candidate: Candidate; active: boolean; onSelect: () => void }) {
   return (
-    <button className={`candidate-card ${active ? 'active' : ''}`} onClick={onSelect}>
+    <button type="button" className={`candidate-card ${active ? 'active' : ''}`} onClick={onSelect}>
       <span>{candidate.candidate_id}</span>
       <strong>{formatNumber(candidate.period, 4)} d</strong>
       <small>SNR {formatNumber(candidate.signal_to_noise, 2)} · depth {formatNumber(candidate.depth * 1_000_000, 0)} ppm</small>
     </button>
+  );
+}
+
+function ModalShell({
+  title,
+  titleId,
+  children,
+  footer,
+  onClose,
+  closeDisabled = false,
+}: {
+  title: string;
+  titleId: string;
+  children: ReactNode;
+  footer?: ReactNode;
+  onClose: () => void;
+  closeDisabled?: boolean;
+}) {
+  return (
+    <div
+      className="modal-overlay"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !closeDisabled) onClose();
+      }}
+    >
+      <div className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+        <header>
+          <h2 id={titleId}>{title}</h2>
+          <button type="button" aria-label={`Close ${title}`} onClick={onClose} disabled={closeDisabled}>
+            <X size={20} />
+          </button>
+        </header>
+        <div className="modal-content">{children}</div>
+        {footer && <footer>{footer}</footer>}
+      </div>
+    </div>
   );
 }
 
@@ -58,18 +94,34 @@ const setupCommands: Record<string, string> = {
   k2_astronet: 'No public K2 checkpoint registered yet.',
 };
 
+const modelDisplayNames: Record<string, string> = {
+  nigraha_tess: 'Nigraha TESS',
+  kepler_astronet: 'Kepler AstroNet',
+  k2_exomac_kkt: 'K2 ExoMAC KKT',
+  k2_astronet: 'K2 AstroNet',
+};
+
 const MIN_PERIOD_FLOOR = 0.2;
 const MAX_PERIOD_CEILING = 60;
 const ANALYSIS_POLL_LIMIT = Number(import.meta.env.VITE_ANALYSIS_POLL_LIMIT ?? 120);
 const ANALYSIS_POLL_INTERVAL_MS = Number(import.meta.env.VITE_ANALYSIS_POLL_INTERVAL_MS ?? 1000);
 
 type Mission = 'TESS' | 'Kepler' | 'K2';
+type ActiveModal = 'aperture' | 'bls' | 'models' | 'sessions' | null;
+type SearchStatus = 'idle' | 'searching' | 'success' | 'empty' | 'failed';
+type BlsPreviewStatus = 'idle' | 'running' | 'complete' | 'failed';
+
+function formatModelDisplayName(key: string) {
+  return modelDisplayNames[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase());
+}
 
 export default function App() {
   const [mission, setMission] = useState<Mission>('TESS');
   const [query, setQuery] = useState('');
   const [targets, setTargets] = useState<SearchResult[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchStatus, setSearchStatus] = useState<SearchStatus>('idle');
+  const [searchStatusQuery, setSearchStatusQuery] = useState('');
   const [selectedTarget, setSelectedTarget] = useState<SearchResult | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
@@ -82,18 +134,17 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [showApertureModal, setShowApertureModal] = useState(false);
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [tpfPreview, setTpfPreview] = useState<TpfPreview | null>(null);
   const [apertureMask, setApertureMask] = useState<boolean[][]>([]);
   const [selectedApertureMaskId, setSelectedApertureMaskId] = useState<string | undefined>();
 
-  const [showBlsModal, setShowBlsModal] = useState(false);
   const [minPeriod, setMinPeriod] = useState(0.5);
   const [maxPeriod, setMaxPeriod] = useState(30.0);
   const [blsRunning, setBlsRunning] = useState(false);
+  const [blsPreviewStatus, setBlsPreviewStatus] = useState<BlsPreviewStatus>('idle');
+  const [blsPreviewError, setBlsPreviewError] = useState<string | null>(null);
 
-  const [showModelModal, setShowModelModal] = useState(false);
-  const [showSessionsModal, setShowSessionsModal] = useState(false);
   const [sessions, setSessions] = useState<SavedSession[]>([]);
 
   const [selectedArtifactMaskId, setSelectedArtifactMaskId] = useState<string | undefined>();
@@ -116,6 +167,17 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!activeModal) return undefined;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') closeActiveModal();
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeModal, blsRunning]);
+
   async function refreshModelStatus() {
     try {
       const status = await fetchModelStatus();
@@ -133,6 +195,11 @@ export default function App() {
     successTimeout.current = window.setTimeout(() => setSuccess(null), 3000);
   }
 
+  function closeActiveModal() {
+    if (activeModal === 'bls' && blsRunning) return;
+    setActiveModal(null);
+  }
+
   const selected = useMemo(() => {
     return result?.candidates.find((candidate) => candidate.candidate_id === selectedId) ?? result?.candidates[0];
   }, [result, selectedId]);
@@ -141,6 +208,13 @@ export default function App() {
   const activeModel = mission === 'TESS' ? model?.nigraha_tess : mission === 'Kepler' ? model?.kepler_astronet : model?.k2_exomac_kkt;
   const activeModelStatus = typeof activeModel?.status === 'string' ? activeModel.status : 'unknown';
   const activeModelSource = typeof activeModel?.source === 'string' ? activeModel.source : typeof activeModel?.detail === 'string' ? activeModel.detail : 'n/a';
+  const selectedAperturePixelCount = useMemo(() => apertureMask.flat().filter(Boolean).length, [apertureMask]);
+  const matchEmptyMessage = useMemo(() => {
+    if (searchStatus === 'searching') return `Searching for "${searchStatusQuery}"...`;
+    if (searchStatus === 'failed') return `Search failed for "${searchStatusQuery}".`;
+    if (searchStatus === 'empty') return `No matching targets found for "${searchStatusQuery}".`;
+    return hasSearched ? 'No matching targets found.' : 'Search for a target first.';
+  }, [hasSearched, searchStatus, searchStatusQuery]);
 
   const pixelScale = useMemo(() => {
     if (!tpfPreview) return { min: 0, span: 1 };
@@ -161,6 +235,11 @@ export default function App() {
     return 0.2 + normalized * 0.8;
   }
 
+  function aperturePixelLabel(row: number, column: number, value: number, selected: boolean) {
+    const flux = Number.isFinite(value) ? formatNumber(value, 2) : 'not finite';
+    return `Toggle aperture pixel row ${row + 1} column ${column + 1}. Flux ${flux}. ${selected ? 'Selected' : 'Not selected'}.`;
+  }
+
   function changeMission(next: 'TESS' | 'Kepler' | 'K2') {
     searchToken.current += 1;
     productToken.current += 1;
@@ -170,6 +249,8 @@ export default function App() {
     setMission(next);
     setTargets([]);
     setHasSearched(false);
+    setSearchStatus('idle');
+    setSearchStatusQuery('');
     setSelectedTarget(null);
     setProducts([]);
     setProductsLoading(false);
@@ -185,8 +266,9 @@ export default function App() {
     setSelectedArtifactMaskId(undefined);
     setTpfPreview(null);
     setApertureMask([]);
-    setShowApertureModal(false);
-    setShowBlsModal(false);
+    setBlsPreviewStatus('idle');
+    setBlsPreviewError(null);
+    setActiveModal(null);
   }
 
   function updateMinPeriod(value: number) {
@@ -210,6 +292,10 @@ export default function App() {
     setError(null);
     setSuccess(null);
     setWorkflow('searching');
+    setTargets([]);
+    setHasSearched(true);
+    setSearchStatus('searching');
+    setSearchStatusQuery(trimmedQuery);
     setSelectedTarget(null);
     setSelectedProduct(null);
     setProducts([]);
@@ -226,10 +312,13 @@ export default function App() {
       if (token !== searchToken.current) return;
       setTargets(payload);
       setHasSearched(true);
+      setSearchStatus(payload.length ? 'success' : 'empty');
       setWorkflow('idle');
     } catch (err) {
       if (token !== searchToken.current) return;
       setHasSearched(true);
+      setTargets([]);
+      setSearchStatus('failed');
       setError(err instanceof Error ? err.message : String(err));
       setWorkflow('failed');
     }
@@ -252,6 +341,8 @@ export default function App() {
     setSelectedArtifactMaskId(undefined);
     setTpfPreview(null);
     setApertureMask([]);
+    setBlsPreviewStatus('idle');
+    setBlsPreviewError(null);
     setProductsLoading(true);
     try {
       const payload = await fetchProducts(target.target_id, mission);
@@ -284,6 +375,8 @@ export default function App() {
     setApertureMask([]);
     setCadenceStart(0);
     setCadenceEnd(0);
+    setBlsPreviewStatus('idle');
+    setBlsPreviewError(null);
   }
 
   async function runAnalysis() {
@@ -399,7 +492,7 @@ export default function App() {
     try {
       const payload = await fetchSessions();
       setSessions(payload);
-      setShowSessionsModal(true);
+      setActiveModal('sessions');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -424,6 +517,8 @@ export default function App() {
     setSelectedTarget(restoredTarget);
     setTargets(restoredTarget ? [restoredTarget] : []);
     setHasSearched(Boolean(restoredTarget));
+    setSearchStatus(restoredTarget ? 'success' : 'idle');
+    setSearchStatusQuery(typeof payload.query === 'string' ? payload.query : '');
     setSelectedProduct(restoredProduct);
     setSelectedApertureMaskId(typeof payload.selectedApertureMaskId === 'string' ? payload.selectedApertureMaskId : undefined);
     setSelectedArtifactMaskId(typeof payload.selectedArtifactMaskId === 'string' ? payload.selectedArtifactMaskId : undefined);
@@ -441,7 +536,7 @@ export default function App() {
       setWorkflow('idle');
     }
 
-    setShowSessionsModal(false);
+    setActiveModal(null);
     showSuccessMessage(`Restored session ${session.name}`);
   }
 
@@ -481,7 +576,7 @@ export default function App() {
 
       setTpfPreview(preview);
       setApertureMask(Array.from({ length: preview.shape[0] }, () => Array(preview.shape[1]).fill(false)));
-      setShowApertureModal(true);
+      setActiveModal('aperture');
     } catch (err) {
       if (token !== apertureToken.current) return;
       setError(err instanceof Error ? err.message : String(err));
@@ -503,7 +598,7 @@ export default function App() {
         reason: 'User defined aperture in OrbitLab',
       });
       setSelectedApertureMaskId(created.aperture_mask_id);
-      setShowApertureModal(false);
+      setActiveModal(null);
       setError(null);
       showSuccessMessage('Custom aperture mask created.');
     } catch (err) {
@@ -522,9 +617,18 @@ export default function App() {
 
     setError(null);
     setSuccess(null);
+    setBlsPreviewError(null);
+    setBlsPreviewStatus('running');
+
+    if (result?.result_id === 'preview') {
+      setResult(null);
+      setSelectedId(undefined);
+      setWorkflow('product-selected');
+    }
 
     if (minPeriod >= maxPeriod) {
-      setError('Minimum period must be lower than maximum period.');
+      setBlsPreviewStatus('failed');
+      setBlsPreviewError('Minimum period must be lower than maximum period.');
       return;
     }
 
@@ -555,11 +659,13 @@ export default function App() {
 
       setSelectedId(payload.candidates[0]?.candidate_id);
       setWorkflow('complete');
-      setShowBlsModal(false);
+      setBlsPreviewStatus('complete');
+      setActiveModal(null);
     } catch (err) {
       if (token !== blsPreviewToken.current) return;
-      setError(err instanceof Error ? err.message : String(err));
-      setWorkflow('failed');
+      setBlsPreviewStatus('failed');
+      setBlsPreviewError(err instanceof Error ? err.message : String(err));
+      setWorkflow(result && result.result_id !== 'preview' ? 'complete' : 'product-selected');
     } finally {
       if (token === blsPreviewToken.current) {
         setBlsRunning(false);
@@ -628,14 +734,14 @@ export default function App() {
           <Search size={16} />
           <label className="sr-only" htmlFor="target-search">Target search</label>
           <input id="target-search" name="target-search" value={query} onChange={(event) => setQuery(event.target.value)} aria-label="target search" placeholder="Try TIC 307210830, Kepler-10, TOI-700..." />
-          <button onClick={runSearch} disabled={!query.trim() || workflow === 'searching'}>
+          <button type="button" onClick={runSearch} disabled={!query.trim() || workflow === 'searching'}>
             <Search size={15} /> Search
           </button>
         </div>
         <div className="command-actions">
-          <button title="Sessions" aria-label="Sessions" onClick={openSessionsModal}><History size={17} /></button>
-          <button title="Save session" aria-label="Save session" onClick={handleSaveSession} disabled={!selectedTarget}><Save size={17} /></button>
-          <button title="Export report" aria-label="Export report" onClick={handleExportReport} disabled={!result || result.result_id === 'preview'}><Download size={17} /></button>
+          <button type="button" title="Sessions" aria-label="Sessions" onClick={openSessionsModal}><History size={17} /></button>
+          <button type="button" title="Save session" aria-label="Save session" onClick={handleSaveSession} disabled={!selectedTarget}><Save size={17} /></button>
+          <button type="button" title="Export report" aria-label="Export report" onClick={handleExportReport} disabled={!result || result.result_id === 'preview'}><Download size={17} /></button>
         </div>
       </header>
 
@@ -653,6 +759,7 @@ export default function App() {
             <div className="selection-list">
               {targets.map((target) => (
                 <button
+                  type="button"
                   key={`${target.catalog}-${target.target_id}`}
                   className={selectedTarget?.target_id === target.target_id ? 'active' : ''}
                   onClick={() => chooseTarget(target)}
@@ -661,12 +768,13 @@ export default function App() {
                   <small>{target.catalog}</small>
                 </button>
               ))}
-              {!targets.length && <p className="quiet">{hasSearched ? 'No matching targets found.' : 'Search for a target first.'}</p>}
+              {!targets.length && <p className="quiet">{matchEmptyMessage}</p>}
             </div>
             <div className="field-label">Product</div>
             <div className="selection-list">
               {products.map((product) => (
                 <button
+                  type="button"
                   key={product.product_uri}
                   className={selectedProduct?.product_uri === product.product_uri ? 'active' : ''}
                   onClick={() => chooseProduct(product)}
@@ -683,22 +791,23 @@ export default function App() {
           </div>
           <div className="rail-section">
             <h2>Pipeline</h2>
-            <button disabled={!selectedProduct || workflow === 'running'} onClick={openApertureModal} className={selectedApertureMaskId ? 'active-pill' : ''}>
+            <button type="button" disabled={!selectedProduct || workflow === 'running'} onClick={openApertureModal} className={selectedApertureMaskId ? 'active-pill' : ''}>
               <SlidersHorizontal size={15} /> Aperture {selectedApertureMaskId ? '(Custom)' : ''}
             </button>
-            <button disabled={!selectedProduct || workflow === 'running'} onClick={() => setShowBlsModal(true)}>
+            <button type="button" disabled={!selectedProduct || workflow === 'running'} onClick={() => setActiveModal('bls')}>
               <FlaskConical size={15} /> BLS Search
-            </button>            <button disabled={!selectedProduct?.product_uri || workflow === 'running'} onClick={runAnalysis}>
+            </button>
+            <button type="button" disabled={!selectedProduct?.product_uri || workflow === 'running'} onClick={runAnalysis}>
               <Play size={15} /> Run Analysis
             </button>
-            <button onClick={() => setShowModelModal(true)}>
+            <button type="button" onClick={() => setActiveModal('models')}>
               <Gauge size={15} /> ML Status {activeModelStatus}
             </button>
             {job && (
               <div className="job-status-row">
                 <p className="quiet">Job {job.status}{job.result_id ? ` · ${job.result_id.slice(0, 8)}` : ''}</p>
                 {job.status !== 'complete' && job.status !== 'failed' && (
-                  <button className="quiet-action" onClick={refreshCurrentJob} title="Refresh Status">
+                  <button type="button" className="quiet-action" onClick={refreshCurrentJob} title="Refresh Status">
                     <RefreshCw size={14} />
                   </button>
                 )}
@@ -747,8 +856,8 @@ export default function App() {
                 <input type="number" value={cadenceStart} onChange={e => setCadenceStart(Number(e.target.value))} />
                 <span>to</span>
                 <input type="number" value={cadenceEnd} onChange={e => setCadenceEnd(Number(e.target.value))} />
-                <button onClick={handleCreateArtifactMask} className={selectedArtifactMaskId ? 'active-pill' : ''}>Apply Mask</button>
-                {selectedArtifactMaskId && <button className="quiet" onClick={() => setSelectedArtifactMaskId(undefined)}><Trash2 size={14}/></button>}
+                <button type="button" onClick={handleCreateArtifactMask} className={selectedArtifactMaskId ? 'active-pill' : ''}>Apply Mask</button>
+                {selectedArtifactMaskId && <button type="button" className="quiet" onClick={() => setSelectedArtifactMaskId(undefined)}><Trash2 size={14}/></button>}
               </div>
             )}
           </div>
@@ -817,163 +926,163 @@ export default function App() {
               <dt>Input</dt><dd>{selected?.ml?.input_tensor_checksum?.slice(0, 12) ?? 'n/a'}</dd>
             </dl>
           </div>
-          {error && <div className="error-panel" role="alert">{error} <button aria-label="Dismiss error" onClick={() => setError(null)}><X size={14}/></button></div>}
+          {error && <div className="error-panel" role="alert">{error} <button type="button" aria-label="Dismiss error" onClick={() => setError(null)}><X size={14}/></button></div>}
           {success && <div className="success-panel" role="status">{success}</div>}
         </aside>
       </section>
 
-      {showApertureModal && tpfPreview && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <header>
-              <h2>Aperture Mask Editor</h2>
-              <button onClick={() => setShowApertureModal(false)}><X size={20}/></button>
-            </header>
-            <div className="modal-content">
-              <p className="quiet">Select pixels to include in the extraction aperture.</p>
-              <div className="pixel-grid" style={{ gridTemplateColumns: `repeat(${tpfPreview.shape[1]}, 1fr)` }}>
-                {tpfPreview.image.map((row, i) => row.map((val, j) => (
-                  <button
-                    key={`${i}-${j}`}
-                    data-testid={`aperture-pixel-${i}-${j}`}
-                    className={`pixel ${apertureMask[i][j] ? 'selected' : ''}`}
-                    style={{ opacity: aperturePixelOpacity(val) }}
-                    onClick={() => {
-                      const next = [...apertureMask];
-                      next[i] = [...next[i]];
-                      next[i][j] = !next[i][j];
-                      setApertureMask(next);
-                    }}
-                  />
-                )))}
-              </div>
-            </div>
-            <footer>
-              <button onClick={handleCreateApertureMask}>Apply Mask</button>
-            </footer>
+      {activeModal === 'aperture' && tpfPreview && (
+        <ModalShell
+          title="Aperture Mask Editor"
+          titleId="aperture-modal-title"
+          onClose={closeActiveModal}
+          footer={<button type="button" onClick={handleCreateApertureMask}>Apply Mask</button>}
+        >
+          <p className="quiet">Select pixels to include in the extraction aperture.</p>
+          <p className="quiet aperture-summary" data-testid="aperture-selection-summary">
+            {selectedAperturePixelCount} {selectedAperturePixelCount === 1 ? 'pixel' : 'pixels'} selected.
+          </p>
+          <div className="pixel-grid" style={{ gridTemplateColumns: `repeat(${tpfPreview.shape[1]}, 1fr)` }}>
+            {tpfPreview.image.map((row, i) => row.map((val, j) => {
+              const selectedPixel = Boolean(apertureMask[i][j]);
+              const label = aperturePixelLabel(i, j, val, selectedPixel);
+
+              return (
+                <button
+                  type="button"
+                  key={`${i}-${j}`}
+                  data-testid={`aperture-pixel-${i}-${j}`}
+                  aria-label={label}
+                  aria-pressed={selectedPixel}
+                  title={label}
+                  className={`pixel ${selectedPixel ? 'selected' : ''}`}
+                  style={{ opacity: aperturePixelOpacity(val) }}
+                  onClick={() => {
+                    const next = [...apertureMask];
+                    next[i] = [...next[i]];
+                    next[i][j] = !next[i][j];
+                    setApertureMask(next);
+                  }}
+                />
+              );
+            }))}
           </div>
-        </div>
+        </ModalShell>
       )}
 
-      {showBlsModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <header>
-              <h2>BLS Search Controls</h2>
-              <button onClick={() => setShowBlsModal(false)}><X size={20}/></button>
-            </header>
-            <div className="modal-content">
-              <div className="period-control">
-                <label htmlFor="min-period">Min Period (days)</label>
-                <div className="range-row">
-                  <input
-                    id="min-period"
-                    name="min-period"
-                    type="range"
-                    min={MIN_PERIOD_FLOOR}
-                    max={Math.max(MIN_PERIOD_FLOOR, maxPeriod - 0.1)}
-                    value={minPeriod}
-                    onChange={(event) => updateMinPeriod(Number(event.target.value))}
-                    step="0.1"
-                  />
-                  <input
-                    aria-label="minimum period value"
-                    type="number"
-                    min={MIN_PERIOD_FLOOR}
-                    max={Math.max(MIN_PERIOD_FLOOR, maxPeriod - 0.1)}
-                    value={minPeriod}
-                    onChange={(event) => updateMinPeriod(Number(event.target.value))}
-                    step="0.1"
-                  />
-                </div>
-              </div>
-              <div className="period-control">
-                <label htmlFor="max-period">Max Period (days)</label>
-                <div className="range-row">
-                  <input
-                    id="max-period"
-                    name="max-period"
-                    type="range"
-                    min={MIN_PERIOD_FLOOR}
-                    max={MAX_PERIOD_CEILING}
-                    value={maxPeriod}
-                    onChange={(event) => updateMaxPeriod(Number(event.target.value))}
-                    step="0.1"
-                  />
-                  <input
-                    aria-label="maximum period value"
-                    type="number"
-                    min={Math.min(MAX_PERIOD_CEILING, minPeriod + 0.1)}
-                    max={MAX_PERIOD_CEILING}
-                    value={maxPeriod}
-                    onChange={(event) => updateMaxPeriod(Number(event.target.value))}
-                    step="0.1"
-                  />
-                </div>
-              </div>
-              {blsRunning && <p className="quiet">Searching grid...</p>}
+      {activeModal === 'bls' && (
+        <ModalShell
+          title="BLS Search Controls"
+          titleId="bls-modal-title"
+          onClose={closeActiveModal}
+          closeDisabled={blsRunning}
+          footer={
+            <button type="button" onClick={runBlsPreview} disabled={blsRunning}>
+              {blsPreviewStatus === 'failed' ? 'Retry Preview Search' : 'Run Preview Search'}
+            </button>
+          }
+        >
+          <div className="period-control">
+            <label htmlFor="min-period">Min Period (days)</label>
+            <div className="range-row">
+              <input
+                id="min-period"
+                name="min-period"
+                type="range"
+                min={MIN_PERIOD_FLOOR}
+                max={Math.max(MIN_PERIOD_FLOOR, maxPeriod - 0.1)}
+                value={minPeriod}
+                onChange={(event) => updateMinPeriod(Number(event.target.value))}
+                step="0.1"
+              />
+              <input
+                aria-label="minimum period value"
+                type="number"
+                min={MIN_PERIOD_FLOOR}
+                max={Math.max(MIN_PERIOD_FLOOR, maxPeriod - 0.1)}
+                value={minPeriod}
+                onChange={(event) => updateMinPeriod(Number(event.target.value))}
+                step="0.1"
+              />
             </div>
-            <footer>
-              <button onClick={runBlsPreview} disabled={blsRunning}>Run Preview Search</button>
-            </footer>
           </div>
-        </div>
+          <div className="period-control">
+            <label htmlFor="max-period">Max Period (days)</label>
+            <div className="range-row">
+              <input
+                id="max-period"
+                name="max-period"
+                type="range"
+                min={MIN_PERIOD_FLOOR}
+                max={MAX_PERIOD_CEILING}
+                value={maxPeriod}
+                onChange={(event) => updateMaxPeriod(Number(event.target.value))}
+                step="0.1"
+              />
+              <input
+                aria-label="maximum period value"
+                type="number"
+                min={Math.min(MAX_PERIOD_CEILING, minPeriod + 0.1)}
+                max={MAX_PERIOD_CEILING}
+                value={maxPeriod}
+                onChange={(event) => updateMaxPeriod(Number(event.target.value))}
+                step="0.1"
+              />
+            </div>
+          </div>
+          <div className={`modal-status bls-status-${blsPreviewStatus}`}>
+            BLS preview status: <strong>{blsPreviewStatus}</strong>
+          </div>
+          {blsRunning && <p className="quiet">Searching grid...</p>}
+          {blsPreviewStatus === 'failed' && blsPreviewError && (
+            <div className="modal-error" role="alert">
+              <strong>Preview search failed</strong>
+              <p>{blsPreviewError}</p>
+            </div>
+          )}
+        </ModalShell>
       )}
 
-      {showModelModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <header>
-              <h2>Model Status & Registry</h2>
-              <button onClick={() => setShowModelModal(false)}><X size={20}/></button>
-            </header>
-            <div className="modal-content">
-              {model ? Object.entries(model).map(([key, info]) => (
-                <div key={key} className="model-info-card">
-                  <h3>{key.replace('_', ' ').toUpperCase()}</h3>
-                  <dl>
-                    <dt>Status</dt><dd className={info.status === 'ready' ? 'status-ready' : 'status-bad'}>{info.status}</dd>
-                    <dt>Source</dt><dd>{info.source ?? 'n/a'}</dd>
-                    <dt>Version</dt><dd>{info.version ?? 'n/a'}</dd>
-                    <dt>Checksum</dt><dd><code>{info.checksum?.slice(0, 16) ?? 'n/a'}</code></dd>
-                    {info.detail && <dt>Detail</dt>}
-                    {info.detail && <dd className="quiet">{info.detail}</dd>}
-                  </dl>
-                  {info.status !== 'ready' && (
-                    <div className="setup-hint">
-                      <strong>Fix:</strong> run <code>{setupCommands[key] ?? 'Check model registry setup.'}</code>
-                    </div>
-                  )}
+      {activeModal === 'models' && (
+        <ModalShell
+          title="Model Status & Registry"
+          titleId="models-modal-title"
+          onClose={closeActiveModal}
+          footer={<button type="button" onClick={refreshModelStatus}><RefreshCw size={14}/> Refresh Registry</button>}
+        >
+          {model ? Object.entries(model).map(([key, info]) => (
+            <div key={key} className="model-info-card">
+              <h3>{formatModelDisplayName(key)}</h3>
+              <dl>
+                <dt>Status</dt><dd className={info.status === 'ready' ? 'status-ready' : 'status-bad'}>{info.status}</dd>
+                <dt>Source</dt><dd>{info.source ?? 'n/a'}</dd>
+                <dt>Version</dt><dd>{info.version ?? 'n/a'}</dd>
+                <dt>Checksum</dt><dd><code>{info.checksum?.slice(0, 16) ?? 'n/a'}</code></dd>
+                {info.detail && <dt>Detail</dt>}
+                {info.detail && <dd className="quiet">{info.detail}</dd>}
+              </dl>
+              {info.status !== 'ready' && (
+                <div className="setup-hint">
+                  <strong>Fix:</strong> run <code>{setupCommands[key] ?? 'Check model registry setup.'}</code>
                 </div>
-              )) : <p>Loading model registry...</p>}
+              )}
             </div>
-            <footer>
-              <button onClick={refreshModelStatus}><RefreshCw size={14}/> Refresh Registry</button>
-            </footer>
-          </div>
-        </div>
+          )) : <p>Loading model registry...</p>}
+        </ModalShell>
       )}
 
-      {showSessionsModal && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <header>
-              <h2>Saved Sessions</h2>
-              <button onClick={() => setShowSessionsModal(false)}><X size={20}/></button>
-            </header>
-            <div className="modal-content">
-              <div className="selection-list">
-                {sessions.map(s => (
-                  <button key={s.session_id} onClick={() => restoreSession(s)}>
-                    <span>{s.name}</span>
-                    <small>{new Date(s.created_at).toLocaleString()}</small>
-                  </button>
-                ))}
-                {!sessions.length && <p className="quiet">No saved sessions found.</p>}
-              </div>
-            </div>
+      {activeModal === 'sessions' && (
+        <ModalShell title="Saved Sessions" titleId="sessions-modal-title" onClose={closeActiveModal}>
+          <div className="selection-list">
+            {sessions.map(s => (
+              <button type="button" key={s.session_id} onClick={() => restoreSession(s)}>
+                <span>{s.name}</span>
+                <small>{new Date(s.created_at).toLocaleString()}</small>
+              </button>
+            ))}
+            {!sessions.length && <p className="quiet">No saved sessions found.</p>}
           </div>
-        </div>
+        </ModalShell>
       )}
     </main>
   );

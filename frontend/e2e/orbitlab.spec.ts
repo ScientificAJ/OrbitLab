@@ -208,11 +208,12 @@ test('search handles loading, success, empty, and API error states', async ({ pa
 
   await page.getByLabel('target search').fill('empty target');
   await page.getByRole('button', { name: /^Search$/ }).click();
-  await expect(page.getByText('No matching targets found.')).toBeVisible();
+  await expect(page.getByText('No matching targets found for "empty target".')).toBeVisible();
 
   await page.getByLabel('target search').fill('error target');
   await page.getByRole('button', { name: /^Search$/ }).click();
   await expect(page.getByRole('alert')).toContainText('MAST search unavailable');
+  await expect(page.getByText('Search failed for "error target".')).toBeVisible();
   await expect(page.getByTestId('workflow-status')).toHaveText('failed');
 });
 
@@ -230,6 +231,21 @@ test('mission switch clears stale target, product, and result state', async ({ p
   await expect(page.getByText('Select a target first.')).toBeVisible();
   await expect(page.getByText('No candidates loaded.')).toBeVisible();
   await expect(page.getByTestId('workflow-status')).toHaveText('idle');
+});
+
+test('search API failures clear stale matches and selected product state', async ({ page }) => {
+  await openApp(page);
+  await chooseProduct(page);
+  await expect(page.getByRole('button', { name: /TESS Sector 12 TPF/ })).toBeVisible();
+
+  await page.getByLabel('target search').fill('error target');
+  await page.getByRole('button', { name: /^Search$/ }).click();
+
+  await expect(page.getByRole('alert')).toContainText('MAST search unavailable');
+  await expect(page.getByText('Search failed for "error target".')).toBeVisible();
+  await expect(page.getByRole('button', { name: new RegExp(target.target_id) })).not.toBeVisible();
+  await expect(page.getByRole('button', { name: /TESS Sector 12 TPF/ })).not.toBeVisible();
+  await expect(page.getByText('Select a target first.')).toBeVisible();
 });
 
 test('product selection enables aperture, BLS, and analysis controls', async ({ page }) => {
@@ -251,11 +267,18 @@ test('aperture modal validates empty masks and saves selected pixels', async ({ 
   await chooseProduct(page);
 
   await page.getByRole('button', { name: /Aperture/ }).click();
-  await expect(page.getByRole('heading', { name: 'Aperture Mask Editor' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Aperture Mask Editor' })).toBeVisible();
+  await expect(page.getByTestId('aperture-selection-summary')).toHaveText('0 pixels selected.');
   await page.getByRole('button', { name: 'Apply Mask' }).click();
   await expect(page.getByRole('alert')).toContainText('Please select at least one pixel');
 
-  await page.getByTestId('aperture-pixel-0-0').click();
+  const pixel = page.getByTestId('aperture-pixel-0-0');
+  await expect(pixel).toHaveAttribute('aria-label', /Toggle aperture pixel row 1 column 1/);
+  await expect(pixel).toHaveAttribute('aria-pressed', 'false');
+  await pixel.focus();
+  await page.keyboard.press('Enter');
+  await expect(pixel).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('aperture-selection-summary')).toHaveText('1 pixel selected.');
   await page.getByRole('button', { name: 'Apply Mask' }).click();
 
   await expect(page.getByRole('status')).toContainText('Custom aperture mask created.');
@@ -278,6 +301,44 @@ test('BLS preview renders candidates, periodogram, folded plot, and API errors',
   await page.getByRole('button', { name: /BLS Search/ }).click();
   await page.getByRole('button', { name: /Run Preview Search/ }).click();
   await expect(page.getByRole('alert')).toContainText('min_period must be less than max_period');
+  await expect(page.getByRole('dialog', { name: 'BLS Search Controls' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /preview-1/ })).not.toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+});
+
+test('failed BLS preview clears stale preview data but preserves full analysis results', async ({ page }) => {
+  await openApp(page);
+  await chooseProduct(page);
+
+  await page.getByRole('button', { name: /BLS Search/ }).click();
+  await page.getByRole('button', { name: /Run Preview Search/ }).click();
+  await expect(page.getByRole('button', { name: /preview-1/ })).toBeVisible();
+
+  await page.route(`${API}/bls-preview`, (route) => json(route, { detail: 'BLS preview unavailable' }, 500));
+  await page.getByRole('button', { name: /BLS Search/ }).click();
+  await page.getByRole('button', { name: /Run Preview Search/ }).click();
+  await expect(page.getByRole('alert')).toContainText('BLS preview unavailable');
+  await expect(page.getByRole('button', { name: /preview-1/ })).not.toBeVisible();
+  await expect(page.getByText('No candidates loaded.')).toBeVisible();
+
+  await page.getByRole('button', { name: /Close BLS Search Controls/ }).click();
+  await page.route(`${API}/analysis-jobs`, (route) =>
+    json(route, {
+      job_id: 'job-complete',
+      status: 'complete',
+      created_at: '2026-05-14T12:00:00Z',
+      result_id: analysisResult.result_id,
+    }, 201),
+  );
+  await page.route(`${API}/analysis-results/${analysisResult.result_id}`, (route) => json(route, analysisResult));
+  await page.getByRole('button', { name: /Run Analysis/ }).click();
+  await expect(page.getByRole('button', { name: /candidate-1/ })).toBeVisible();
+
+  await page.getByRole('button', { name: /BLS Search/ }).click();
+  await page.getByRole('button', { name: /Retry Preview Search|Run Preview Search/ }).click();
+  await expect(page.getByRole('alert')).toContainText('BLS preview unavailable');
+  await expect(page.getByRole('button', { name: /candidate-1/ })).toBeVisible();
+  await expect(page.getByTestId('workflow-status')).toHaveText('complete');
 });
 
 test('analysis jobs handle complete, failed, and polling timeout states', async ({ page }) => {
@@ -326,10 +387,29 @@ test('model readiness modal shows ready and unavailable setup information', asyn
 
   await page.getByRole('button', { name: /ML Status ready/ }).click();
 
-  await expect(page.getByRole('heading', { name: 'Model Status & Registry' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Model Status & Registry' })).toBeVisible();
   await expect(page.getByText('ready').first()).toBeVisible();
   await expect(page.getByText('unavailable').first()).toBeVisible();
   await expect(page.getByText('scripts/fetch_kepler_astronet.py')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'K2 ExoMAC KKT' })).toBeVisible();
+  await expect(page.locator('.model-info-card h3').filter({ hasText: '_' })).toHaveCount(0);
+});
+
+test('modal dialogs are single, labelled, and dismissible', async ({ page }) => {
+  await openApp(page);
+
+  await page.getByRole('button', { name: /ML Status ready/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Model Status & Registry' })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Sessions' }).click();
+  await expect(page.getByRole('dialog', { name: 'Saved Sessions' })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+  await page.getByRole('button', { name: /Close Saved Sessions/ }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
 test('sessions save and restore expected UI state', async ({ page }) => {
