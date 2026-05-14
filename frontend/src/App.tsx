@@ -60,6 +60,8 @@ const setupCommands: Record<string, string> = {
 
 const MIN_PERIOD_FLOOR = 0.2;
 const MAX_PERIOD_CEILING = 60;
+const ANALYSIS_POLL_LIMIT = Number(import.meta.env.VITE_ANALYSIS_POLL_LIMIT ?? 120);
+const ANALYSIS_POLL_INTERVAL_MS = Number(import.meta.env.VITE_ANALYSIS_POLL_INTERVAL_MS ?? 1000);
 
 type Mission = 'TESS' | 'Kepler' | 'K2';
 
@@ -67,6 +69,7 @@ export default function App() {
   const [mission, setMission] = useState<Mission>('TESS');
   const [query, setQuery] = useState('');
   const [targets, setTargets] = useState<SearchResult[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [selectedTarget, setSelectedTarget] = useState<SearchResult | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
@@ -102,9 +105,15 @@ export default function App() {
   const productToken = useRef<number>(0);
   const apertureToken = useRef<number>(0);
   const blsPreviewToken = useRef<number>(0);
+  const successTimeout = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     refreshModelStatus();
+    return () => {
+      if (successTimeout.current) {
+        window.clearTimeout(successTimeout.current);
+      }
+    };
   }, []);
 
   async function refreshModelStatus() {
@@ -114,6 +123,14 @@ export default function App() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
+  }
+
+  function showSuccessMessage(message: string) {
+    if (successTimeout.current) {
+      window.clearTimeout(successTimeout.current);
+    }
+    setSuccess(message);
+    successTimeout.current = window.setTimeout(() => setSuccess(null), 3000);
   }
 
   const selected = useMemo(() => {
@@ -152,6 +169,7 @@ export default function App() {
     blsPreviewToken.current += 1;
     setMission(next);
     setTargets([]);
+    setHasSearched(false);
     setSelectedTarget(null);
     setProducts([]);
     setProductsLoading(false);
@@ -207,9 +225,11 @@ export default function App() {
       const payload = await searchTargets(trimmedQuery, mission);
       if (token !== searchToken.current) return;
       setTargets(payload);
+      setHasSearched(true);
       setWorkflow('idle');
     } catch (err) {
       if (token !== searchToken.current) return;
+      setHasSearched(true);
       setError(err instanceof Error ? err.message : String(err));
       setWorkflow('failed');
     }
@@ -285,8 +305,8 @@ export default function App() {
       if (token !== analysisToken.current) return;
       setJob(created);
       let current = created;
-      for (let index = 0; index < 120 && current.status !== 'complete' && current.status !== 'failed'; index += 1) {
-        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+      for (let index = 0; index < ANALYSIS_POLL_LIMIT && current.status !== 'complete' && current.status !== 'failed'; index += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, ANALYSIS_POLL_INTERVAL_MS));
         if (token !== analysisToken.current) return;
         current = await fetchAnalysisJob(current.job_id);
         setJob(current);
@@ -369,8 +389,7 @@ export default function App() {
           workflow,
         },
       });
-      setSuccess('Session saved successfully.');
-      window.setTimeout(() => setSuccess(null), 3000);
+      showSuccessMessage('Session saved successfully.');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -403,6 +422,8 @@ export default function App() {
     setQuery(typeof payload.query === 'string' ? payload.query : '');
     setProducts(Array.isArray(payload.products) ? (payload.products as Product[]) : []);
     setSelectedTarget(restoredTarget);
+    setTargets(restoredTarget ? [restoredTarget] : []);
+    setHasSearched(Boolean(restoredTarget));
     setSelectedProduct(restoredProduct);
     setSelectedApertureMaskId(typeof payload.selectedApertureMaskId === 'string' ? payload.selectedApertureMaskId : undefined);
     setSelectedArtifactMaskId(typeof payload.selectedArtifactMaskId === 'string' ? payload.selectedArtifactMaskId : undefined);
@@ -421,8 +442,7 @@ export default function App() {
     }
 
     setShowSessionsModal(false);
-    setSuccess(`Restored session ${session.name}`);
-    window.setTimeout(() => setSuccess(null), 3000);
+    showSuccessMessage(`Restored session ${session.name}`);
   }
 
   async function handleExportReport() {
@@ -440,8 +460,7 @@ export default function App() {
       a.download = `orbitlab-report-${result.target_id}-${result.result_id.slice(0, 8)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      setSuccess('Report exported successfully.');
-      window.setTimeout(() => setSuccess(null), 3000);
+      showSuccessMessage('Report exported successfully.');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -486,8 +505,7 @@ export default function App() {
       setSelectedApertureMaskId(created.aperture_mask_id);
       setShowApertureModal(false);
       setError(null);
-      setSuccess('Custom aperture mask created.');
-      window.setTimeout(() => setSuccess(null), 3000);
+      showSuccessMessage('Custom aperture mask created.');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -590,8 +608,7 @@ export default function App() {
       setCadenceStart(start);
       setCadenceEnd(end);
       setError(null);
-      setSuccess('Artifact mask created and will be applied to the next run.');
-      window.setTimeout(() => setSuccess(null), 3000);
+      showSuccessMessage('Artifact mask created and will be applied to the next run.');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -616,9 +633,9 @@ export default function App() {
           </button>
         </div>
         <div className="command-actions">
-          <button title="Sessions" onClick={openSessionsModal}><History size={17} /></button>
-          <button title="Save session" onClick={handleSaveSession} disabled={!selectedTarget}><Save size={17} /></button>
-          <button title="Export report" onClick={handleExportReport} disabled={!result || result.result_id === 'preview'}><Download size={17} /></button>
+          <button title="Sessions" aria-label="Sessions" onClick={openSessionsModal}><History size={17} /></button>
+          <button title="Save session" aria-label="Save session" onClick={handleSaveSession} disabled={!selectedTarget}><Save size={17} /></button>
+          <button title="Export report" aria-label="Export report" onClick={handleExportReport} disabled={!result || result.result_id === 'preview'}><Download size={17} /></button>
         </div>
       </header>
 
@@ -644,7 +661,7 @@ export default function App() {
                   <small>{target.catalog}</small>
                 </button>
               ))}
-              {!targets.length && <p className="quiet">Search for a target first.</p>}
+              {!targets.length && <p className="quiet">{hasSearched ? 'No matching targets found.' : 'Search for a target first.'}</p>}
             </div>
             <div className="field-label">Product</div>
             <div className="selection-list">
@@ -711,12 +728,13 @@ export default function App() {
               <span>{result?.mission ?? 'Mission'}</span>
               <strong>{result?.target_id ?? selectedTarget?.target_id ?? 'Awaiting real analysis data'}</strong>
             </div>
-            <div className="sync-pill">{workflow}</div>
+            <div className="sync-pill" data-testid="workflow-status">{workflow}</div>
           </div>
           <OrbitScene candidates={result?.candidates ?? []} selectedId={selected?.candidate_id} />
           <div className="timeline">
             <SciencePlot
               title="Light Curve Timeline"
+              testId="light-curve-plot"
               x={result?.light_curve.time ?? []}
               y={result?.light_curve.flux ?? []}
               xLabel="time"
@@ -741,6 +759,7 @@ export default function App() {
             <h2>Periodogram</h2>
             <SciencePlot
               title="BLS Power"
+              testId="periodogram-plot"
               x={result?.periodogram.period ?? []}
               y={result?.periodogram.power ?? []}
               xLabel="period"
@@ -751,6 +770,7 @@ export default function App() {
             <h2>Folded Curve</h2>
             <SciencePlot
               title={selected?.candidate_id ?? 'Candidate'}
+              testId="folded-curve-plot"
               x={folded?.phase ?? []}
               y={folded?.flux ?? []}
               xLabel="phase"
@@ -797,8 +817,8 @@ export default function App() {
               <dt>Input</dt><dd>{selected?.ml?.input_tensor_checksum?.slice(0, 12) ?? 'n/a'}</dd>
             </dl>
           </div>
-          {error && <div className="error-panel">{error} <button onClick={() => setError(null)}><X size={14}/></button></div>}
-          {success && <div className="success-panel">{success}</div>}
+          {error && <div className="error-panel" role="alert">{error} <button aria-label="Dismiss error" onClick={() => setError(null)}><X size={14}/></button></div>}
+          {success && <div className="success-panel" role="status">{success}</div>}
         </aside>
       </section>
 
@@ -815,8 +835,10 @@ export default function App() {
                 {tpfPreview.image.map((row, i) => row.map((val, j) => (
                   <button
                     key={`${i}-${j}`}
+                    data-testid={`aperture-pixel-${i}-${j}`}
                     className={`pixel ${apertureMask[i][j] ? 'selected' : ''}`}
-                    style={{ opacity: aperturePixelOpacity(val) }}                    onClick={() => {
+                    style={{ opacity: aperturePixelOpacity(val) }}
+                    onClick={() => {
                       const next = [...apertureMask];
                       next[i] = [...next[i]];
                       next[i][j] = !next[i][j];

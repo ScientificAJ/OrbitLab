@@ -317,7 +317,17 @@ label,
   min-height: 180px;
 }
 
+.plot-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+}
+
 .panel .plot {
+  height: 220px;
+}
+
+.panel .plot-frame {
   height: 220px;
 }
 
@@ -385,6 +395,10 @@ label,
 }
 
 @media (max-width: 980px) {
+  .shell {
+    grid-template-rows: auto 1fr;
+  }
+
   .command-bar,
   .workspace {
     grid-template-columns: 1fr;

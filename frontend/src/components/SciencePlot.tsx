@@ -7,13 +7,15 @@ type Props = {
   xLabel: string;
   yLabel: string;
   mode?: 'lines' | 'markers' | 'lines+markers';
+  testId?: string;
 };
 
-export function SciencePlot({ title, x, y, xLabel, yLabel, mode = 'lines' }: Props) {
+export function SciencePlot({ title, x, y, xLabel, yLabel, mode = 'lines', testId }: Props) {
   if (x.length === 0 || y.length === 0) {
-    return <div className="empty-plot">{title}</div>;
+    return <div className="empty-plot" data-testid={testId}>{title}</div>;
   }
   return (
+    <div data-testid={testId} className="plot-frame">
     <Plot
       data={[
         {
@@ -39,5 +41,6 @@ export function SciencePlot({ title, x, y, xLabel, yLabel, mode = 'lines' }: Pro
       useResizeHandler
       className="plot"
     />
+    </div>
   );
 }
