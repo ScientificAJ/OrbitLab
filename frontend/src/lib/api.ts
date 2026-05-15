@@ -76,6 +76,8 @@ export type SearchResult = {
   ra?: number | null;
   dec?: number | null;
   catalog: string;
+  match_type?: 'catalog' | 'alias';
+  matched_query?: string | null;
 };
 
 export type Product = {

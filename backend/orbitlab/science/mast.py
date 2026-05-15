@@ -17,6 +17,19 @@ class ProductSummary:
     product_uri: str
 
 
+TARGET_ALIASES = {
+    "trappist": "TRAPPIST-1",
+    "trappist 1": "TRAPPIST-1",
+    "trappist-1": "TRAPPIST-1",
+    "trappist1": "TRAPPIST-1",
+}
+
+
+def resolve_target_alias(query: str) -> str | None:
+    normalized = " ".join(query.strip().lower().split())
+    return TARGET_ALIASES.get(normalized)
+
+
 def row_value(row, key: str, default=None):
     colnames = set(getattr(row, "colnames", []))
     if key in colnames:
@@ -42,14 +55,44 @@ def search_targets(query: str, *, mission: str | None = None, limit: int = 20) -
     else:
         catalog = "TIC"
     results: list[dict] = []
-    if query and not query.isdigit():
-        results.append({"target_id": query, "ra": None, "dec": None, "catalog": "NAME"})
+    alias_target = resolve_target_alias(query)
+    if alias_target:
+        results.append(
+            {
+                "target_id": alias_target,
+                "ra": None,
+                "dec": None,
+                "catalog": "ALIAS",
+                "match_type": "alias",
+                "matched_query": query,
+            }
+        )
+    if query and not query.isdigit() and not alias_target:
+        results.append(
+            {
+                "target_id": query,
+                "ra": None,
+                "dec": None,
+                "catalog": "NAME",
+                "match_type": "catalog",
+                "matched_query": None,
+            }
+        )
     try:
         table = Catalogs.query_object(query, catalog=catalog, radius=0.02)
     except Exception:
         if mission_upper not in {"KEPLER", "K2"}:
             raise
-        return results or [{"target_id": query, "ra": None, "dec": None, "catalog": catalog}]
+        return results or [
+            {
+                "target_id": query,
+                "ra": None,
+                "dec": None,
+                "catalog": catalog,
+                "match_type": "catalog",
+                "matched_query": None,
+            }
+        ]
     rows = table[:limit]
     seen = {(item["catalog"], item["target_id"]) for item in results}
     for row in rows:
@@ -58,6 +101,8 @@ def search_targets(query: str, *, mission: str | None = None, limit: int = 20) -
             "ra": float(row_value(row, "ra")) if "ra" in row.colnames else None,
             "dec": float(row_value(row, "dec")) if "dec" in row.colnames else None,
             "catalog": catalog,
+            "match_type": "catalog",
+            "matched_query": None,
         }
         key = (item["catalog"], item["target_id"])
         if key not in seen:

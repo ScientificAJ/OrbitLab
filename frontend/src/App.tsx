@@ -248,6 +248,8 @@ export default function App() {
   const matchEmptyMessage = useMemo(() => {
     return getMatchEmptyMessage(searchStatus, searchStatusQuery, hasSearched);
   }, [hasSearched, searchStatus, searchStatusQuery]);
+  const suggestedTargets = useMemo(() => targets.filter((target) => target.match_type === 'alias'), [targets]);
+  const catalogTargets = useMemo(() => targets.filter((target) => target.match_type !== 'alias'), [targets]);
   const workflowMessage = useMemo(() => {
     return getWorkflowMessage({
       workflow,
@@ -840,7 +842,22 @@ export default function App() {
             </select>
             <div className="field-label">Matches</div>
             <div className="selection-list">
-              {targets.map((target) => (
+              {suggestedTargets.length > 0 && <div className="selection-group-label">Suggested targets</div>}
+              {suggestedTargets.map((target) => (
+                <button
+                  type="button"
+                  key={`${target.catalog}-${target.target_id}-${target.matched_query ?? ''}`}
+                  className={selectedTarget?.target_id === target.target_id ? 'active' : ''}
+                  onClick={() => chooseTarget(target)}
+                >
+                  <span>{target.target_id}</span>
+                  <small>{target.matched_query ? `Alias for "${target.matched_query}"` : target.catalog}</small>
+                </button>
+              ))}
+              {suggestedTargets.length > 0 && catalogTargets.length > 0 && (
+                <div className="selection-group-label">Catalog matches</div>
+              )}
+              {catalogTargets.map((target) => (
                 <button
                   type="button"
                   key={`${target.catalog}-${target.target_id}`}
