@@ -80,6 +80,8 @@ scripts/start_all.sh
 
 The script starts Docker Compose services, ensures the Kepler/K1 TensorFlow runtime image is present, fetches registered Kepler and K2 artifacts when needed, then starts the backend and frontend. Logs and pid files live under `.orbitlab/`.
 
+For step-by-step app usage, LAN access, target search, BLS preview, full analysis, and troubleshooting, see [docs/USAGE.md](docs/USAGE.md).
+
 For manual startup:
 
 ```bash
