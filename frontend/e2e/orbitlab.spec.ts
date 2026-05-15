@@ -54,7 +54,7 @@ const analysisResult = {
       ml: {
         probability: 0.91,
         threshold: 0.5,
-        label: 'planet_candidate',
+        label: 'planet-candidate',
         model_version: 'test',
         model_source: 'mock fixture',
         input_tensor_checksum: 'abc123def456',
@@ -99,10 +99,37 @@ async function json(route: Route, body: unknown, status = 200) {
 async function installBaseMocks(page: Page) {
   await page.route(`${API}/models`, (route) =>
     json(route, {
-      nigraha_tess: { status: 'ready', source: 'local test registry', version: '1.0.0', checksum: 'abcdef1234567890' },
-      kepler_astronet: { status: 'unavailable', detail: 'missing checkpoint', source: 'registry' },
-      k2_exomac_kkt: { status: 'unavailable', detail: 'missing K2 artifact', source: 'registry' },
-      k2_astronet: { status: 'unavailable', detail: 'No public K2 checkpoint registered yet.' },
+      nigraha_tess: {
+        model_id: 'nigraha-tess-global-nodropout-binary-ensemble',
+        status: 'ready',
+        source:
+          'ExoplanetML/Nigraha models/weights/global_nodropout/binary at c4365b41dd02b187c3210189ffe8e3ead584f4f5',
+        version: 'c4365b41dd02b187c3210189ffe8e3ead584f4f5',
+        checksum: '1ff146fb1cd3f9bfd354c3c71a95b93adfee53edaf494cc5507bd5865d850f93',
+        schema_version: 'orbitlab.nigraha.v1',
+      },
+      kepler_astronet: {
+        model_id: 'kepler-astronet-cnn-bilstm-attention',
+        status: 'ready',
+        source: 'bibinthomas123/Astronet TensorFlow checkpoint at 9809ce92306f11fbdc96f9830b522026710a3883',
+        version: '9809ce92306f11fbdc96f9830b522026710a3883',
+        checksum: '68dee983c65e9e4cd67748906e8a6796ce1810f7cbe66bf9a34938af9b61b9a3',
+        schema_version: 'orbitlab.astronet.v1',
+      },
+      k2_exomac_kkt: {
+        model_id: 'k2-exomac-kkt-randomforest',
+        status: 'ready',
+        source: 'ZapatoProgramming/ExoMAC-KKT pretrained NASA Kepler/K2/TESS catalog classifier',
+        version: '5cda5310d5a163679c6915f9463a4d6afc312483',
+        checksum: 'd8a28d99cb29be8cfd0870d964bdde0bb3e97ee8d0aee9fded946ad5a54b2c2c',
+        schema_version: 'orbitlab.exomac-kkt.v1',
+      },
+      k2_astronet: {
+        model_id: 'k2-astronet-family',
+        mission: 'K2',
+        status: 'unavailable',
+        detail: 'Published AstroNet-K2 paper found; no public downloadable checkpoint is registered.',
+      },
     }),
   );
 
@@ -150,7 +177,12 @@ async function installBaseMocks(page: Page) {
     return json(route, [savedSession]);
   });
   await page.route(`${API}/reports/*`, (route) =>
-    json(route, { report_id: analysisResult.result_id, generated_at: '2026-05-14T12:00:00Z', format: 'json', result: analysisResult }),
+    json(route, {
+      report_id: analysisResult.result_id,
+      generated_at: '2026-05-14T12:00:00Z',
+      format: 'json',
+      result: analysisResult,
+    }),
   );
 }
 
@@ -297,7 +329,9 @@ test('BLS preview renders candidates, periodogram, folded plot, and API errors',
   await expect(page.getByTestId('periodogram-plot').locator('.js-plotly-plot')).toBeVisible();
   await expect(page.getByTestId('folded-curve-plot').locator('.js-plotly-plot')).toBeVisible();
 
-  await page.route(`${API}/bls-preview`, (route) => json(route, { detail: 'min_period must be less than max_period' }, 422));
+  await page.route(`${API}/bls-preview`, (route) =>
+    json(route, { detail: 'min_period must be less than max_period' }, 422),
+  );
   await page.getByRole('button', { name: /BLS Search/ }).click();
   await page.getByRole('button', { name: /Run Preview Search/ }).click();
   await expect(page.getByRole('alert')).toContainText('min_period must be less than max_period');
@@ -323,12 +357,16 @@ test('failed BLS preview clears stale preview data but preserves full analysis r
 
   await page.getByRole('button', { name: /Close BLS Search Controls/ }).click();
   await page.route(`${API}/analysis-jobs`, (route) =>
-    json(route, {
-      job_id: 'job-complete',
-      status: 'complete',
-      created_at: '2026-05-14T12:00:00Z',
-      result_id: analysisResult.result_id,
-    }, 201),
+    json(
+      route,
+      {
+        job_id: 'job-complete',
+        status: 'complete',
+        created_at: '2026-05-14T12:00:00Z',
+        result_id: analysisResult.result_id,
+      },
+      201,
+    ),
   );
   await page.route(`${API}/analysis-results/${analysisResult.result_id}`, (route) => json(route, analysisResult));
   await page.getByRole('button', { name: /Run Analysis/ }).click();
@@ -365,7 +403,11 @@ test('analysis jobs handle complete, failed, and polling timeout states', async 
   await expect(page.getByTestId('workflow-status')).toHaveText('complete');
 
   await page.route(`${API}/analysis-jobs`, (route) =>
-    json(route, { job_id: 'job-failed', status: 'failed', created_at: '2026-05-14T12:00:00Z', error: 'BLS failed to converge' }, 201),
+    json(
+      route,
+      { job_id: 'job-failed', status: 'failed', created_at: '2026-05-14T12:00:00Z', error: 'BLS failed to converge' },
+      201,
+    ),
   );
   await page.getByRole('button', { name: /Run Analysis/ }).click();
   await expect(page.getByRole('alert')).toContainText('BLS failed to converge');
@@ -390,7 +432,9 @@ test('model readiness modal shows ready and unavailable setup information', asyn
   await expect(page.getByRole('dialog', { name: 'Model Status & Registry' })).toBeVisible();
   await expect(page.getByText('ready').first()).toBeVisible();
   await expect(page.getByText('unavailable').first()).toBeVisible();
-  await expect(page.getByText('scripts/fetch_kepler_astronet.py')).toBeVisible();
+  await expect(
+    page.getByText('No public downloadable K2 AstroNet checkpoint is registered for OrbitLab.'),
+  ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'K2 ExoMAC KKT' })).toBeVisible();
   await expect(page.locator('.model-info-card h3').filter({ hasText: '_' })).toHaveCount(0);
 });
@@ -435,12 +479,16 @@ test('report export is disabled without full results and downloads valid reports
 
   await chooseProduct(page);
   await page.route(`${API}/analysis-jobs`, (route) =>
-    json(route, {
-      job_id: 'job-complete',
-      status: 'complete',
-      created_at: '2026-05-14T12:00:00Z',
-      result_id: analysisResult.result_id,
-    }, 201),
+    json(
+      route,
+      {
+        job_id: 'job-complete',
+        status: 'complete',
+        created_at: '2026-05-14T12:00:00Z',
+        result_id: analysisResult.result_id,
+      },
+      201,
+    ),
   );
   await page.route(`${API}/analysis-results/${analysisResult.result_id}`, (route) => json(route, analysisResult));
   await page.getByRole('button', { name: /Run Analysis/ }).click();

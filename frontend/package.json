@@ -7,7 +7,11 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
+    "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "test:unit": "vitest run src/lib/uiState.test.ts",
     "test:e2e": "playwright test",
+    "test:e2e:live": "LIVE_ORBITLAB=1 playwright test e2e/orbitlab-live.spec.ts --project=chromium",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report"
   },
@@ -21,12 +25,17 @@
     "three": "^0.170.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/react-plotly.js": "^2.6.4",
     "@types/three": "^0.184.1",
+    "eslint": "^10.3.0",
+    "prettier": "^3.8.3",
     "typescript": "^5.6.3",
-    "vite": "^6.0.0"
+    "typescript-eslint": "^8.59.3",
+    "vite": "^6.0.0",
+    "vitest": "^4.1.6"
   }
 }

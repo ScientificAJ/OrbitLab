@@ -1,7 +1,22 @@
-import { Activity, Database, Download, FlaskConical, Gauge, History, Layers, Play, RefreshCw, Save, Search, SlidersHorizontal, Trash2, X } from 'lucide-react';
+import {
+  Activity,
+  Download,
+  FlaskConical,
+  Gauge,
+  History,
+  Layers,
+  Play,
+  RefreshCw,
+  Save,
+  Search,
+  SlidersHorizontal,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { OrbitScene } from './components/OrbitScene';
 import { SciencePlot } from './components/SciencePlot';
+import { useModalState } from './hooks/useModalState';
 import {
   AnalysisJob,
   AnalysisResult,
@@ -25,10 +40,20 @@ import {
   fetchSessions,
   SavedSession,
 } from './lib/api';
+import {
+  BlsPreviewStatus,
+  SearchStatus,
+  WorkflowState,
+  buildAperturePixelLabel,
+  formatFiniteNumber,
+  formatModelDisplayName,
+  getMatchEmptyMessage,
+  getWorkflowMessage,
+} from './lib/uiState';
 import './styles/app.css';
 
 function formatNumber(value: number | null | undefined, digits = 3) {
-  return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(digits) : 'n/a';
+  return formatFiniteNumber(value, digits);
 }
 
 function formatTriState(value: unknown, trueLabel: string, falseLabel: string) {
@@ -41,12 +66,22 @@ function formatScientific(value: number | null | undefined, digits = 3) {
   return typeof value === 'number' && Number.isFinite(value) ? value.toExponential(digits) : 'n/a';
 }
 
-function CandidateCard({ candidate, active, onSelect }: { candidate: Candidate; active: boolean; onSelect: () => void }) {
+function CandidateCard({
+  candidate,
+  active,
+  onSelect,
+}: {
+  candidate: Candidate;
+  active: boolean;
+  onSelect: () => void;
+}) {
   return (
     <button type="button" className={`candidate-card ${active ? 'active' : ''}`} onClick={onSelect}>
       <span>{candidate.candidate_id}</span>
       <strong>{formatNumber(candidate.period, 4)} d</strong>
-      <small>SNR {formatNumber(candidate.signal_to_noise, 2)} · depth {formatNumber(candidate.depth * 1_000_000, 0)} ppm</small>
+      <small>
+        SNR {formatNumber(candidate.signal_to_noise, 2)} · depth {formatNumber(candidate.depth * 1_000_000, 0)} ppm
+      </small>
     </button>
   );
 }
@@ -87,19 +122,35 @@ function ModalShell({
   );
 }
 
-const setupCommands: Record<string, string> = {
-  nigraha_tess: 'scripts/fetch_nigraha_weights.py',
-  kepler_astronet: 'scripts/fetch_kepler_astronet.py',
-  k2_exomac_kkt: 'scripts/fetch_k2_exomac_kkt.py',
-  k2_astronet: 'No public K2 checkpoint registered yet.',
+const setupHints: Record<string, { label: string; command?: string }> = {
+  nigraha_tess: { label: 'Fetch and register the TESS weights.', command: 'scripts/fetch_nigraha_weights.py' },
+  kepler_astronet: { label: 'Fetch and register the Kepler checkpoint.', command: 'scripts/fetch_kepler_astronet.py' },
+  k2_exomac_kkt: { label: 'Fetch and register the K2 ExoMAC bundle.', command: 'scripts/fetch_k2_exomac_kkt.py' },
+  k2_astronet: { label: 'No public downloadable K2 AstroNet checkpoint is registered for OrbitLab.' },
 };
 
-const modelDisplayNames: Record<string, string> = {
-  nigraha_tess: 'Nigraha TESS',
-  kepler_astronet: 'Kepler AstroNet',
-  k2_exomac_kkt: 'K2 ExoMAC KKT',
-  k2_astronet: 'K2 AstroNet',
-};
+function ModelSetupHint({ modelKey }: { modelKey: string }) {
+  const hint = setupHints[modelKey];
+  if (!hint) {
+    return (
+      <div className="setup-hint">
+        <strong>Note:</strong> Check model registry setup.
+      </div>
+    );
+  }
+
+  return (
+    <div className="setup-hint">
+      <strong>{hint.command ? 'Fix:' : 'Note:'}</strong> {hint.label}
+      {hint.command && (
+        <>
+          {' '}
+          Run <code>{hint.command}</code>
+        </>
+      )}
+    </div>
+  );
+}
 
 const MIN_PERIOD_FLOOR = 0.2;
 const MAX_PERIOD_CEILING = 60;
@@ -107,13 +158,6 @@ const ANALYSIS_POLL_LIMIT = Number(import.meta.env.VITE_ANALYSIS_POLL_LIMIT ?? 1
 const ANALYSIS_POLL_INTERVAL_MS = Number(import.meta.env.VITE_ANALYSIS_POLL_INTERVAL_MS ?? 1000);
 
 type Mission = 'TESS' | 'Kepler' | 'K2';
-type ActiveModal = 'aperture' | 'bls' | 'models' | 'sessions' | null;
-type SearchStatus = 'idle' | 'searching' | 'success' | 'empty' | 'failed';
-type BlsPreviewStatus = 'idle' | 'running' | 'complete' | 'failed';
-
-function formatModelDisplayName(key: string) {
-  return modelDisplayNames[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase());
-}
 
 export default function App() {
   const [mission, setMission] = useState<Mission>('TESS');
@@ -130,11 +174,10 @@ export default function App() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [selectedId, setSelectedId] = useState<string | undefined>();
   const [model, setModel] = useState<ModelStatuses | null>(null);
-  const [workflow, setWorkflow] = useState<'idle' | 'searching' | 'product-selected' | 'running' | 'complete' | 'failed'>('idle');
+  const [workflow, setWorkflow] = useState<WorkflowState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [tpfPreview, setTpfPreview] = useState<TpfPreview | null>(null);
   const [apertureMask, setApertureMask] = useState<boolean[][]>([]);
   const [selectedApertureMaskId, setSelectedApertureMaskId] = useState<string | undefined>();
@@ -150,6 +193,9 @@ export default function App() {
   const [selectedArtifactMaskId, setSelectedArtifactMaskId] = useState<string | undefined>();
   const [cadenceStart, setCadenceStart] = useState<number>(0);
   const [cadenceEnd, setCadenceEnd] = useState<number>(0);
+  const { activeModal, openModal, closeActiveModal, setActiveModal } = useModalState(
+    (modal) => modal === 'bls' && blsRunning,
+  );
 
   const analysisToken = useRef<number>(0);
   const searchToken = useRef<number>(0);
@@ -166,17 +212,6 @@ export default function App() {
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (!activeModal) return undefined;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') closeActiveModal();
-    }
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeModal, blsRunning]);
 
   async function refreshModelStatus() {
     try {
@@ -195,26 +230,33 @@ export default function App() {
     successTimeout.current = window.setTimeout(() => setSuccess(null), 3000);
   }
 
-  function closeActiveModal() {
-    if (activeModal === 'bls' && blsRunning) return;
-    setActiveModal(null);
-  }
-
   const selected = useMemo(() => {
     return result?.candidates.find((candidate) => candidate.candidate_id === selectedId) ?? result?.candidates[0];
   }, [result, selectedId]);
 
   const folded = selected && result ? result.folded_curves[selected.candidate_id] : undefined;
-  const activeModel = mission === 'TESS' ? model?.nigraha_tess : mission === 'Kepler' ? model?.kepler_astronet : model?.k2_exomac_kkt;
+  const activeModel =
+    mission === 'TESS' ? model?.nigraha_tess : mission === 'Kepler' ? model?.kepler_astronet : model?.k2_exomac_kkt;
   const activeModelStatus = typeof activeModel?.status === 'string' ? activeModel.status : 'unknown';
-  const activeModelSource = typeof activeModel?.source === 'string' ? activeModel.source : typeof activeModel?.detail === 'string' ? activeModel.detail : 'n/a';
+  const activeModelSource =
+    typeof activeModel?.source === 'string'
+      ? activeModel.source
+      : typeof activeModel?.detail === 'string'
+        ? activeModel.detail
+        : 'n/a';
   const selectedAperturePixelCount = useMemo(() => apertureMask.flat().filter(Boolean).length, [apertureMask]);
   const matchEmptyMessage = useMemo(() => {
-    if (searchStatus === 'searching') return `Searching for "${searchStatusQuery}"...`;
-    if (searchStatus === 'failed') return `Search failed for "${searchStatusQuery}".`;
-    if (searchStatus === 'empty') return `No matching targets found for "${searchStatusQuery}".`;
-    return hasSearched ? 'No matching targets found.' : 'Search for a target first.';
+    return getMatchEmptyMessage(searchStatus, searchStatusQuery, hasSearched);
   }, [hasSearched, searchStatus, searchStatusQuery]);
+  const workflowMessage = useMemo(() => {
+    return getWorkflowMessage({
+      workflow,
+      searchStatus,
+      productsLoading,
+      blsStatus: blsPreviewStatus,
+      jobStatus: job?.status,
+    });
+  }, [blsPreviewStatus, job?.status, productsLoading, searchStatus, workflow]);
 
   const pixelScale = useMemo(() => {
     if (!tpfPreview) return { min: 0, span: 1 };
@@ -236,8 +278,7 @@ export default function App() {
   }
 
   function aperturePixelLabel(row: number, column: number, value: number, selected: boolean) {
-    const flux = Number.isFinite(value) ? formatNumber(value, 2) : 'not finite';
-    return `Toggle aperture pixel row ${row + 1} column ${column + 1}. Flux ${flux}. ${selected ? 'Selected' : 'Not selected'}.`;
+    return buildAperturePixelLabel(row, column, value, selected);
   }
 
   function changeMission(next: 'TESS' | 'Kepler' | 'K2') {
@@ -398,7 +439,11 @@ export default function App() {
       if (token !== analysisToken.current) return;
       setJob(created);
       let current = created;
-      for (let index = 0; index < ANALYSIS_POLL_LIMIT && current.status !== 'complete' && current.status !== 'failed'; index += 1) {
+      for (
+        let index = 0;
+        index < ANALYSIS_POLL_LIMIT && current.status !== 'complete' && current.status !== 'failed';
+        index += 1
+      ) {
         await new Promise((resolve) => window.setTimeout(resolve, ANALYSIS_POLL_INTERVAL_MS));
         if (token !== analysisToken.current) return;
         current = await fetchAnalysisJob(current.job_id);
@@ -492,7 +537,7 @@ export default function App() {
     try {
       const payload = await fetchSessions();
       setSessions(payload);
-      setActiveModal('sessions');
+      openModal('sessions');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -520,12 +565,18 @@ export default function App() {
     setSearchStatus(restoredTarget ? 'success' : 'idle');
     setSearchStatusQuery(typeof payload.query === 'string' ? payload.query : '');
     setSelectedProduct(restoredProduct);
-    setSelectedApertureMaskId(typeof payload.selectedApertureMaskId === 'string' ? payload.selectedApertureMaskId : undefined);
-    setSelectedArtifactMaskId(typeof payload.selectedArtifactMaskId === 'string' ? payload.selectedArtifactMaskId : undefined);
+    setSelectedApertureMaskId(
+      typeof payload.selectedApertureMaskId === 'string' ? payload.selectedApertureMaskId : undefined,
+    );
+    setSelectedArtifactMaskId(
+      typeof payload.selectedArtifactMaskId === 'string' ? payload.selectedArtifactMaskId : undefined,
+    );
     setMinPeriod(Number.isFinite(payload.minPeriod) ? Number(payload.minPeriod) : 0.5);
     setMaxPeriod(Number.isFinite(payload.maxPeriod) ? Number(payload.maxPeriod) : 30);
     setResult(restoredResult);
-    setSelectedId(typeof payload.selectedId === 'string' ? payload.selectedId : restoredResult?.candidates[0]?.candidate_id);
+    setSelectedId(
+      typeof payload.selectedId === 'string' ? payload.selectedId : restoredResult?.candidates[0]?.candidate_id,
+    );
     setJob(null);
 
     if (restoredResult) {
@@ -576,7 +627,7 @@ export default function App() {
 
       setTpfPreview(preview);
       setApertureMask(Array.from({ length: preview.shape[0] }, () => Array(preview.shape[1]).fill(false)));
-      setActiveModal('aperture');
+      openModal('aperture');
     } catch (err) {
       if (token !== apertureToken.current) return;
       setError(err instanceof Error ? err.message : String(err));
@@ -586,7 +637,7 @@ export default function App() {
   async function handleCreateApertureMask() {
     if (!selectedTarget || !selectedProduct || !tpfPreview) return;
     setError(null);
-    if (!apertureMask.flat().some(p => p)) {
+    if (!apertureMask.flat().some((p) => p)) {
       setError('Please select at least one pixel for the aperture mask.');
       return;
     }
@@ -732,16 +783,43 @@ export default function App() {
         </div>
         <div className="search-strip">
           <Search size={16} />
-          <label className="sr-only" htmlFor="target-search">Target search</label>
-          <input id="target-search" name="target-search" value={query} onChange={(event) => setQuery(event.target.value)} aria-label="target search" placeholder="Try TIC 307210830, Kepler-10, TOI-700..." />
+          <label className="sr-only" htmlFor="target-search">
+            Target search
+          </label>
+          <input
+            id="target-search"
+            name="target-search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            aria-label="target search"
+            placeholder="Try TIC 307210830, Kepler-10, TOI-700..."
+          />
           <button type="button" onClick={runSearch} disabled={!query.trim() || workflow === 'searching'}>
             <Search size={15} /> Search
           </button>
         </div>
         <div className="command-actions">
-          <button type="button" title="Sessions" aria-label="Sessions" onClick={openSessionsModal}><History size={17} /></button>
-          <button type="button" title="Save session" aria-label="Save session" onClick={handleSaveSession} disabled={!selectedTarget}><Save size={17} /></button>
-          <button type="button" title="Export report" aria-label="Export report" onClick={handleExportReport} disabled={!result || result.result_id === 'preview'}><Download size={17} /></button>
+          <button type="button" title="Sessions" aria-label="Sessions" onClick={openSessionsModal}>
+            <History size={17} />
+          </button>
+          <button
+            type="button"
+            title="Save session"
+            aria-label="Save session"
+            onClick={handleSaveSession}
+            disabled={!selectedTarget}
+          >
+            <Save size={17} />
+          </button>
+          <button
+            type="button"
+            title="Export report"
+            aria-label="Export report"
+            onClick={handleExportReport}
+            disabled={!result || result.result_id === 'preview'}
+          >
+            <Download size={17} />
+          </button>
         </div>
       </header>
 
@@ -750,7 +828,12 @@ export default function App() {
           <div className="rail-section">
             <h2>Target</h2>
             <label htmlFor="mission-select">Mission</label>
-            <select id="mission-select" name="mission" value={mission} onChange={(event) => changeMission(event.target.value as 'TESS' | 'Kepler' | 'K2')}>
+            <select
+              id="mission-select"
+              name="mission"
+              value={mission}
+              onChange={(event) => changeMission(event.target.value as 'TESS' | 'Kepler' | 'K2')}
+            >
               <option value="TESS">TESS</option>
               <option value="Kepler">Kepler</option>
               <option value="K2">K2</option>
@@ -791,21 +874,37 @@ export default function App() {
           </div>
           <div className="rail-section">
             <h2>Pipeline</h2>
-            <button type="button" disabled={!selectedProduct || workflow === 'running'} onClick={openApertureModal} className={selectedApertureMaskId ? 'active-pill' : ''}>
+            <button
+              type="button"
+              disabled={!selectedProduct || workflow === 'running'}
+              onClick={openApertureModal}
+              className={selectedApertureMaskId ? 'active-pill' : ''}
+            >
               <SlidersHorizontal size={15} /> Aperture {selectedApertureMaskId ? '(Custom)' : ''}
             </button>
-            <button type="button" disabled={!selectedProduct || workflow === 'running'} onClick={() => setActiveModal('bls')}>
+            <button
+              type="button"
+              disabled={!selectedProduct || workflow === 'running'}
+              onClick={() => openModal('bls')}
+            >
               <FlaskConical size={15} /> BLS Search
             </button>
-            <button type="button" disabled={!selectedProduct?.product_uri || workflow === 'running'} onClick={runAnalysis}>
+            <button
+              type="button"
+              disabled={!selectedProduct?.product_uri || workflow === 'running'}
+              onClick={runAnalysis}
+            >
               <Play size={15} /> Run Analysis
             </button>
-            <button type="button" onClick={() => setActiveModal('models')}>
+            <button type="button" onClick={() => openModal('models')}>
               <Gauge size={15} /> ML Status {activeModelStatus}
             </button>
             {job && (
               <div className="job-status-row">
-                <p className="quiet">Job {job.status}{job.result_id ? ` · ${job.result_id.slice(0, 8)}` : ''}</p>
+                <p className="quiet">
+                  Job {job.status}
+                  {job.result_id ? ` · ${job.result_id.slice(0, 8)}` : ''}
+                </p>
                 {job.status !== 'complete' && job.status !== 'failed' && (
                   <button type="button" className="quiet-action" onClick={refreshCurrentJob} title="Refresh Status">
                     <RefreshCw size={14} />
@@ -836,8 +935,13 @@ export default function App() {
             <div>
               <span>{result?.mission ?? 'Mission'}</span>
               <strong>{result?.target_id ?? selectedTarget?.target_id ?? 'Awaiting real analysis data'}</strong>
+              <small className="stage-message" data-testid="workflow-message">
+                {workflowMessage}
+              </small>
             </div>
-            <div className="sync-pill" data-testid="workflow-status">{workflow}</div>
+            <div className="sync-pill" data-testid="workflow-status">
+              {workflow}
+            </div>
           </div>
           <OrbitScene candidates={result?.candidates ?? []} selectedId={selected?.candidate_id} />
           <div className="timeline">
@@ -853,11 +957,21 @@ export default function App() {
               <div className="artifact-toolbar">
                 <Layers size={14} />
                 <span className="field-label">Mask Range (index):</span>
-                <input type="number" value={cadenceStart} onChange={e => setCadenceStart(Number(e.target.value))} />
+                <input type="number" value={cadenceStart} onChange={(e) => setCadenceStart(Number(e.target.value))} />
                 <span>to</span>
-                <input type="number" value={cadenceEnd} onChange={e => setCadenceEnd(Number(e.target.value))} />
-                <button type="button" onClick={handleCreateArtifactMask} className={selectedArtifactMaskId ? 'active-pill' : ''}>Apply Mask</button>
-                {selectedArtifactMaskId && <button type="button" className="quiet" onClick={() => setSelectedArtifactMaskId(undefined)}><Trash2 size={14}/></button>}
+                <input type="number" value={cadenceEnd} onChange={(e) => setCadenceEnd(Number(e.target.value))} />
+                <button
+                  type="button"
+                  onClick={handleCreateArtifactMask}
+                  className={selectedArtifactMaskId ? 'active-pill' : ''}
+                >
+                  Apply Mask
+                </button>
+                {selectedArtifactMaskId && (
+                  <button type="button" className="quiet" onClick={() => setSelectedArtifactMaskId(undefined)}>
+                    <Trash2 size={14} />
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -890,18 +1004,25 @@ export default function App() {
           <div className="panel details">
             <h2>Validation</h2>
             <dl>
-              <dt>Odd-even</dt><dd>{formatScientific(selected?.validation?.odd_even_depth_delta, 3)}</dd>
-              <dt>Secondary</dt><dd>{formatScientific(selected?.validation?.secondary_depth, 3)}</dd>
-              <dt>Duration</dt><dd>{String(selected?.validation?.duration_plausible ?? 'n/a')}</dd>
+              <dt>Odd-even</dt>
+              <dd>{formatScientific(selected?.validation?.odd_even_depth_delta, 3)}</dd>
+              <dt>Secondary</dt>
+              <dd>{formatScientific(selected?.validation?.secondary_depth, 3)}</dd>
+              <dt>Duration</dt>
+              <dd>{String(selected?.validation?.duration_plausible ?? 'n/a')}</dd>
             </dl>
           </div>
           <div className="panel details">
             <h2>Physics & Habitability</h2>
             <dl>
-              <dt>Rp/Rs</dt><dd>{formatNumber(selected?.physics?.radius_ratio, 4)}</dd>
-              <dt>Radius</dt><dd>{formatNumber(selected?.physics?.planet_radius_earth, 2)} R⊕</dd>
-              <dt>Distance</dt><dd>{formatNumber(selected?.physics?.semi_major_axis_au, 4)} AU</dd>
-              <dt>T_eq</dt><dd>{formatNumber(selected?.physics?.equilibrium_temperature_k, 1)} K</dd>
+              <dt>Rp/Rs</dt>
+              <dd>{formatNumber(selected?.physics?.radius_ratio, 4)}</dd>
+              <dt>Radius</dt>
+              <dd>{formatNumber(selected?.physics?.planet_radius_earth, 2)} R⊕</dd>
+              <dt>Distance</dt>
+              <dd>{formatNumber(selected?.physics?.semi_major_axis_au, 4)} AU</dd>
+              <dt>T_eq</dt>
+              <dd>{formatNumber(selected?.physics?.equilibrium_temperature_k, 1)} K</dd>
               <dt>HZ Zone</dt>
               <dd className={selected?.physics?.is_in_habitable_zone ? 'status-ready' : ''}>
                 {formatTriState(selected?.physics?.is_in_habitable_zone, 'Inside', 'Outside')}
@@ -915,19 +1036,40 @@ export default function App() {
           <div className="panel details">
             <h2>Pretrained ML</h2>
             <dl>
-              <dt>Readiness</dt><dd>{activeModelStatus}</dd>
-              <dt>Mission</dt><dd>{mission}</dd>
-              <dt>Verdict</dt><dd>{selected?.ml?.label ?? 'n/a'}</dd>
-              <dt>Probability</dt><dd>{formatNumber(selected?.ml?.probability, 4)}</dd>
-              {selected?.ml?.class_probabilities && Object.entries(selected.ml.class_probabilities).map(([label, probability]) => (
-                <Fragment key={label}><dt>{label}</dt><dd>{formatNumber(probability, 4)}</dd></Fragment>
-              ))}
-              <dt>Source</dt><dd>{selected?.ml?.model_source ?? activeModelSource}</dd>
-              <dt>Input</dt><dd>{selected?.ml?.input_tensor_checksum?.slice(0, 12) ?? 'n/a'}</dd>
+              <dt>Readiness</dt>
+              <dd>{activeModelStatus}</dd>
+              <dt>Mission</dt>
+              <dd>{mission}</dd>
+              <dt>Verdict</dt>
+              <dd>{selected?.ml?.label ?? 'n/a'}</dd>
+              <dt>Probability</dt>
+              <dd>{formatNumber(selected?.ml?.probability, 4)}</dd>
+              {selected?.ml?.class_probabilities &&
+                Object.entries(selected.ml.class_probabilities).map(([label, probability]) => (
+                  <Fragment key={label}>
+                    <dt>{label}</dt>
+                    <dd>{formatNumber(probability, 4)}</dd>
+                  </Fragment>
+                ))}
+              <dt>Source</dt>
+              <dd>{selected?.ml?.model_source ?? activeModelSource}</dd>
+              <dt>Input</dt>
+              <dd>{selected?.ml?.input_tensor_checksum?.slice(0, 12) ?? 'n/a'}</dd>
             </dl>
           </div>
-          {error && <div className="error-panel" role="alert">{error} <button type="button" aria-label="Dismiss error" onClick={() => setError(null)}><X size={14}/></button></div>}
-          {success && <div className="success-panel" role="status">{success}</div>}
+          {error && (
+            <div className="error-panel" role="alert">
+              {error}{' '}
+              <button type="button" aria-label="Dismiss error" onClick={() => setError(null)}>
+                <X size={14} />
+              </button>
+            </div>
+          )}
+          {success && (
+            <div className="success-panel" role="status">
+              {success}
+            </div>
+          )}
         </aside>
       </section>
 
@@ -936,36 +1078,42 @@ export default function App() {
           title="Aperture Mask Editor"
           titleId="aperture-modal-title"
           onClose={closeActiveModal}
-          footer={<button type="button" onClick={handleCreateApertureMask}>Apply Mask</button>}
+          footer={
+            <button type="button" onClick={handleCreateApertureMask}>
+              Apply Mask
+            </button>
+          }
         >
           <p className="quiet">Select pixels to include in the extraction aperture.</p>
           <p className="quiet aperture-summary" data-testid="aperture-selection-summary">
             {selectedAperturePixelCount} {selectedAperturePixelCount === 1 ? 'pixel' : 'pixels'} selected.
           </p>
           <div className="pixel-grid" style={{ gridTemplateColumns: `repeat(${tpfPreview.shape[1]}, 1fr)` }}>
-            {tpfPreview.image.map((row, i) => row.map((val, j) => {
-              const selectedPixel = Boolean(apertureMask[i][j]);
-              const label = aperturePixelLabel(i, j, val, selectedPixel);
+            {tpfPreview.image.map((row, i) =>
+              row.map((val, j) => {
+                const selectedPixel = Boolean(apertureMask[i][j]);
+                const label = aperturePixelLabel(i, j, val, selectedPixel);
 
-              return (
-                <button
-                  type="button"
-                  key={`${i}-${j}`}
-                  data-testid={`aperture-pixel-${i}-${j}`}
-                  aria-label={label}
-                  aria-pressed={selectedPixel}
-                  title={label}
-                  className={`pixel ${selectedPixel ? 'selected' : ''}`}
-                  style={{ opacity: aperturePixelOpacity(val) }}
-                  onClick={() => {
-                    const next = [...apertureMask];
-                    next[i] = [...next[i]];
-                    next[i][j] = !next[i][j];
-                    setApertureMask(next);
-                  }}
-                />
-              );
-            }))}
+                return (
+                  <button
+                    type="button"
+                    key={`${i}-${j}`}
+                    data-testid={`aperture-pixel-${i}-${j}`}
+                    aria-label={label}
+                    aria-pressed={selectedPixel}
+                    title={label}
+                    className={`pixel ${selectedPixel ? 'selected' : ''}`}
+                    style={{ opacity: aperturePixelOpacity(val) }}
+                    onClick={() => {
+                      const next = [...apertureMask];
+                      next[i] = [...next[i]];
+                      next[i][j] = !next[i][j];
+                      setApertureMask(next);
+                    }}
+                  />
+                );
+              }),
+            )}
           </div>
         </ModalShell>
       )}
@@ -1048,33 +1196,43 @@ export default function App() {
           title="Model Status & Registry"
           titleId="models-modal-title"
           onClose={closeActiveModal}
-          footer={<button type="button" onClick={refreshModelStatus}><RefreshCw size={14}/> Refresh Registry</button>}
+          footer={
+            <button type="button" onClick={refreshModelStatus}>
+              <RefreshCw size={14} /> Refresh Registry
+            </button>
+          }
         >
-          {model ? Object.entries(model).map(([key, info]) => (
-            <div key={key} className="model-info-card">
-              <h3>{formatModelDisplayName(key)}</h3>
-              <dl>
-                <dt>Status</dt><dd className={info.status === 'ready' ? 'status-ready' : 'status-bad'}>{info.status}</dd>
-                <dt>Source</dt><dd>{info.source ?? 'n/a'}</dd>
-                <dt>Version</dt><dd>{info.version ?? 'n/a'}</dd>
-                <dt>Checksum</dt><dd><code>{info.checksum?.slice(0, 16) ?? 'n/a'}</code></dd>
-                {info.detail && <dt>Detail</dt>}
-                {info.detail && <dd className="quiet">{info.detail}</dd>}
-              </dl>
-              {info.status !== 'ready' && (
-                <div className="setup-hint">
-                  <strong>Fix:</strong> run <code>{setupCommands[key] ?? 'Check model registry setup.'}</code>
-                </div>
-              )}
-            </div>
-          )) : <p>Loading model registry...</p>}
+          {model ? (
+            Object.entries(model).map(([key, info]) => (
+              <div key={key} className="model-info-card">
+                <h3>{formatModelDisplayName(key)}</h3>
+                <dl>
+                  <dt>Status</dt>
+                  <dd className={info.status === 'ready' ? 'status-ready' : 'status-bad'}>{info.status}</dd>
+                  <dt>Source</dt>
+                  <dd>{info.source ?? 'n/a'}</dd>
+                  <dt>Version</dt>
+                  <dd>{info.version ?? 'n/a'}</dd>
+                  <dt>Checksum</dt>
+                  <dd>
+                    <code>{info.checksum?.slice(0, 16) ?? 'n/a'}</code>
+                  </dd>
+                  {info.detail && <dt>Detail</dt>}
+                  {info.detail && <dd className="quiet">{info.detail}</dd>}
+                </dl>
+                {info.status !== 'ready' && <ModelSetupHint modelKey={key} />}
+              </div>
+            ))
+          ) : (
+            <p>Loading model registry...</p>
+          )}
         </ModalShell>
       )}
 
       {activeModal === 'sessions' && (
         <ModalShell title="Saved Sessions" titleId="sessions-modal-title" onClose={closeActiveModal}>
           <div className="selection-list">
-            {sessions.map(s => (
+            {sessions.map((s) => (
               <button type="button" key={s.session_id} onClick={() => restoreSession(s)}>
                 <span>{s.name}</span>
                 <small>{new Date(s.created_at).toLocaleString()}</small>

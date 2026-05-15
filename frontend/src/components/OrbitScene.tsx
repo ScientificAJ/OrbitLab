@@ -40,7 +40,7 @@ export function OrbitScene({ candidates, selectedId }: Props) {
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({ antialias: true });
-    } catch (error) {
+    } catch {
       setWebglUnavailable(true);
       return;
     }
@@ -54,7 +54,7 @@ export function OrbitScene({ candidates, selectedId }: Props) {
 
     const star = new THREE.Mesh(
       new THREE.SphereGeometry(1.7, 48, 48),
-      new THREE.MeshStandardMaterial({ color: 0xffd17a, emissive: 0xffa629, emissiveIntensity: 1.2 })
+      new THREE.MeshStandardMaterial({ color: 0xffd17a, emissive: 0xffa629, emissiveIntensity: 1.2 }),
     );
     scene.add(star);
 
@@ -63,21 +63,21 @@ export function OrbitScene({ candidates, selectedId }: Props) {
       const radius = 4 + Math.log1p(candidate.period) * 2.4 + index * 0.8;
       const orbit = new THREE.Mesh(
         new THREE.TorusGeometry(radius, 0.012, 8, 160),
-        new THREE.MeshBasicMaterial({ color: candidate.candidate_id === selectedId ? 0x76e4f7 : 0x315765 })
+        new THREE.MeshBasicMaterial({ color: candidate.candidate_id === selectedId ? 0x76e4f7 : 0x315765 }),
       );
       orbit.rotation.x = Math.PI / 2;
       scene.add(orbit);
 
       const planet = new THREE.Mesh(
         new THREE.SphereGeometry(candidate.candidate_id === selectedId ? 0.36 : 0.25, 32, 32),
-        new THREE.MeshStandardMaterial({ color: candidate.candidate_id === selectedId ? 0x8ee7ff : 0xb6ccd2 })
+        new THREE.MeshStandardMaterial({ color: candidate.candidate_id === selectedId ? 0x8ee7ff : 0xb6ccd2 }),
       );
       scene.add(planet);
       planetMeshes.push({
         mesh: planet,
         radius,
         speed: Math.max(0.001, 0.03 / candidate.period),
-        phase: candidate.epoch % Math.PI
+        phase: candidate.epoch % Math.PI,
       });
     });
 

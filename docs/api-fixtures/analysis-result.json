@@ -1,0 +1,60 @@
+{
+  "result_id": "result-12345678",
+  "target_id": "TIC 307210830",
+  "mission": "TESS",
+  "candidates": [
+    {
+      "candidate_id": "candidate-1",
+      "period": 1.2345,
+      "epoch": 0.12,
+      "duration": 0.08,
+      "depth": 0.0021,
+      "signal_to_noise": 18.4,
+      "physics": {
+        "radius_ratio": 0.045,
+        "planet_radius_earth": 1.8,
+        "semi_major_axis_au": 0.054,
+        "equilibrium_temperature_k": 285,
+        "is_in_habitable_zone": true,
+        "is_temperature_habitable": true
+      },
+      "validation": {
+        "odd_even_depth_delta": 0.00001,
+        "secondary_depth": 0.00002,
+        "duration_plausible": true
+      },
+      "ml": {
+        "probability": 0.91,
+        "threshold": 0.5,
+        "label": "planet-candidate",
+        "model_version": "fixture",
+        "model_source": "docs/api-fixtures",
+        "input_tensor_checksum": "abc123def456",
+        "preprocessing_compatible": true,
+        "citation": "Test-only contract fixture"
+      }
+    }
+  ],
+  "periodogram": {
+    "period": [0.5, 1.2, 2.4, 4.8],
+    "power": [0.1, 0.8, 0.4, 0.2],
+    "duration": [0.1, 0.1, 0.2, 0.2]
+  },
+  "folded_curves": {
+    "candidate-1": {
+      "phase": [-0.5, 0, 0.5],
+      "flux": [1.0, 0.998, 1.0]
+    }
+  },
+  "light_curve": {
+    "time": [1, 2, 3, 4],
+    "flux": [1, 0.998, 1.001, 1]
+  },
+  "bls_light_curve": {
+    "time": [1, 2, 3, 4],
+    "flux": [1, 0.998, 1.001, 1]
+  },
+  "preprocessing": {
+    "source": "fixture"
+  }
+}

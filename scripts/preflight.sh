@@ -28,6 +28,7 @@ log "backend tests"
 
 log "frontend build"
 if [[ -d frontend/node_modules ]]; then
+  npm run test:unit --prefix frontend
   npm run build --prefix frontend
 else
   printf 'Missing frontend/node_modules. Run: npm ci --prefix frontend\n' >&2
