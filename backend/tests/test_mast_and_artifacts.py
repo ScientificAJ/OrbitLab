@@ -104,6 +104,29 @@ def test_alias_search_returns_suggestion_before_catalog_rows(monkeypatch: pytest
     assert results[1]["match_type"] == "catalog"
 
 
+def test_alias_search_survives_tess_catalog_resolution_failure(monkeypatch: pytest.MonkeyPatch):
+    class Catalogs:
+        @staticmethod
+        def query_object(*args, **kwargs):
+            raise RuntimeError('Could not resolve "trappist" to a sky position.')
+
+    mast = ModuleType("astroquery.mast")
+    mast.Catalogs = Catalogs
+    monkeypatch.setitem(sys.modules, "astroquery", ModuleType("astroquery"))
+    monkeypatch.setitem(sys.modules, "astroquery.mast", mast)
+
+    assert search_targets("trappist", mission="TESS") == [
+        {
+            "target_id": "TRAPPIST-1",
+            "ra": None,
+            "dec": None,
+            "catalog": "ALIAS",
+            "match_type": "alias",
+            "matched_query": "trappist",
+        }
+    ]
+
+
 def test_pipeline_extraction_uses_threshold_mask_when_pipeline_mask_is_empty(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):

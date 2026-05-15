@@ -81,6 +81,8 @@ def search_targets(query: str, *, mission: str | None = None, limit: int = 20) -
     try:
         table = Catalogs.query_object(query, catalog=catalog, radius=0.02)
     except Exception:
+        if alias_target:
+            return results
         if mission_upper not in {"KEPLER", "K2"}:
             raise
         return results or [
