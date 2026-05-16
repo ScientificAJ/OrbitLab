@@ -9,7 +9,7 @@ description = "Real-data exoplanet analysis workbench with TPF-first pipelines a
 requires-python = ">=3.11"
 dependencies = [
   "numpy>=1.26",
-  "pydantic>=2.7",
+  "pydantic>=2.13.4",
 ]
 
 [project.optional-dependencies]
