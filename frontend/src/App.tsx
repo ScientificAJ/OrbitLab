@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Save,
   Search,
+  Settings,
   SlidersHorizontal,
   Trash2,
   X,
@@ -43,6 +44,8 @@ import {
 import {
   BlsPreviewStatus,
   SearchStatus,
+  OrbitLabMode,
+  ThemeName,
   WorkflowState,
   buildAperturePixelLabel,
   formatFiniteNumber,
@@ -51,6 +54,9 @@ import {
   getMatchEmptyMessage,
   getOrbitEmptyMessage,
   getWorkflowMessage,
+  normalizeOrbitLabMode,
+  normalizeThemeName,
+  themeLabels,
 } from './lib/uiState';
 import './styles/app.css';
 
@@ -161,7 +167,27 @@ const ANALYSIS_POLL_INTERVAL_MS = Number(import.meta.env.VITE_ANALYSIS_POLL_INTE
 
 type Mission = 'TESS' | 'Kepler' | 'K2';
 
+const MODE_STORAGE_KEY = 'orbitlab-mode';
+const THEME_STORAGE_KEY = 'orbitlab-theme';
+
+function readStoredMode(): OrbitLabMode {
+  if (typeof window === 'undefined') return 'beginner';
+  return normalizeOrbitLabMode(window.localStorage.getItem(MODE_STORAGE_KEY));
+}
+
+function readStoredTheme(): ThemeName {
+  if (typeof window === 'undefined') return 'space';
+  return normalizeThemeName(window.localStorage.getItem(THEME_STORAGE_KEY));
+}
+
+function parseOptionalPositiveNumber(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
 export default function App() {
+  const [mode, setMode] = useState<OrbitLabMode>(readStoredMode);
+  const [theme, setTheme] = useState<ThemeName>(readStoredTheme);
   const [mission, setMission] = useState<Mission>('TESS');
   const [query, setQuery] = useState('');
   const [targets, setTargets] = useState<SearchResult[]>([]);
@@ -186,6 +212,9 @@ export default function App() {
 
   const [minPeriod, setMinPeriod] = useState(0.5);
   const [maxPeriod, setMaxPeriod] = useState(30.0);
+  const [maxCandidates, setMaxCandidates] = useState(4);
+  const [stellarRadius, setStellarRadius] = useState('');
+  const [stellarMass, setStellarMass] = useState('');
   const [blsRunning, setBlsRunning] = useState(false);
   const [blsPreviewStatus, setBlsPreviewStatus] = useState<BlsPreviewStatus>('idle');
   const [blsPreviewError, setBlsPreviewError] = useState<string | null>(null);
@@ -215,6 +244,15 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    window.localStorage.setItem(MODE_STORAGE_KEY, mode);
+  }, [mode]);
+
+  useEffect(() => {
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
   async function refreshModelStatus() {
     try {
       const status = await fetchModelStatus();
@@ -235,6 +273,7 @@ export default function App() {
   const selected = useMemo(() => {
     return result?.candidates.find((candidate) => candidate.candidate_id === selectedId) ?? result?.candidates[0];
   }, [result, selectedId]);
+  const isAdvanced = mode === 'advanced';
 
   const folded = selected && result ? result.folded_curves[selected.candidate_id] : undefined;
   const activeModel =
@@ -262,8 +301,9 @@ export default function App() {
       hasResult: Boolean(result),
       candidateCount: result?.candidates.length,
       resultKind: result?.result_id === 'preview' ? 'preview' : result ? 'analysis' : undefined,
+      mode,
     });
-  }, [blsPreviewStatus, job?.status, productsLoading, result, searchStatus, workflow]);
+  }, [blsPreviewStatus, job?.status, mode, productsLoading, result, searchStatus, workflow]);
   const candidateEmptyMessage = useMemo(() => getCandidateEmptyMessage(Boolean(result)), [result]);
   const orbitEmptyMessage = useMemo(() => getOrbitEmptyMessage(Boolean(result)), [result]);
 
@@ -329,6 +369,11 @@ export default function App() {
   function updateMaxPeriod(value: number) {
     const next = Math.max(Math.min(value, MAX_PERIOD_CEILING), minPeriod + 0.1);
     setMaxPeriod(Number(next.toFixed(2)));
+  }
+
+  function updateMaxCandidates(value: number) {
+    const next = Math.min(8, Math.max(1, Math.round(value || 1)));
+    setMaxCandidates(next);
   }
 
   async function runSearch() {
@@ -441,7 +486,9 @@ export default function App() {
         target_id: selectedTarget.target_id,
         product_uri: selectedProduct.product_uri,
         mission,
-        max_candidates: 4,
+        max_candidates: maxCandidates,
+        stellar_radius_solar: parseOptionalPositiveNumber(stellarRadius),
+        stellar_mass_solar: parseOptionalPositiveNumber(stellarMass),
         aperture_mask_id: selectedApertureMaskId,
         artifact_mask_id: selectedArtifactMaskId,
       });
@@ -531,6 +578,9 @@ export default function App() {
           selectedArtifactMaskId,
           minPeriod,
           maxPeriod,
+          maxCandidates,
+          stellarRadius,
+          stellarMass,
           result,
           selectedId,
           workflow,
@@ -582,6 +632,11 @@ export default function App() {
     );
     setMinPeriod(Number.isFinite(payload.minPeriod) ? Number(payload.minPeriod) : 0.5);
     setMaxPeriod(Number.isFinite(payload.maxPeriod) ? Number(payload.maxPeriod) : 30);
+    setMaxCandidates(
+      Number.isFinite(payload.maxCandidates) ? Math.min(8, Math.max(1, Number(payload.maxCandidates))) : 4,
+    );
+    setStellarRadius(typeof payload.stellarRadius === 'string' ? payload.stellarRadius : '');
+    setStellarMass(typeof payload.stellarMass === 'string' ? payload.stellarMass : '');
     setResult(restoredResult);
     setSelectedId(
       typeof payload.selectedId === 'string' ? payload.selectedId : restoredResult?.candidates[0]?.candidate_id,
@@ -701,6 +756,7 @@ export default function App() {
         aperture_mask_id: apertureMaskId,
         min_period: minPeriod,
         max_period: maxPeriod,
+        max_candidates: maxCandidates,
       });
 
       if (token !== blsPreviewToken.current) return;
@@ -781,13 +837,13 @@ export default function App() {
   }
 
   return (
-    <main className="shell">
+    <main className="shell" data-mode={mode} data-theme={theme}>
       <header className="command-bar">
         <div className="brand">
           <Activity size={22} />
           <div>
             <strong>OrbitLab</strong>
-            <span>Real TPF exoplanet workbench</span>
+            <span>{mode === 'beginner' ? 'Guided exoplanet workflow' : 'Real TPF exoplanet workbench'}</span>
           </div>
         </div>
         <div className="search-strip">
@@ -808,6 +864,9 @@ export default function App() {
           </button>
         </div>
         <div className="command-actions">
+          <button type="button" title="Settings" aria-label="Settings" onClick={() => openModal('settings')}>
+            <Settings size={17} />
+          </button>
           <button type="button" title="Sessions" aria-label="Sessions" onClick={openSessionsModal}>
             <History size={17} />
           </button>
@@ -834,8 +893,8 @@ export default function App() {
 
       <section className="workspace">
         <aside className="left-rail">
-          <div className="rail-section">
-            <h2>Target</h2>
+          <div className={`rail-section ${isAdvanced ? '' : 'guided-section'}`}>
+            <h2>{isAdvanced ? 'Target' : '1. Choose Mission'}</h2>
             <label htmlFor="mission-select">Mission</label>
             <select
               id="mission-select"
@@ -847,7 +906,10 @@ export default function App() {
               <option value="Kepler">Kepler</option>
               <option value="K2">K2</option>
             </select>
-            <div className="field-label">Matches</div>
+            {!isAdvanced && (
+              <p className="quiet">Pick the archive you want to search, then enter a target in the top bar.</p>
+            )}
+            <div className="field-label">{isAdvanced ? 'Matches' : '2. Select Target'}</div>
             <div className="selection-list">
               {suggestedTargets.length > 0 && <div className="selection-group-label">Suggested targets</div>}
               {suggestedTargets.map((target) => (
@@ -875,9 +937,13 @@ export default function App() {
                   <small>{target.catalog}</small>
                 </button>
               ))}
-              {!targets.length && <p className="quiet">{matchEmptyMessage}</p>}
+              {!targets.length && (
+                <p className="quiet">
+                  {isAdvanced ? matchEmptyMessage : matchEmptyMessage.replace('Search', 'Use Search')}
+                </p>
+              )}
             </div>
-            <div className="field-label">Product</div>
+            <div className="field-label">{isAdvanced ? 'Product' : '3. Select Observation File'}</div>
             <div className="selection-list">
               {products.map((product) => (
                 <button
@@ -892,27 +958,47 @@ export default function App() {
               ))}
               {productsLoading && <p className="quiet">Loading products...</p>}
               {!productsLoading && !products.length && (
-                <p className="quiet">{selectedTarget ? 'No target pixel products found.' : 'Select a target first.'}</p>
+                <p className="quiet">
+                  {selectedTarget
+                    ? isAdvanced
+                      ? 'No target pixel products found.'
+                      : 'No observation files were found for this target.'
+                    : isAdvanced
+                      ? 'Select a target first.'
+                      : 'Choose a matching target first.'}
+                </p>
               )}
             </div>
           </div>
           <div className="rail-section">
-            <h2>Pipeline</h2>
-            <button
-              type="button"
-              disabled={!selectedProduct || workflow === 'running'}
-              onClick={openApertureModal}
-              className={selectedApertureMaskId ? 'active-pill' : ''}
-            >
-              <SlidersHorizontal size={15} /> Aperture {selectedApertureMaskId ? '(Custom)' : ''}
-            </button>
-            <button
-              type="button"
-              disabled={!selectedProduct || workflow === 'running'}
-              onClick={() => openModal('bls')}
-            >
-              <FlaskConical size={15} /> BLS Search
-            </button>
+            <h2>{isAdvanced ? 'Pipeline' : '4. Run'}</h2>
+            {isAdvanced ? (
+              <>
+                <button
+                  type="button"
+                  disabled={!selectedProduct || workflow === 'running'}
+                  onClick={openApertureModal}
+                  className={selectedApertureMaskId ? 'active-pill' : ''}
+                >
+                  <SlidersHorizontal size={15} /> Aperture {selectedApertureMaskId ? '(Custom)' : ''}
+                </button>
+                <button
+                  type="button"
+                  disabled={!selectedProduct || workflow === 'running'}
+                  onClick={() => openModal('bls')}
+                >
+                  <FlaskConical size={15} /> BLS Search
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                disabled={!selectedProduct || workflow === 'running' || blsRunning}
+                onClick={runBlsPreview}
+              >
+                <FlaskConical size={15} /> Preview Candidates
+              </button>
+            )}
             <button
               type="button"
               disabled={!selectedProduct?.product_uri || workflow === 'running'}
@@ -920,9 +1006,45 @@ export default function App() {
             >
               <Play size={15} /> Run Analysis
             </button>
-            <button type="button" onClick={() => openModal('models')}>
-              <Gauge size={15} /> ML Status {activeModelStatus}
-            </button>
+            {isAdvanced && (
+              <>
+                <div className="expert-options" aria-label="Expert options">
+                  <h3>Expert Options</h3>
+                  <label htmlFor="max-candidates">Max Candidates</label>
+                  <input
+                    id="max-candidates"
+                    type="number"
+                    min="1"
+                    max="8"
+                    value={maxCandidates}
+                    onChange={(event) => updateMaxCandidates(Number(event.target.value))}
+                  />
+                  <label htmlFor="stellar-radius">Stellar Radius (solar)</label>
+                  <input
+                    id="stellar-radius"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={stellarRadius}
+                    onChange={(event) => setStellarRadius(event.target.value)}
+                    placeholder="optional"
+                  />
+                  <label htmlFor="stellar-mass">Stellar Mass (solar)</label>
+                  <input
+                    id="stellar-mass"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={stellarMass}
+                    onChange={(event) => setStellarMass(event.target.value)}
+                    placeholder="optional"
+                  />
+                </div>
+                <button type="button" onClick={() => openModal('models')}>
+                  <Gauge size={15} /> ML Status {activeModelStatus}
+                </button>
+              </>
+            )}
             {job && (
               <div className="job-status-row">
                 <p className="quiet">
@@ -938,7 +1060,7 @@ export default function App() {
             )}
           </div>
           <div className="rail-section">
-            <h2>Candidates</h2>
+            <h2>{isAdvanced ? 'Candidates' : '5. Review Candidates'}</h2>
             {result?.candidates.length ? (
               result.candidates.map((candidate) => (
                 <CandidateCard
@@ -981,7 +1103,7 @@ export default function App() {
               xLabel="time"
               yLabel="normalized flux"
             />
-            {result && result.result_id !== 'preview' && (
+            {isAdvanced && result && result.result_id !== 'preview' && (
               <div className="artifact-toolbar">
                 <Layers size={14} />
                 <span className="field-label">Mask Range (index):</span>
@@ -1100,6 +1222,59 @@ export default function App() {
           )}
         </aside>
       </section>
+
+      {activeModal === 'settings' && (
+        <ModalShell title="Settings" titleId="settings-modal-title" onClose={closeActiveModal}>
+          <div className="settings-grid">
+            <section>
+              <h3>Mode</h3>
+              <div className="segmented-control" role="radiogroup" aria-label="OrbitLab mode">
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={mode === 'beginner'}
+                  className={mode === 'beginner' ? 'active' : ''}
+                  onClick={() => setMode('beginner')}
+                >
+                  Beginner
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={mode === 'advanced'}
+                  className={mode === 'advanced' ? 'active' : ''}
+                  onClick={() => setMode('advanced')}
+                >
+                  Advanced
+                </button>
+              </div>
+              <p className="quiet">
+                {mode === 'beginner'
+                  ? 'Guided controls keep the real workflow focused on the next useful step.'
+                  : 'Advanced mode exposes aperture, BLS range, ML registry, masks, sessions, and expert payload options.'}
+              </p>
+            </section>
+            <section>
+              <h3>Theme</h3>
+              <div className="theme-grid" role="radiogroup" aria-label="OrbitLab theme">
+                {(Object.entries(themeLabels) as Array<[ThemeName, string]>).map(([themeName, label]) => (
+                  <button
+                    type="button"
+                    key={themeName}
+                    role="radio"
+                    aria-checked={theme === themeName}
+                    className={`theme-choice theme-${themeName} ${theme === themeName ? 'active' : ''}`}
+                    onClick={() => setTheme(themeName)}
+                  >
+                    <span aria-hidden="true" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </section>
+          </div>
+        </ModalShell>
+      )}
 
       {activeModal === 'aperture' && tpfPreview && (
         <ModalShell

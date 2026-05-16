@@ -6,6 +6,8 @@ import {
   getMatchEmptyMessage,
   getOrbitEmptyMessage,
   getWorkflowMessage,
+  normalizeOrbitLabMode,
+  normalizeThemeName,
 } from './uiState';
 
 describe('uiState helpers', () => {
@@ -49,6 +51,32 @@ describe('uiState helpers', () => {
         blsStatus: 'idle',
       }),
     ).toBe('Product selected. Choose aperture, BLS preview, or full analysis.');
+  });
+
+  it('falls back safely for invalid saved mode and theme values', () => {
+    expect(normalizeOrbitLabMode('advanced')).toBe('advanced');
+    expect(normalizeOrbitLabMode('expert')).toBe('beginner');
+    expect(normalizeOrbitLabMode(null)).toBe('beginner');
+
+    expect(normalizeThemeName('nature')).toBe('nature');
+    expect(normalizeThemeName('solarized')).toBe('space');
+    expect(normalizeThemeName(undefined)).toBe('space');
+  });
+
+  it('keeps workflow guidance distinct for beginner and advanced modes', () => {
+    const base = {
+      workflow: 'product-selected' as const,
+      searchStatus: 'success' as const,
+      productsLoading: false,
+      blsStatus: 'idle' as const,
+    };
+
+    expect(getWorkflowMessage({ ...base, mode: 'beginner' })).toBe(
+      'Observation file selected. Preview candidates or run the full analysis.',
+    );
+    expect(getWorkflowMessage({ ...base, mode: 'advanced' })).toBe(
+      'Product selected. Choose aperture, BLS preview, or full analysis.',
+    );
   });
 
   it('separates pre-run and post-result empty candidate messages', () => {

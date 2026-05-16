@@ -266,8 +266,21 @@ async function installBaseMocks(page: Page) {
   );
 }
 
-async function openApp(page: Page) {
+async function openApp(
+  page: Page,
+  options: { storedMode?: 'beginner' | 'advanced' | null; storedTheme?: string | null } = {},
+) {
+  const { storedMode = 'advanced', storedTheme } = options;
   await installBaseMocks(page);
+  if (storedMode || storedTheme) {
+    await page.addInitScript(
+      ({ mode, theme }) => {
+        if (mode) window.localStorage.setItem('orbitlab-mode', mode);
+        if (theme) window.localStorage.setItem('orbitlab-theme', theme);
+      },
+      { mode: storedMode, theme: storedTheme },
+    );
+  }
   await page.goto('/');
   await expect(page.getByText('OrbitLab')).toBeVisible();
 }
@@ -286,12 +299,31 @@ test('app loads without browser console errors', async ({ page }) => {
   });
   page.on('pageerror', (error) => errors.push(error.message));
 
-  await openApp(page);
+  await openApp(page, { storedMode: null });
 
   await expect(page.getByTestId('workflow-status')).toHaveText('idle');
+  await expect(page.locator('.shell')).toHaveAttribute('data-mode', 'beginner');
+  await expect(page.locator('.shell')).toHaveAttribute('data-theme', 'space');
+  await expect(page.getByText('1. Choose Mission')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Preview Candidates/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /BLS Search/ })).not.toBeVisible();
   await expect(page.getByTestId('orbit-empty-state')).toContainText('Run BLS Search or Analysis');
   await expect(page.getByTestId('orbit-scene').getByTestId(/orbit-label-/)).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('settings drawer persists mode and theme after reload', async ({ page }) => {
+  await openApp(page, { storedMode: null });
+
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+  await page.getByRole('radio', { name: 'Advanced' }).click();
+  await page.getByRole('radio', { name: 'Sakura' }).click();
+  await page.reload();
+
+  await expect(page.locator('.shell')).toHaveAttribute('data-mode', 'advanced');
+  await expect(page.locator('.shell')).toHaveAttribute('data-theme', 'sakura');
+  await expect(page.getByRole('button', { name: /BLS Search/ })).toBeVisible();
 });
 
 test('search handles loading, success, empty, and API error states', async ({ page }) => {
@@ -392,6 +424,86 @@ test('product selection enables aperture, BLS, and analysis controls', async ({ 
   await expect(page.getByRole('button', { name: /Aperture/ })).toBeEnabled();
   await expect(page.getByRole('button', { name: /BLS Search/ })).toBeEnabled();
   await expect(page.getByRole('button', { name: /Run Analysis/ })).toBeEnabled();
+});
+
+test('beginner flow can select product, preview candidates, and run analysis', async ({ page }) => {
+  await openApp(page, { storedMode: 'beginner' });
+  await chooseProduct(page);
+
+  await expect(page.getByText('4. Run')).toBeVisible();
+  await page.getByRole('button', { name: /Preview Candidates/ }).click();
+  await expect(page.getByRole('button', { name: /preview-1/ })).toBeVisible();
+
+  await page.route(`${API}/analysis-jobs`, (route) =>
+    json(
+      route,
+      {
+        job_id: 'job-complete',
+        status: 'complete',
+        created_at: '2026-05-14T12:00:00Z',
+        result_id: analysisResult.result_id,
+      },
+      201,
+    ),
+  );
+  await page.route(`${API}/analysis-results/${analysisResult.result_id}`, (route) => json(route, analysisResult));
+  await page.getByRole('button', { name: /Run Analysis/ }).click();
+  await expect(page.getByRole('button', { name: /candidate-1/ })).toBeVisible();
+  await expect(page.getByTestId('workflow-message')).toContainText('Analysis results are ready');
+});
+
+test('advanced mode exposes expert controls and sends expert payload fields', async ({ page }) => {
+  await openApp(page);
+  await chooseProduct(page);
+
+  await expect(page.getByRole('button', { name: /Aperture/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /BLS Search/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /ML Status ready/ })).toBeVisible();
+  await page.getByLabel('Max Candidates').fill('7');
+  await page.getByLabel('Stellar Radius (solar)').fill('0.76');
+  await page.getByLabel('Stellar Mass (solar)').fill('0.81');
+
+  const previewRequest = page.waitForRequest(`${API}/bls-preview`);
+  await page.getByRole('button', { name: /BLS Search/ }).click();
+  await page.getByRole('button', { name: /Run Preview Search/ }).click();
+  expect(JSON.parse((await previewRequest).postData() ?? '{}')).toMatchObject({ max_candidates: 7 });
+
+  await page.route(`${API}/analysis-jobs`, (route) =>
+    json(
+      route,
+      {
+        job_id: 'job-complete',
+        status: 'complete',
+        created_at: '2026-05-14T12:00:00Z',
+        result_id: analysisResult.result_id,
+      },
+      201,
+    ),
+  );
+  await page.route(`${API}/analysis-results/${analysisResult.result_id}`, (route) => json(route, analysisResult));
+  const analysisRequest = page.waitForRequest(`${API}/analysis-jobs`);
+  await page.getByRole('button', { name: /Run Analysis/ }).click();
+  expect(JSON.parse((await analysisRequest).postData() ?? '{}')).toMatchObject({
+    max_candidates: 7,
+    stellar_radius_solar: 0.76,
+    stellar_mass_solar: 0.81,
+  });
+});
+
+test('mobile layout keeps settings and guided controls within the viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openApp(page, { storedMode: 'beginner' });
+
+  await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Preview Candidates/ })).toBeVisible();
+  const overflowing = await page.evaluate(
+    () =>
+      Array.from(document.querySelectorAll('button, input, select, .rail-section')).filter((element) => {
+        const rect = element.getBoundingClientRect();
+        return rect.left < -1 || rect.right > window.innerWidth + 1;
+      }).length,
+  );
+  expect(overflowing).toBe(0);
 });
 
 test('aperture modal validates empty masks and saves selected pixels', async ({ page }) => {

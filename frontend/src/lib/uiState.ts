@@ -1,6 +1,27 @@
 export type WorkflowState = 'idle' | 'searching' | 'product-selected' | 'running' | 'complete' | 'failed';
 export type SearchStatus = 'idle' | 'searching' | 'success' | 'empty' | 'failed';
 export type BlsPreviewStatus = 'idle' | 'running' | 'complete' | 'failed';
+export type OrbitLabMode = 'beginner' | 'advanced';
+export type ThemeName = 'space' | 'sakura' | 'light' | 'dark' | 'nature';
+
+export const ORBITLAB_MODES: OrbitLabMode[] = ['beginner', 'advanced'];
+export const ORBITLAB_THEMES: ThemeName[] = ['space', 'sakura', 'light', 'dark', 'nature'];
+
+export const themeLabels: Record<ThemeName, string> = {
+  space: 'Space',
+  sakura: 'Sakura',
+  light: 'Light',
+  dark: 'Dark',
+  nature: 'Nature',
+};
+
+export function normalizeOrbitLabMode(value: unknown): OrbitLabMode {
+  return value === 'advanced' ? 'advanced' : 'beginner';
+}
+
+export function normalizeThemeName(value: unknown): ThemeName {
+  return typeof value === 'string' && ORBITLAB_THEMES.includes(value as ThemeName) ? (value as ThemeName) : 'space';
+}
 
 const modelDisplayNames: Record<string, string> = {
   nigraha_tess: 'Nigraha TESS',
@@ -38,6 +59,7 @@ export function getWorkflowMessage({
   hasResult,
   candidateCount,
   resultKind,
+  mode = 'advanced',
 }: {
   workflow: WorkflowState;
   searchStatus: SearchStatus;
@@ -47,25 +69,51 @@ export function getWorkflowMessage({
   hasResult?: boolean;
   candidateCount?: number;
   resultKind?: 'preview' | 'analysis';
+  mode?: OrbitLabMode;
 }) {
-  if (searchStatus === 'searching') return 'Resolving target in mission archive...';
-  if (productsLoading) return 'Fetching target pixel products...';
-  if (blsStatus === 'running') return 'Running BLS grid preview...';
-  if (workflow === 'running' && jobStatus) return `Analysis job ${jobStatus}...`;
-  if (workflow === 'running') return 'Submitting analysis job...';
+  const beginner = mode === 'beginner';
+  if (searchStatus === 'searching') {
+    return beginner ? 'Looking up that target in the mission archive...' : 'Resolving target in mission archive...';
+  }
+  if (productsLoading) {
+    return beginner ? 'Finding available observation files for this target...' : 'Fetching target pixel products...';
+  }
+  if (blsStatus === 'running') return beginner ? 'Previewing likely transit signals...' : 'Running BLS grid preview...';
+  if (workflow === 'running' && jobStatus) {
+    return beginner ? `Analysis is ${jobStatus}...` : `Analysis job ${jobStatus}...`;
+  }
+  if (workflow === 'running') return beginner ? 'Starting the full analysis...' : 'Submitting analysis job...';
   if (workflow === 'complete' && hasResult && candidateCount === 0) {
+    if (beginner) {
+      return resultKind === 'preview'
+        ? 'Preview finished without strong candidates. Try another product or run full analysis.'
+        : 'Analysis finished without candidates for this product.';
+    }
     return resultKind === 'preview'
       ? 'BLS preview finished with no candidates in this period range.'
       : 'Analysis finished with no candidates for this product.';
   }
   if (workflow === 'complete') {
+    if (beginner) {
+      return resultKind === 'preview'
+        ? 'Preview candidates are ready. Pick one to inspect the plots.'
+        : 'Analysis results are ready. Review candidates and plots.';
+    }
     return resultKind === 'preview'
       ? 'BLS preview candidates are ready for review.'
       : 'Analysis candidates are ready for review.';
   }
-  if (workflow === 'failed') return 'Workflow needs attention; see the error panel.';
-  if (workflow === 'product-selected') return 'Product selected. Choose aperture, BLS preview, or full analysis.';
-  return 'Search for a target to begin.';
+  if (workflow === 'failed') {
+    return beginner
+      ? 'Something needs attention. Check the message panel for details.'
+      : 'Workflow needs attention; see the error panel.';
+  }
+  if (workflow === 'product-selected') {
+    return beginner
+      ? 'Observation file selected. Preview candidates or run the full analysis.'
+      : 'Product selected. Choose aperture, BLS preview, or full analysis.';
+  }
+  return beginner ? 'Choose a mission, then search for a target to begin.' : 'Search for a target to begin.';
 }
 
 export function getCandidateEmptyMessage(hasResult: boolean) {

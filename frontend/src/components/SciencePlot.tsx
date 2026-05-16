@@ -27,17 +27,27 @@ export function SciencePlot({ title, x, y, xLabel, yLabel, mode = 'lines', testI
             y,
             type: 'scatter',
             mode,
-            line: { color: '#78dce8', width: 1.4 },
-            marker: { color: '#78dce8', size: 3 },
+            line: { color: 'var(--accent)', width: 1.4 },
+            marker: { color: 'var(--accent)', size: 3 },
           },
         ]}
         layout={{
-          title: { text: title, font: { color: '#d8edf2', size: 13 } },
+          title: { text: title, font: { color: 'var(--text-strong)', size: 13 } },
           paper_bgcolor: 'rgba(0,0,0,0)',
           plot_bgcolor: 'rgba(0,0,0,0)',
           margin: { l: 44, r: 16, t: 36, b: 36 },
-          xaxis: { title: { text: xLabel }, color: '#8fb0b8', gridcolor: '#1b343d', zerolinecolor: '#31515b' },
-          yaxis: { title: { text: yLabel }, color: '#8fb0b8', gridcolor: '#1b343d', zerolinecolor: '#31515b' },
+          xaxis: {
+            title: { text: xLabel },
+            color: 'var(--muted)',
+            gridcolor: 'var(--border)',
+            zerolinecolor: 'var(--border-strong)',
+          },
+          yaxis: {
+            title: { text: yLabel },
+            color: 'var(--muted)',
+            gridcolor: 'var(--border)',
+            zerolinecolor: 'var(--border-strong)',
+          },
           showlegend: false,
           autosize: true,
         }}
