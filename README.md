@@ -1,5 +1,7 @@
 # OrbitLab
 
+![OrbitLab satellite-imagery header](docs/assets/ORBITLAB.png)
+
 [![CI](https://github.com/ScientificAJ/OrbitLab/actions/workflows/ci.yml/badge.svg)](https://github.com/ScientificAJ/OrbitLab/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/ScientificAJ/OrbitLab/actions/workflows/codeql.yml/badge.svg)](https://github.com/ScientificAJ/OrbitLab/actions/workflows/codeql.yml)
 [![Release](https://img.shields.io/github/v/release/ScientificAJ/OrbitLab?include_prereleases&label=release)](https://github.com/ScientificAJ/OrbitLab/releases/tag/v0.1.0-mvp)
