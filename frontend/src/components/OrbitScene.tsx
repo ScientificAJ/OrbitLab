@@ -5,6 +5,7 @@ import type { Candidate } from '../lib/api';
 type Props = {
   candidates: Candidate[];
   selectedId?: string;
+  emptyMessage?: string;
 };
 
 function orbitRadius(candidate: Candidate, index: number) {
@@ -24,7 +25,11 @@ function canCreateWebGLContext() {
   return true;
 }
 
-export function OrbitScene({ candidates, selectedId }: Props) {
+export function OrbitScene({
+  candidates,
+  selectedId,
+  emptyMessage = 'Run BLS Search or Analysis to render candidate orbits.',
+}: Props) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [webglUnavailable, setWebglUnavailable] = useState(false);
 
@@ -159,7 +164,7 @@ export function OrbitScene({ candidates, selectedId }: Props) {
       {!candidates.length && (
         <div className="orbit-empty-state" data-testid="orbit-empty-state">
           <strong>Star-only view</strong>
-          <span>Run BLS Search or Analysis to render candidate orbits.</span>
+          <span>{emptyMessage}</span>
         </div>
       )}
       {candidates.length > 0 && (

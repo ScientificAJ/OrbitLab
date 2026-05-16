@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildAperturePixelLabel, formatModelDisplayName, getMatchEmptyMessage, getWorkflowMessage } from './uiState';
+import {
+  buildAperturePixelLabel,
+  formatModelDisplayName,
+  getCandidateEmptyMessage,
+  getMatchEmptyMessage,
+  getOrbitEmptyMessage,
+  getWorkflowMessage,
+} from './uiState';
 
 describe('uiState helpers', () => {
   it('formats known and fallback model ids for humans', () => {
@@ -42,5 +49,23 @@ describe('uiState helpers', () => {
         blsStatus: 'idle',
       }),
     ).toBe('Product selected. Choose aperture, BLS preview, or full analysis.');
+  });
+
+  it('separates pre-run and post-result empty candidate messages', () => {
+    expect(getCandidateEmptyMessage(false)).toBe('No candidates loaded.');
+    expect(getCandidateEmptyMessage(true)).toBe('No candidates found for this result.');
+    expect(getOrbitEmptyMessage(false)).toBe('Run BLS Search or Analysis to render candidate orbits.');
+    expect(getOrbitEmptyMessage(true)).toContain('No candidate orbits were found');
+    expect(
+      getWorkflowMessage({
+        workflow: 'complete',
+        searchStatus: 'success',
+        productsLoading: false,
+        blsStatus: 'complete',
+        hasResult: true,
+        candidateCount: 0,
+        resultKind: 'preview',
+      }),
+    ).toBe('BLS preview finished with no candidates in this period range.');
   });
 });

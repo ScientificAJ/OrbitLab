@@ -447,6 +447,29 @@ test('BLS preview renders candidates, periodogram, folded plot, and API errors',
   await expect(page.getByRole('dialog')).toHaveCount(1);
 });
 
+test('empty BLS preview does not tell users to rerun a search that already finished', async ({ page }) => {
+  await openApp(page);
+  await chooseProduct(page);
+
+  await page.route(`${API}/bls-preview`, (route) =>
+    json(route, {
+      ...previewResult,
+      candidates: [],
+      folded_curves: {},
+    }),
+  );
+
+  await page.getByRole('button', { name: /BLS Search/ }).click();
+  await page.getByRole('button', { name: /Run Preview Search/ }).click();
+
+  await expect(page.getByTestId('workflow-message')).toHaveText(
+    'BLS preview finished with no candidates in this period range.',
+  );
+  await expect(page.getByText('No candidates found for this result.')).toBeVisible();
+  await expect(page.getByTestId('orbit-empty-state')).toContainText('No candidate orbits were found for this result.');
+  await expect(page.getByTestId('orbit-empty-state')).not.toContainText('Run BLS Search or Analysis');
+});
+
 test('failed BLS preview clears stale preview data but preserves full analysis results', async ({ page }) => {
   await openApp(page);
   await chooseProduct(page);

@@ -47,7 +47,9 @@ import {
   buildAperturePixelLabel,
   formatFiniteNumber,
   formatModelDisplayName,
+  getCandidateEmptyMessage,
   getMatchEmptyMessage,
+  getOrbitEmptyMessage,
   getWorkflowMessage,
 } from './lib/uiState';
 import './styles/app.css';
@@ -257,8 +259,13 @@ export default function App() {
       productsLoading,
       blsStatus: blsPreviewStatus,
       jobStatus: job?.status,
+      hasResult: Boolean(result),
+      candidateCount: result?.candidates.length,
+      resultKind: result?.result_id === 'preview' ? 'preview' : result ? 'analysis' : undefined,
     });
-  }, [blsPreviewStatus, job?.status, productsLoading, searchStatus, workflow]);
+  }, [blsPreviewStatus, job?.status, productsLoading, result, searchStatus, workflow]);
+  const candidateEmptyMessage = useMemo(() => getCandidateEmptyMessage(Boolean(result)), [result]);
+  const orbitEmptyMessage = useMemo(() => getOrbitEmptyMessage(Boolean(result)), [result]);
 
   const pixelScale = useMemo(() => {
     if (!tpfPreview) return { min: 0, span: 1 };
@@ -942,7 +949,7 @@ export default function App() {
                 />
               ))
             ) : (
-              <p className="quiet">No candidates loaded.</p>
+              <p className="quiet">{candidateEmptyMessage}</p>
             )}
           </div>
         </aside>
@@ -960,7 +967,11 @@ export default function App() {
               {workflow}
             </div>
           </div>
-          <OrbitScene candidates={result?.candidates ?? []} selectedId={selected?.candidate_id} />
+          <OrbitScene
+            candidates={result?.candidates ?? []}
+            selectedId={selected?.candidate_id}
+            emptyMessage={orbitEmptyMessage}
+          />
           <div className="timeline">
             <SciencePlot
               title="Light Curve Timeline"

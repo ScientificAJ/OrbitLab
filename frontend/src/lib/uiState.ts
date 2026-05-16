@@ -35,20 +35,45 @@ export function getWorkflowMessage({
   productsLoading,
   blsStatus,
   jobStatus,
+  hasResult,
+  candidateCount,
+  resultKind,
 }: {
   workflow: WorkflowState;
   searchStatus: SearchStatus;
   productsLoading: boolean;
   blsStatus: BlsPreviewStatus;
   jobStatus?: string;
+  hasResult?: boolean;
+  candidateCount?: number;
+  resultKind?: 'preview' | 'analysis';
 }) {
   if (searchStatus === 'searching') return 'Resolving target in mission archive...';
   if (productsLoading) return 'Fetching target pixel products...';
   if (blsStatus === 'running') return 'Running BLS grid preview...';
   if (workflow === 'running' && jobStatus) return `Analysis job ${jobStatus}...`;
   if (workflow === 'running') return 'Submitting analysis job...';
-  if (workflow === 'complete') return 'Candidate workspace is ready for review.';
+  if (workflow === 'complete' && hasResult && candidateCount === 0) {
+    return resultKind === 'preview'
+      ? 'BLS preview finished with no candidates in this period range.'
+      : 'Analysis finished with no candidates for this product.';
+  }
+  if (workflow === 'complete') {
+    return resultKind === 'preview'
+      ? 'BLS preview candidates are ready for review.'
+      : 'Analysis candidates are ready for review.';
+  }
   if (workflow === 'failed') return 'Workflow needs attention; see the error panel.';
   if (workflow === 'product-selected') return 'Product selected. Choose aperture, BLS preview, or full analysis.';
   return 'Search for a target to begin.';
+}
+
+export function getCandidateEmptyMessage(hasResult: boolean) {
+  return hasResult ? 'No candidates found for this result.' : 'No candidates loaded.';
+}
+
+export function getOrbitEmptyMessage(hasResult: boolean) {
+  return hasResult
+    ? 'No candidate orbits were found for this result. Adjust the BLS range or try another product.'
+    : 'Run BLS Search or Analysis to render candidate orbits.';
 }
