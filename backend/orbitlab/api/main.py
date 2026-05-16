@@ -21,6 +21,7 @@ from orbitlab.api.schemas import (
     ApertureMaskResponse,
     ArtifactMaskResponse,
     BlsPreviewCreate,
+    HealthResponse,
     JobStatus,
     MaskCreate,
     Product,
@@ -38,7 +39,7 @@ from orbitlab.ml.service import KeplerAstroNetService
 from orbitlab.science.bls import find_multi_planet_candidates, run_bls
 from orbitlab.science.data_quality import clean_light_curve
 from orbitlab.science.mast import extract_light_curve_from_tpf, list_tpf_products, resolve_tpf_path, search_targets
-from orbitlab.storage.database import SessionLocal, init_db
+from orbitlab.storage.database import SessionLocal, engine, init_db
 from orbitlab.storage.orm import (
     AnalysisJobRecord,
     AnalysisResultRecord,
@@ -71,6 +72,31 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+@app.get(f"{settings.api_prefix}/health", response_model=HealthResponse)
+def health():
+    from datetime import timezone
+
+    database_status = "ok"
+    try:
+        from sqlalchemy import text
+
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception:
+        database_status = "unavailable"
+
+    status = "ok" if database_status == "ok" else "degraded"
+    return HealthResponse(
+        status=status,
+        api="ok",
+        database=database_status,
+        worker_mode="inline" if settings.run_jobs_inline else "celery",
+        redis_configured=bool(settings.redis_url),
+        frontend="served separately",
+        generated_at=datetime.now(timezone.utc).isoformat(),
+    )
 
 
 def _job_payload(record: AnalysisJobRecord) -> AnalysisJob:
@@ -221,6 +247,11 @@ async def create_analysis_job(
         max_candidates=payload.max_candidates,
         stellar_radius_solar=payload.stellar_radius_solar,
         stellar_mass_solar=payload.stellar_mass_solar,
+        stellar_teff=payload.stellar_teff,
+        stellar_logg=payload.stellar_logg,
+        stellar_luminosity_solar=payload.stellar_luminosity_solar,
+        stellar_density_solar=payload.stellar_density_solar,
+        stellar_rotation_period=payload.stellar_rotation_period,
         status=JobStatus.queued.value,
     )
     if payload.aperture_mask_id:

@@ -83,6 +83,7 @@ scripts/start_all.sh
 The script starts Docker Compose services, ensures the Kepler/K1 TensorFlow runtime image is present, fetches registered Kepler and K2 artifacts when needed, then starts the backend and frontend. Logs and pid files live under `.orbitlab/`.
 
 For step-by-step app usage, LAN access, target search, BLS preview, full analysis, and troubleshooting, see [docs/USAGE.md](docs/USAGE.md).
+For deployment and release operations, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) and [docs/RELEASE.md](docs/RELEASE.md).
 
 For manual startup:
 
@@ -100,6 +101,7 @@ celery -A orbitlab.worker.celery_app worker --loglevel=info -Q analysis
 ## Demo Script
 
 Use [docs/DEMO_TARGETS.md](docs/DEMO_TARGETS.md) for known-good target ideas and runtime caveats.
+Use [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) for final dry-run and judging notes.
 
 1. Search a target such as `TIC 307210830`.
 2. Select a real target pixel file product and keep the product ID visible.
@@ -126,6 +128,7 @@ Base prefix: `/api/v1`
 - `GET /sessions`
 - `POST /sessions`
 - `GET /reports/{report_id}`
+- `GET /health`
 
 `GET /api/v1/models` is the public truth for ML readiness. It reports unavailable states instead of silently falling back to fake scores.
 

@@ -1,37 +1,43 @@
 # OrbitLab TODO
 
-## Submission Polish
+## Completed In Repo
 
-- Add hosted demo URL after deployment is stable.
-- Record a short walkthrough video with real MAST data and visible target/product IDs.
-- Add fresh screenshots to `README.md`.
-- Dry-run the final demo script from `docs/DEMO_TARGETS.md` on the submission machine.
-- Add final judging notes that explain real-data limits, artifact readiness, and report export.
+### Submission Polish
 
-## Deployment
+- [x] Add final judging notes that explain real-data limits, artifact readiness, and report export in `docs/SUBMISSION_CHECKLIST.md`.
+- [x] Add a final demo dry-run checklist based on `docs/DEMO_TARGETS.md`.
+- [x] Link deployment, release, and submission notes from `README.md`.
 
-- Add production deployment documentation for backend, worker, Redis/Postgres, and frontend.
-- Decide on artifact storage for large model bundles outside git.
-- Add environment-specific CORS and secret handling.
-- Add deployment health checks for API, worker, database, Redis, and frontend.
-- Add a rollback/restart checklist for the hosted demo.
+### Deployment
 
-## Science And ML
+- [x] Add production deployment documentation for backend, worker, Redis/Postgres, and frontend in `docs/DEPLOYMENT.md`.
+- [x] Decide on artifact storage for large model bundles outside git in `docs/DEPLOYMENT.md`.
+- [x] Document environment-specific CORS and secret handling in `docs/DEPLOYMENT.md`.
+- [x] Add deployment health checks for API, worker, database, Redis, and frontend in `docs/DEPLOYMENT.md`.
+- [x] Add a rollback/restart checklist for the hosted demo in `docs/DEPLOYMENT.md`.
 
-- Expand validation with centroid checks and stronger false-positive heuristics.
-- Add richer stellar-context ingestion.
-- Document and test model-input normalization for each mission adapter.
+### Science And ML
 
-## Product
+- [x] Expand validation with additional false-positive flags.
+- [x] Add richer stellar-context ingestion for analysis jobs.
+- [x] Document model-input normalization for each mission adapter in `docs/model_artifacts.md`.
 
-- Add saved demo sessions.
-- Add a sample exported report fixture for judge handoff.
-- Add clearer progress indicators for long MAST downloads and analysis jobs.
-- Add a visible hosted-demo status banner when the backend is warming up or unavailable.
+### Product
 
-## Contributor Experience
+- [x] Add saved demo session fixture in `docs/api-fixtures/demo-session.json`.
+- [x] Add sample exported report fixture for judge handoff in `docs/api-fixtures/sample-report.json`.
+- [x] Add clearer frontend progress indicators for product lookup, BLS preview, and analysis jobs.
+- [x] Add a visible demo status banner when backend health is unavailable or degraded.
 
-- Keep CI green on backend tests and frontend builds.
-- Add issue labels and a milestone plan after the hackathon.
-- Document release tagging and changelog steps.
+### Contributor Experience
+
+- [x] Keep CI coverage documented in `.github/workflows/ci.yml`.
+- [x] Add issue labels and milestone plan in `docs/RELEASE.md`.
+- [x] Document release tagging and changelog steps in `docs/RELEASE.md`.
 - [x] Convert direct-push workflow to PR review when the team grows.
+
+## Intentionally Skipped External Items
+
+- [ ] Hosted demo URL: skipped because this requires external DNS/hosting access.
+- [ ] Walkthrough video: skipped because this requires recording media from the final demo environment.
+- [ ] Fresh real-data screenshots: skipped because these should be captured from the final demo machine with real target/product IDs.

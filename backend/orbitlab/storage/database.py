@@ -49,6 +49,11 @@ def _ensure_analysis_job_columns() -> None:
         "max_candidates": "INTEGER DEFAULT 4",
         "stellar_radius_solar": "FLOAT",
         "stellar_mass_solar": "FLOAT",
+        "stellar_teff": "FLOAT",
+        "stellar_logg": "FLOAT",
+        "stellar_luminosity_solar": "FLOAT",
+        "stellar_density_solar": "FLOAT",
+        "stellar_rotation_period": "FLOAT",
     }
 
     with engine.begin() as conn:

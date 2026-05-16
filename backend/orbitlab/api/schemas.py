@@ -40,6 +40,11 @@ class AnalysisJobCreate(BaseModel):
     max_candidates: int = Field(default=4, ge=1, le=8)
     stellar_radius_solar: float | None = Field(default=None, gt=0)
     stellar_mass_solar: float | None = Field(default=None, gt=0)
+    stellar_teff: float | None = Field(default=None, gt=0)
+    stellar_logg: float | None = Field(default=None, gt=0)
+    stellar_luminosity_solar: float | None = Field(default=None, gt=0)
+    stellar_density_solar: float | None = Field(default=None, gt=0)
+    stellar_rotation_period: float | None = Field(default=None, gt=0)
 
 
 class BlsPreviewCreate(BaseModel):
@@ -77,6 +82,16 @@ class CandidatePayload(BaseModel):
     ml: dict[str, Any] | None = None
 
 
+class StellarContext(BaseModel):
+    radius_solar: float | None = None
+    mass_solar: float | None = None
+    teff: float | None = None
+    logg: float | None = None
+    luminosity_solar: float | None = None
+    density_solar: float | None = None
+    rotation_period: float | None = None
+
+
 class AnalysisResult(BaseModel):
     result_id: str
     target_id: str
@@ -86,6 +101,7 @@ class AnalysisResult(BaseModel):
     folded_curves: dict[str, dict[str, list[float]]]
     light_curve: dict[str, list[float]]
     bls_light_curve: dict[str, list[float]] | None = None
+    stellar_context: StellarContext | None = None
     preprocessing: dict[str, Any] | None = None
 
 
@@ -154,3 +170,13 @@ class SavedSession(BaseModel):
 class SavedSessionCreate(BaseModel):
     name: str
     payload: dict[str, Any]
+
+
+class HealthResponse(BaseModel):
+    status: str
+    api: str
+    database: str
+    worker_mode: str
+    redis_configured: bool
+    frontend: str
+    generated_at: str

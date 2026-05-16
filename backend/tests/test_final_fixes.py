@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from orbitlab.api.main import app
+from orbitlab.api.schemas import AnalysisJobCreate
 from orbitlab.storage.database import SessionLocal, init_db
 from orbitlab.storage.orm import AnalysisResultRecord, AnalysisJobRecord
 from uuid import uuid4
@@ -93,3 +94,34 @@ def test_analysis_job_accepts_artifact_mask_id():
         # Should 404 because it checks existence
         assert response.status_code == 404
         assert "artifact mask not found" in response.json()["detail"]
+
+
+def test_health_reports_database_and_worker_mode():
+    with TestClient(app) as client:
+        response = client.get("/api/v1/health")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["api"] == "ok"
+    assert payload["database"] == "ok"
+    assert payload["worker_mode"] in {"inline", "celery"}
+    assert payload["frontend"] == "served separately"
+
+
+def test_analysis_job_schema_accepts_richer_stellar_context():
+    payload = AnalysisJobCreate(
+        target_id="test",
+        product_uri="test",
+        mission="TESS",
+        stellar_radius_solar=1.0,
+        stellar_mass_solar=1.0,
+        stellar_teff=5778,
+        stellar_logg=4.44,
+        stellar_luminosity_solar=1.0,
+        stellar_density_solar=1.0,
+        stellar_rotation_period=25.0,
+    )
+
+    assert payload.stellar_teff == 5778
+    assert payload.stellar_rotation_period == 25.0

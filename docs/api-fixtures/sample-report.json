@@ -1,0 +1,32 @@
+{
+  "report_id": "sample-report-tic-307210830",
+  "generated_at": "2026-05-16T00:00:00Z",
+  "format": "json",
+  "result": {
+    "result_id": "sample-result",
+    "target_id": "TIC 307210830",
+    "mission": "TESS",
+    "candidates": [],
+    "periodogram": {
+      "period": [],
+      "power": []
+    },
+    "folded_curves": {},
+    "light_curve": {
+      "time": [],
+      "flux": []
+    },
+    "stellar_context": {
+      "radius_solar": null,
+      "mass_solar": null,
+      "teff": null,
+      "logg": null,
+      "luminosity_solar": null,
+      "density_solar": null,
+      "rotation_period": null
+    },
+    "preprocessing": {
+      "note": "Shape-only fixture for judge handoff. Use exported real reports for science review."
+    }
+  }
+}

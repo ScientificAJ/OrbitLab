@@ -1,0 +1,21 @@
+{
+  "session_id": "demo-session-tic-307210830",
+  "name": "TESS-TIC 307210830-demo",
+  "created_at": "2026-05-16T00:00:00Z",
+  "payload": {
+    "mission": "TESS",
+    "query": "TIC 307210830",
+    "selectedTarget": {
+      "target_id": "TIC 307210830",
+      "catalog": "MAST",
+      "match_type": "catalog"
+    },
+    "selectedProduct": {
+      "product_id": "Demo TESS TPF",
+      "mission": "TESS",
+      "description": "Replace with a real product from the demo machine before recording.",
+      "product_uri": "mast:tess/demo-product"
+    },
+    "workflow": "product-selected"
+  }
+}

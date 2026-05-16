@@ -73,6 +73,11 @@ def run_analysis_job(self, job_id: str) -> str:
                 quality=quality,
                 stellar_radius_solar=float(job.stellar_radius_solar) if job.stellar_radius_solar else None,
                 stellar_mass_solar=float(job.stellar_mass_solar) if job.stellar_mass_solar else None,
+                stellar_teff=float(job.stellar_teff) if job.stellar_teff else None,
+                stellar_logg=float(job.stellar_logg) if job.stellar_logg else None,
+                stellar_luminosity_solar=float(job.stellar_luminosity_solar) if job.stellar_luminosity_solar else None,
+                stellar_density_solar=float(job.stellar_density_solar) if job.stellar_density_solar else None,
+                stellar_rotation_period=float(job.stellar_rotation_period) if job.stellar_rotation_period else None,
                 max_candidates=job.max_candidates,
             )
             result_id = str(uuid4())

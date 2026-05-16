@@ -176,6 +176,18 @@ function pngHasColorVariance(png: Buffer) {
 }
 
 async function installBaseMocks(page: Page) {
+  await page.route(`${API}/health`, (route) =>
+    json(route, {
+      status: 'ok',
+      api: 'ok',
+      database: 'ok',
+      worker_mode: 'inline',
+      redis_configured: true,
+      frontend: 'served separately',
+      generated_at: '2026-05-16T00:00:00Z',
+    }),
+  );
+
   await page.route(`${API}/models`, (route) =>
     json(route, {
       nigraha_tess: {
@@ -462,6 +474,11 @@ test('advanced mode exposes expert controls and sends expert payload fields', as
   await page.getByLabel('Max Candidates').fill('7');
   await page.getByLabel('Stellar Radius (solar)').fill('0.76');
   await page.getByLabel('Stellar Mass (solar)').fill('0.81');
+  await page.getByLabel('Stellar Teff (K)').fill('5100');
+  await page.getByLabel('Stellar logg').fill('4.55');
+  await page.getByLabel('Luminosity (solar)').fill('0.41');
+  await page.getByLabel('Density (solar)').fill('1.8');
+  await page.getByLabel('Rotation Period (days)').fill('24.5');
 
   const previewRequest = page.waitForRequest(`${API}/bls-preview`);
   await page.getByRole('button', { name: /BLS Search/ }).click();
@@ -487,7 +504,22 @@ test('advanced mode exposes expert controls and sends expert payload fields', as
     max_candidates: 7,
     stellar_radius_solar: 0.76,
     stellar_mass_solar: 0.81,
+    stellar_teff: 5100,
+    stellar_logg: 4.55,
+    stellar_luminosity_solar: 0.41,
+    stellar_density_solar: 1.8,
+    stellar_rotation_period: 24.5,
   });
+});
+
+test('health banner appears when backend health check fails', async ({ page }) => {
+  await installBaseMocks(page);
+  await page.unroute(`${API}/health`);
+  await page.route(`${API}/health`, (route) => json(route, { detail: 'warming up' }, 503));
+  await page.goto('/');
+
+  await expect(page.getByTestId('health-banner')).toContainText('Demo backend unavailable');
+  await expect(page.getByTestId('health-banner')).toContainText('warming up');
 });
 
 test('mobile layout keeps settings and guided controls within the viewport', async ({ page }) => {

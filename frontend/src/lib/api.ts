@@ -20,7 +20,8 @@ export type Candidate = {
     odd_even_depth_delta?: number | null;
     secondary_depth?: number | null;
     duration_plausible?: boolean | null;
-    [key: string]: number | boolean | null | undefined;
+    false_positive_flags?: string[];
+    [key: string]: number | boolean | string[] | null | undefined;
   };
   ml?: {
     probability: number | null;
@@ -56,7 +57,18 @@ export type AnalysisResult = {
   folded_curves: Record<string, { phase: number[]; flux: number[] }>;
   light_curve: FluxSeries;
   bls_light_curve?: FluxSeries;
+  stellar_context?: Record<string, number | null | undefined>;
   preprocessing?: Record<string, unknown>;
+};
+
+export type HealthStatus = {
+  status: string;
+  api: string;
+  database: string;
+  worker_mode: string;
+  redis_configured: boolean;
+  frontend: string;
+  generated_at: string;
 };
 
 export type ModelStatus = {
@@ -103,6 +115,11 @@ export type AnalysisJobCreate = {
   max_candidates?: number;
   stellar_radius_solar?: number;
   stellar_mass_solar?: number;
+  stellar_teff?: number;
+  stellar_logg?: number;
+  stellar_luminosity_solar?: number;
+  stellar_density_solar?: number;
+  stellar_rotation_period?: number;
   aperture_mask_id?: string;
   artifact_mask_id?: string;
 };
@@ -159,6 +176,11 @@ async function readJson<T>(response: Response): Promise<T> {
 export async function fetchModelStatus(): Promise<ModelStatuses> {
   const response = await fetch(`${API}/models`);
   return readJson<ModelStatuses>(response);
+}
+
+export async function fetchHealth(): Promise<HealthStatus> {
+  const response = await fetch(`${API}/health`);
+  return readJson<HealthStatus>(response);
 }
 
 export async function fetchResult(resultId: string): Promise<AnalysisResult> {

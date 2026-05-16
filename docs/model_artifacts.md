@@ -23,4 +23,10 @@ scripts/fetch_k2_exomac_kkt.py
 
 K2 inference is tabular candidate-vetting ML, not an AstroNet-K2 light-curve CNN. OrbitLab maps each detected K2 candidate into the model's 16 catalog features, including period, duration in hours, depth, SNR, stellar context when supplied, and derived log/duty-cycle features.
 
+## Input Normalization
+
+- TESS/Nigraha: folded global, local, and odd/even views are median-centered and scaled by transit depth or robust scatter. Missing scalar stellar context is imputed with solar-like defaults and recorded in the adapter payload.
+- Kepler/AstroNet: global and local folded views are robustly median-centered and scaled by high-percentile absolute deviation. Metadata carries period, epoch, duration, depth, SNR, and optional stellar radius/mass.
+- K2/ExoMAC-KKT: catalog features preserve ExoMAC units: period in days, duration in hours, fractional depth, SNR, optional stellar context, and derived log/duty-cycle features. Missing optional values are encoded as NaN for the sklearn pipeline.
+
 The API refuses to report model readiness when the artifact is absent, empty, or checksum-mismatched.

@@ -14,6 +14,8 @@ class ValidationMetrics:
     harmonic_flag: bool
     sap_pdcsap_agreement: float | None
     centroid_shift_pixels: float | None
+    centroid_shift_flag: bool
+    false_positive_flags: tuple[str, ...]
 
 
 def odd_even_depth(time: np.ndarray, flux: np.ndarray, candidate: TransitCandidate) -> float:
@@ -48,6 +50,34 @@ def harmonic_flag(candidate: TransitCandidate, stellar_rotation_period: float | 
     return any(abs(ratio - value) < 0.02 for value in (0.25, 0.5, 1.0, 2.0, 4.0))
 
 
+def false_positive_flags(
+    *,
+    candidate: TransitCandidate,
+    odd_even_delta: float,
+    secondary_depth: float,
+    duration_ok: bool,
+    harmonic: bool,
+    centroid_shift_pixels: float | None,
+    sap_pdcsap_agreement: float | None,
+) -> tuple[str, ...]:
+    flags: list[str] = []
+    if candidate.signal_to_noise < 7.1:
+        flags.append("low_snr")
+    if not duration_ok:
+        flags.append("implausible_duration")
+    if harmonic:
+        flags.append("stellar_rotation_harmonic")
+    if np.isfinite(odd_even_delta) and candidate.depth > 0 and odd_even_delta > 0.5 * candidate.depth:
+        flags.append("odd_even_depth_mismatch")
+    if np.isfinite(secondary_depth) and candidate.depth > 0 and secondary_depth > 0.5 * candidate.depth:
+        flags.append("secondary_eclipse")
+    if centroid_shift_pixels is not None and np.isfinite(centroid_shift_pixels) and centroid_shift_pixels > 1.0:
+        flags.append("centroid_shift")
+    if sap_pdcsap_agreement is not None and np.isfinite(sap_pdcsap_agreement) and sap_pdcsap_agreement < 0.8:
+        flags.append("sap_pdcsap_disagreement")
+    return tuple(flags)
+
+
 def validate_candidate(
     time: np.ndarray,
     flux: np.ndarray,
@@ -61,12 +91,29 @@ def validate_candidate(
     agreement = None
     if sap_flux is not None and pdcsap_flux is not None:
         agreement = float(np.corrcoef(np.asarray(sap_flux), np.asarray(pdcsap_flux))[0, 1])
+    odd_even_delta = odd_even_depth(np.asarray(time), np.asarray(flux), candidate)
+    secondary_depth_value = secondary_eclipse_depth(np.asarray(time), np.asarray(flux), candidate)
+    duration_ok = duration_plausible(candidate)
+    harmonic = harmonic_flag(candidate, stellar_rotation_period)
+    centroid_flag = bool(
+        centroid_shift_pixels is not None and np.isfinite(centroid_shift_pixels) and centroid_shift_pixels > 1.0
+    )
+    flags = false_positive_flags(
+        candidate=candidate,
+        odd_even_delta=odd_even_delta,
+        secondary_depth=secondary_depth_value,
+        duration_ok=duration_ok,
+        harmonic=harmonic,
+        centroid_shift_pixels=centroid_shift_pixels,
+        sap_pdcsap_agreement=agreement,
+    )
     return ValidationMetrics(
-        odd_even_depth_delta=odd_even_depth(np.asarray(time), np.asarray(flux), candidate),
-        secondary_depth=secondary_eclipse_depth(np.asarray(time), np.asarray(flux), candidate),
-        duration_plausible=duration_plausible(candidate),
-        harmonic_flag=harmonic_flag(candidate, stellar_rotation_period),
+        odd_even_depth_delta=odd_even_delta,
+        secondary_depth=secondary_depth_value,
+        duration_plausible=duration_ok,
+        harmonic_flag=harmonic,
         sap_pdcsap_agreement=agreement,
         centroid_shift_pixels=centroid_shift_pixels,
+        centroid_shift_flag=centroid_flag,
+        false_positive_flags=flags,
     )
-

@@ -230,6 +230,40 @@ select {
   grid-template-columns: 280px minmax(360px, 1fr) 360px;
 }
 
+.health-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--error-border);
+  background: var(--error-bg);
+  color: var(--error);
+  font-size: 12px;
+}
+
+.health-banner span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.pipeline-progress {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--muted-strong);
+  font-size: 12px;
+}
+
+.pipeline-progress progress {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
 .left-rail,
 .right-rail {
   min-height: 0;
@@ -885,6 +919,10 @@ label,
 
   .workspace {
     grid-template-rows: auto minmax(560px, 1fr) auto;
+  }
+
+  .health-banner {
+    grid-template-columns: 1fr;
   }
 
   .center-stage {

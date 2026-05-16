@@ -27,6 +27,7 @@ import {
   TpfPreview,
   createAnalysisJob,
   fetchAnalysisJob,
+  fetchHealth,
   fetchModelStatus,
   fetchProducts,
   fetchResult,
@@ -39,6 +40,7 @@ import {
   fetchBlsPreview,
   createArtifactMask,
   fetchSessions,
+  HealthStatus,
   SavedSession,
 } from './lib/api';
 import {
@@ -215,11 +217,18 @@ export default function App() {
   const [maxCandidates, setMaxCandidates] = useState(4);
   const [stellarRadius, setStellarRadius] = useState('');
   const [stellarMass, setStellarMass] = useState('');
+  const [stellarTeff, setStellarTeff] = useState('');
+  const [stellarLogg, setStellarLogg] = useState('');
+  const [stellarLuminosity, setStellarLuminosity] = useState('');
+  const [stellarDensity, setStellarDensity] = useState('');
+  const [stellarRotationPeriod, setStellarRotationPeriod] = useState('');
   const [blsRunning, setBlsRunning] = useState(false);
   const [blsPreviewStatus, setBlsPreviewStatus] = useState<BlsPreviewStatus>('idle');
   const [blsPreviewError, setBlsPreviewError] = useState<string | null>(null);
 
   const [sessions, setSessions] = useState<SavedSession[]>([]);
+  const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
 
   const [selectedArtifactMaskId, setSelectedArtifactMaskId] = useState<string | undefined>();
   const [cadenceStart, setCadenceStart] = useState<number>(0);
@@ -237,7 +246,10 @@ export default function App() {
 
   useEffect(() => {
     refreshModelStatus();
+    refreshHealth();
+    const interval = window.setInterval(refreshHealth, 30_000);
     return () => {
+      window.clearInterval(interval);
       if (successTimeout.current) {
         window.clearTimeout(successTimeout.current);
       }
@@ -259,6 +271,17 @@ export default function App() {
       setModel(status);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  async function refreshHealth() {
+    try {
+      const payload = await fetchHealth();
+      setHealth(payload);
+      setHealthError(null);
+    } catch (err) {
+      setHealth(null);
+      setHealthError(err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -489,6 +512,11 @@ export default function App() {
         max_candidates: maxCandidates,
         stellar_radius_solar: parseOptionalPositiveNumber(stellarRadius),
         stellar_mass_solar: parseOptionalPositiveNumber(stellarMass),
+        stellar_teff: parseOptionalPositiveNumber(stellarTeff),
+        stellar_logg: parseOptionalPositiveNumber(stellarLogg),
+        stellar_luminosity_solar: parseOptionalPositiveNumber(stellarLuminosity),
+        stellar_density_solar: parseOptionalPositiveNumber(stellarDensity),
+        stellar_rotation_period: parseOptionalPositiveNumber(stellarRotationPeriod),
         aperture_mask_id: selectedApertureMaskId,
         artifact_mask_id: selectedArtifactMaskId,
       });
@@ -581,6 +609,11 @@ export default function App() {
           maxCandidates,
           stellarRadius,
           stellarMass,
+          stellarTeff,
+          stellarLogg,
+          stellarLuminosity,
+          stellarDensity,
+          stellarRotationPeriod,
           result,
           selectedId,
           workflow,
@@ -637,6 +670,11 @@ export default function App() {
     );
     setStellarRadius(typeof payload.stellarRadius === 'string' ? payload.stellarRadius : '');
     setStellarMass(typeof payload.stellarMass === 'string' ? payload.stellarMass : '');
+    setStellarTeff(typeof payload.stellarTeff === 'string' ? payload.stellarTeff : '');
+    setStellarLogg(typeof payload.stellarLogg === 'string' ? payload.stellarLogg : '');
+    setStellarLuminosity(typeof payload.stellarLuminosity === 'string' ? payload.stellarLuminosity : '');
+    setStellarDensity(typeof payload.stellarDensity === 'string' ? payload.stellarDensity : '');
+    setStellarRotationPeriod(typeof payload.stellarRotationPeriod === 'string' ? payload.stellarRotationPeriod : '');
     setResult(restoredResult);
     setSelectedId(
       typeof payload.selectedId === 'string' ? payload.selectedId : restoredResult?.candidates[0]?.candidate_id,
@@ -891,6 +929,20 @@ export default function App() {
         </div>
       </header>
 
+      {(healthError || (health && health.status !== 'ok')) && (
+        <div className="health-banner" role="status" data-testid="health-banner">
+          <strong>{health ? `Demo backend ${health.status}` : 'Demo backend unavailable'}</strong>
+          <span>
+            {health
+              ? `API ${health.api}, database ${health.database}, worker ${health.worker_mode}.`
+              : `Health check failed: ${healthError}`}
+          </span>
+          <button type="button" onClick={refreshHealth}>
+            <RefreshCw size={14} /> Retry
+          </button>
+        </div>
+      )}
+
       <section className="workspace">
         <aside className="left-rail">
           <div className={`rail-section ${isAdvanced ? '' : 'guided-section'}`}>
@@ -1039,6 +1091,56 @@ export default function App() {
                     onChange={(event) => setStellarMass(event.target.value)}
                     placeholder="optional"
                   />
+                  <label htmlFor="stellar-teff">Stellar Teff (K)</label>
+                  <input
+                    id="stellar-teff"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={stellarTeff}
+                    onChange={(event) => setStellarTeff(event.target.value)}
+                    placeholder="optional"
+                  />
+                  <label htmlFor="stellar-logg">Stellar logg</label>
+                  <input
+                    id="stellar-logg"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={stellarLogg}
+                    onChange={(event) => setStellarLogg(event.target.value)}
+                    placeholder="optional"
+                  />
+                  <label htmlFor="stellar-luminosity">Luminosity (solar)</label>
+                  <input
+                    id="stellar-luminosity"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={stellarLuminosity}
+                    onChange={(event) => setStellarLuminosity(event.target.value)}
+                    placeholder="optional"
+                  />
+                  <label htmlFor="stellar-density">Density (solar)</label>
+                  <input
+                    id="stellar-density"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={stellarDensity}
+                    onChange={(event) => setStellarDensity(event.target.value)}
+                    placeholder="optional"
+                  />
+                  <label htmlFor="stellar-rotation">Rotation Period (days)</label>
+                  <input
+                    id="stellar-rotation"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={stellarRotationPeriod}
+                    onChange={(event) => setStellarRotationPeriod(event.target.value)}
+                    placeholder="optional"
+                  />
                 </div>
                 <button type="button" onClick={() => openModal('models')}>
                   <Gauge size={15} /> ML Status {activeModelStatus}
@@ -1056,6 +1158,12 @@ export default function App() {
                     <RefreshCw size={14} />
                   </button>
                 )}
+              </div>
+            )}
+            {(workflow === 'running' || blsRunning || productsLoading || searchStatus === 'searching') && (
+              <div className="pipeline-progress" role="status" aria-live="polite">
+                <span>{workflowMessage}</span>
+                <progress />
               </div>
             )}
           </div>
@@ -1160,6 +1268,8 @@ export default function App() {
               <dd>{formatScientific(selected?.validation?.secondary_depth, 3)}</dd>
               <dt>Duration</dt>
               <dd>{String(selected?.validation?.duration_plausible ?? 'n/a')}</dd>
+              <dt>Flags</dt>
+              <dd>{selected?.validation?.false_positive_flags?.join(', ') || 'none'}</dd>
             </dl>
           </div>
           <div className="panel details">

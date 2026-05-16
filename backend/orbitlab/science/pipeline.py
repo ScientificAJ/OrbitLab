@@ -46,6 +46,7 @@ def analyze_light_curve_arrays(
     stellar_logg: float | None = None,
     stellar_luminosity_solar: float | None = None,
     stellar_density_solar: float | None = None,
+    stellar_rotation_period: float | None = None,
     max_candidates: int = 4,
     ml_service: AstroNetService | None = None,
     nigraha_service: NigrahaService | None = None,
@@ -94,7 +95,14 @@ def analyze_light_curve_arrays(
                     stellar_teff=stellar_teff,
                 )
             )
-        validation = asdict(validate_candidate(clean_time, clean_flux, candidate))
+        validation = asdict(
+            validate_candidate(
+                clean_time,
+                clean_flux,
+                candidate,
+                stellar_rotation_period=stellar_rotation_period,
+            )
+        )
 
         try:
             if mission_upper == "TESS":
@@ -176,6 +184,15 @@ def analyze_light_curve_arrays(
         "bls_light_curve": {
             "time": bls_result.search_time.astype(float).tolist(),
             "flux": bls_result.search_flux.astype(float).tolist(),
+        },
+        "stellar_context": {
+            "radius_solar": stellar_radius_solar,
+            "mass_solar": stellar_mass_solar,
+            "teff": stellar_teff,
+            "logg": stellar_logg,
+            "luminosity_solar": stellar_luminosity_solar,
+            "density_solar": stellar_density_solar,
+            "rotation_period": stellar_rotation_period,
         },
         "preprocessing": bls_result.metadata,
     }

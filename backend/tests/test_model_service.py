@@ -206,8 +206,14 @@ def test_k2_pipeline_uses_exomac_service(monkeypatch: pytest.MonkeyPatch):
         stellar_radius_solar=1.0,
         stellar_mass_solar=1.0,
         stellar_teff=5778.0,
+        stellar_logg=4.44,
+        stellar_luminosity_solar=1.0,
+        stellar_density_solar=1.0,
+        stellar_rotation_period=10.0,
         k2_service=TinyK2Service(),
     )
 
     assert result["candidates"][0]["ml"]["label"] == "candidate"
     assert result["candidates"][0]["ml"]["class_probabilities"]["CANDIDATE"] == pytest.approx(0.7)
+    assert result["stellar_context"]["teff"] == pytest.approx(5778.0)
+    assert result["stellar_context"]["rotation_period"] == pytest.approx(10.0)
