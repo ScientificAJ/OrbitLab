@@ -196,37 +196,61 @@ def _download_mast_product(product_uri: str, cache_dir: Path) -> Path:
         from astroquery.mast import Observations
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("astroquery is required for MAST product downloads") from exc
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    filename = product_uri.rsplit("/", 1)[-1].replace(":", "_")
-    destination = cache_dir / filename
+    safe_cache_dir = cache_dir.resolve()
+    safe_cache_dir.mkdir(parents=True, exist_ok=True)
+    filename = Path(product_uri.rsplit("/", 1)[-1].replace(":", "_")).name or "mast-product.fits"
+    destination = safe_cache_dir / filename
     manifest = Observations.download_file(product_uri, local_path=str(destination), cache=True)
     if isinstance(manifest, str):
         candidate = Path(manifest)
     else:
         candidate = Path(str(manifest))
     if candidate.is_dir():
-        fits_files = sorted(candidate.rglob("*.fits"))
+        candidate_dir = _resolve_path_within_directory(candidate, safe_cache_dir)
+        fits_files = sorted(candidate_dir.rglob("*.fits"))
         if not fits_files:
-            raise FileNotFoundError(f"MAST download produced no FITS files under {candidate}")
+            raise FileNotFoundError(f"MAST download produced no FITS files under {candidate_dir}")
         return fits_files[0]
     if not candidate.exists() and destination.exists():
         return destination
     if not candidate.exists() and product_uri.startswith("mast:"):
-        fits_files = sorted(cache_dir.rglob("*.fits"))
+        fits_files = sorted(safe_cache_dir.rglob("*.fits"))
         if fits_files:
             return fits_files[-1]
     if not candidate.exists():
         raise FileNotFoundError(f"MAST product download did not create a readable file: {product_uri}")
-    return candidate
+    return _resolve_path_within_directory(candidate, safe_cache_dir)
+
+
+def _resolve_path_within_directory(path: Path, root: Path) -> Path:
+    resolved_root = root.resolve()
+    resolved_path = path.expanduser().resolve()
+    try:
+        resolved_path.relative_to(resolved_root)
+    except ValueError as exc:
+        raise PermissionError(f"TPF path must be inside the configured MAST cache: {resolved_root}") from exc
+    return resolved_path
+
+
+def _resolve_existing_cache_path(product_uri: str, root: Path) -> Path:
+    resolved_root = root.resolve()
+    raw_path = Path(product_uri).expanduser()
+    candidate = raw_path if raw_path.is_absolute() else resolved_root / raw_path
+    unresolved_candidate = candidate.resolve(strict=False)
+    try:
+        unresolved_candidate.relative_to(resolved_root)
+    except ValueError as exc:
+        raise PermissionError(f"TPF path must be inside the configured MAST cache: {resolved_root}") from exc
+    if not candidate.exists():
+        raise FileNotFoundError(f"TPF path or MAST URI is not readable: {product_uri}")
+    return _resolve_path_within_directory(candidate, resolved_root)
 
 
 def resolve_tpf_path(product_uri: str, *, cache_dir: Path | None = None) -> Path:
-    path = Path(product_uri).expanduser()
-    if path.exists():
-        return path.resolve()
+    safe_cache_dir = (cache_dir or settings.mast_cache_dir).resolve()
     if product_uri.startswith("mast:"):
-        return _download_mast_product(product_uri, cache_dir or settings.mast_cache_dir)
-    raise FileNotFoundError(f"TPF path or MAST URI is not readable: {product_uri}")
+        return _download_mast_product(product_uri, safe_cache_dir)
+    return _resolve_existing_cache_path(product_uri, safe_cache_dir)
 
 
 def extract_light_curve_from_tpf(

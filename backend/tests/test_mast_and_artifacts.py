@@ -20,10 +20,34 @@ from orbitlab.science.mast import extract_light_curve_from_tpf, resolve_target_a
 
 
 def test_resolve_tpf_path_accepts_existing_fits_file(tmp_path: Path):
-    tpf = tmp_path / "real-tpf.fits"
+    cache_dir = tmp_path / "mast-cache"
+    cache_dir.mkdir()
+    tpf = cache_dir / "real-tpf.fits"
     tpf.write_bytes(b"fits bytes")
 
-    assert resolve_tpf_path(str(tpf)) == tpf.resolve()
+    assert resolve_tpf_path(str(tpf), cache_dir=cache_dir) == tpf.resolve()
+
+
+def test_resolve_tpf_path_rejects_existing_file_outside_cache(tmp_path: Path):
+    cache_dir = tmp_path / "mast-cache"
+    cache_dir.mkdir()
+    outside_tpf = tmp_path / "outside.fits"
+    outside_tpf.write_bytes(b"fits bytes")
+
+    with pytest.raises(PermissionError, match="configured MAST cache"):
+        resolve_tpf_path(str(outside_tpf), cache_dir=cache_dir)
+
+
+def test_resolve_tpf_path_rejects_cache_symlink_escape(tmp_path: Path):
+    cache_dir = tmp_path / "mast-cache"
+    cache_dir.mkdir()
+    outside_tpf = tmp_path / "outside.fits"
+    outside_tpf.write_bytes(b"fits bytes")
+    symlink = cache_dir / "linked.fits"
+    symlink.symlink_to(outside_tpf)
+
+    with pytest.raises(PermissionError, match="configured MAST cache"):
+        resolve_tpf_path(str(symlink), cache_dir=cache_dir)
 
 
 def test_kepler_search_falls_back_when_catalog_adapter_is_missing(monkeypatch: pytest.MonkeyPatch):
@@ -130,7 +154,10 @@ def test_alias_search_survives_tess_catalog_resolution_failure(monkeypatch: pyte
 def test_pipeline_extraction_uses_threshold_mask_when_pipeline_mask_is_empty(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    product = tmp_path / "target.fits"
+    cache_dir = tmp_path / "mast-cache"
+    cache_dir.mkdir()
+    monkeypatch.setattr("orbitlab.science.mast.settings", SimpleNamespace(mast_cache_dir=cache_dir))
+    product = cache_dir / "target.fits"
     product.write_bytes(b"fits")
     used_masks = []
 
