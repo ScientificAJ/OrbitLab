@@ -10,15 +10,15 @@ export default defineConfig({
         manualChunks: {
           react: ['react', 'react-dom'],
           plotly: ['plotly.js-dist-min', 'react-plotly.js'],
-          three: ['three']
-        }
-      }
-    }
+          three: ['three'],
+        },
+      },
+    },
   },
   server: {
     port: 5173,
     proxy: {
-      '/api': 'http://127.0.0.1:8000'
-    }
-  }
+      '/api': 'http://127.0.0.1:8000',
+    },
+  },
 });

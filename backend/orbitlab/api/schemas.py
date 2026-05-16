@@ -19,6 +19,8 @@ class SearchResult(BaseModel):
     ra: float | None = None
     dec: float | None = None
     catalog: str
+    match_type: str = Field(default="catalog", pattern="^(catalog|alias)$")
+    matched_query: str | None = None
 
 
 class Product(BaseModel):

@@ -1,0 +1,7 @@
+{
+  "job_id": "job-failed",
+  "status": "failed",
+  "created_at": "2026-05-14T12:00:00Z",
+  "result_id": null,
+  "error": "BLS failed to converge for the selected product"
+}

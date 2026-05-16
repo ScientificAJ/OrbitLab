@@ -7,6 +7,14 @@ type Props = {
   selectedId?: string;
 };
 
+function orbitRadius(candidate: Candidate, index: number) {
+  return 4 + Math.log1p(Math.max(candidate.period, 0)) * 2.4 + index * 0.8;
+}
+
+function orbitSize(candidate: Candidate, index: number) {
+  return Math.min(92, 34 + Math.log1p(Math.max(candidate.period, 0)) * 22 + index * 8);
+}
+
 function canCreateWebGLContext() {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
@@ -40,12 +48,14 @@ export function OrbitScene({ candidates, selectedId }: Props) {
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({ antialias: true });
-    } catch (error) {
+    } catch {
       setWebglUnavailable(true);
       return;
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
+    renderer.domElement.dataset.testid = 'orbit-canvas';
+    renderer.domElement.setAttribute('aria-label', 'Candidate orbit simulation');
     mount.appendChild(renderer.domElement);
 
     const light = new THREE.PointLight(0xffffff, 3, 80);
@@ -54,30 +64,44 @@ export function OrbitScene({ candidates, selectedId }: Props) {
 
     const star = new THREE.Mesh(
       new THREE.SphereGeometry(1.7, 48, 48),
-      new THREE.MeshStandardMaterial({ color: 0xffd17a, emissive: 0xffa629, emissiveIntensity: 1.2 })
+      new THREE.MeshStandardMaterial({ color: 0xffd17a, emissive: 0xffa629, emissiveIntensity: 1.2 }),
     );
     scene.add(star);
 
     const planetMeshes: Array<{ mesh: THREE.Mesh; radius: number; speed: number; phase: number }> = [];
     candidates.forEach((candidate, index) => {
-      const radius = 4 + Math.log1p(candidate.period) * 2.4 + index * 0.8;
+      const radius = orbitRadius(candidate, index);
+      const active = candidate.candidate_id === selectedId;
       const orbit = new THREE.Mesh(
-        new THREE.TorusGeometry(radius, 0.012, 8, 160),
-        new THREE.MeshBasicMaterial({ color: candidate.candidate_id === selectedId ? 0x76e4f7 : 0x315765 })
+        new THREE.TorusGeometry(radius, active ? 0.05 : 0.035, 12, 192),
+        new THREE.MeshBasicMaterial({ color: active ? 0x8ee7ff : 0x4fb6c7 }),
       );
       orbit.rotation.x = Math.PI / 2;
       scene.add(orbit);
 
+      if (active) {
+        const glow = new THREE.Mesh(
+          new THREE.TorusGeometry(radius, 0.09, 12, 192),
+          new THREE.MeshBasicMaterial({ color: 0x8ee7ff, transparent: true, opacity: 0.2 }),
+        );
+        glow.rotation.x = Math.PI / 2;
+        scene.add(glow);
+      }
+
       const planet = new THREE.Mesh(
-        new THREE.SphereGeometry(candidate.candidate_id === selectedId ? 0.36 : 0.25, 32, 32),
-        new THREE.MeshStandardMaterial({ color: candidate.candidate_id === selectedId ? 0x8ee7ff : 0xb6ccd2 })
+        new THREE.SphereGeometry(active ? 0.42 : 0.3, 32, 32),
+        new THREE.MeshStandardMaterial({
+          color: active ? 0x8ee7ff : 0xd9edf2,
+          emissive: active ? 0x176d82 : 0x000000,
+          emissiveIntensity: active ? 0.65 : 0,
+        }),
       );
       scene.add(planet);
       planetMeshes.push({
         mesh: planet,
         radius,
         speed: Math.max(0.001, 0.03 / candidate.period),
-        phase: candidate.epoch % Math.PI
+        phase: candidate.epoch % Math.PI,
       });
     });
 
@@ -131,24 +155,47 @@ export function OrbitScene({ candidates, selectedId }: Props) {
   }, [candidates, selectedId]);
 
   return (
-    <div className="orbit-scene" ref={mountRef}>
+    <div className="orbit-scene" ref={mountRef} data-testid="orbit-scene">
+      {!candidates.length && (
+        <div className="orbit-empty-state" data-testid="orbit-empty-state">
+          <strong>Star-only view</strong>
+          <span>Run BLS Search or Analysis to render candidate orbits.</span>
+        </div>
+      )}
+      {candidates.length > 0 && (
+        <div className="orbit-labels" aria-label="Rendered candidate orbits">
+          {candidates.map((candidate) => {
+            const active = candidate.candidate_id === selectedId;
+            return (
+              <div
+                key={candidate.candidate_id}
+                className={`orbit-label ${active ? 'active' : ''}`}
+                data-testid={`orbit-label-${candidate.candidate_id}`}
+              >
+                <span>{candidate.candidate_id}</span>
+                <small>{candidate.period.toFixed(4)} d</small>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {webglUnavailable && (
         <div className="orbit-fallback" aria-label="Static orbit overview">
           <div className="fallback-star" />
           {candidates.slice(0, 6).map((candidate, index) => {
-            const size = Math.min(92, 34 + Math.log1p(candidate.period) * 22 + index * 8);
+            const size = orbitSize(candidate, index);
             const active = candidate.candidate_id === selectedId;
             return (
               <div
                 key={candidate.candidate_id}
                 className={`fallback-orbit ${active ? 'active' : ''}`}
                 style={{ width: `${size}%`, height: `${size}%` }}
+                data-testid={`fallback-orbit-${candidate.candidate_id}`}
               >
                 <span className="fallback-planet" />
               </div>
             );
           })}
-          {!candidates.length && <span className="fallback-empty">Awaiting candidate orbits</span>}
         </div>
       )}
     </div>

@@ -76,6 +76,8 @@ export type SearchResult = {
   ra?: number | null;
   dec?: number | null;
   catalog: string;
+  match_type?: 'catalog' | 'alias';
+  matched_query?: string | null;
 };
 
 export type Product = {
@@ -140,21 +142,15 @@ async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const text = await response.text();
 
+    let parsed: unknown;
     try {
-      const parsed = JSON.parse(text);
-      throw new Error(formatApiErrorDetail(parsed.detail, text));
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message !== text &&
-        !error.message.startsWith('Unexpected token') &&
-        !error.message.startsWith('JSON.parse:')
-      ) {
-        throw error;
-      }
-
+      parsed = JSON.parse(text);
+    } catch {
       throw new Error(text || `Request failed with status ${response.status}`);
     }
+
+    const detail = parsed && typeof parsed === 'object' && 'detail' in parsed ? parsed.detail : undefined;
+    throw new Error(formatApiErrorDetail(detail, text));
   }
 
   return response.json();
@@ -196,10 +192,7 @@ export async function fetchAnalysisJob(jobId: string): Promise<AnalysisJob> {
   return readJson<AnalysisJob>(response);
 }
 
-export async function saveSession(payload: {
-  name: string;
-  payload: Record<string, unknown>;
-}): Promise<SavedSession> {
+export async function saveSession(payload: { name: string; payload: Record<string, unknown> }): Promise<SavedSession> {
   const response = await fetch(`${API}/sessions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -269,11 +262,7 @@ export async function fetchBlsPreview(payload: {
   return readJson<BlsPreviewResult>(response);
 }
 
-export async function createArtifactMask(payload: {
-  target_id: string;
-  indices: number[];
-  reason: string;
-}) {
+export async function createArtifactMask(payload: { target_id: string; indices: number[]; reason: string }) {
   const response = await fetch(`${API}/artifact-masks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

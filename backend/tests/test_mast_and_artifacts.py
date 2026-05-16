@@ -16,7 +16,7 @@ from orbitlab.ml.artifact_registry import (
     register_artifact,
 )
 from orbitlab.ml.checksum import sha256_path
-from orbitlab.science.mast import extract_light_curve_from_tpf, resolve_tpf_path, search_targets
+from orbitlab.science.mast import extract_light_curve_from_tpf, resolve_target_alias, resolve_tpf_path, search_targets
 
 
 def test_resolve_tpf_path_accepts_existing_fits_file(tmp_path: Path):
@@ -38,7 +38,14 @@ def test_kepler_search_falls_back_when_catalog_adapter_is_missing(monkeypatch: p
     monkeypatch.setitem(sys.modules, "astroquery.mast", mast)
 
     assert search_targets("Kepler-10", mission="Kepler") == [
-        {"target_id": "Kepler-10", "ra": None, "dec": None, "catalog": "NAME"}
+        {
+            "target_id": "Kepler-10",
+            "ra": None,
+            "dec": None,
+            "catalog": "NAME",
+            "match_type": "catalog",
+            "matched_query": None,
+        }
     ]
 
 
@@ -58,8 +65,66 @@ def test_named_tess_search_includes_exact_query_before_nearby_catalog_rows(monke
 
     results = search_targets("TRAPPIST-1", mission="TESS")
 
-    assert results[0] == {"target_id": "TRAPPIST-1", "ra": None, "dec": None, "catalog": "NAME"}
+    assert results[0] == {
+        "target_id": "TRAPPIST-1",
+        "ra": None,
+        "dec": None,
+        "catalog": "ALIAS",
+        "match_type": "alias",
+        "matched_query": "TRAPPIST-1",
+    }
     assert results[1]["target_id"] == "278892590"
+
+
+@pytest.mark.parametrize("query", ["trappist", "trappist 1", "trappist-1", "trappist1"])
+def test_target_alias_resolver_maps_common_trappist_names(query: str):
+    assert resolve_target_alias(query) == "TRAPPIST-1"
+
+
+def test_alias_search_returns_suggestion_before_catalog_rows(monkeypatch: pytest.MonkeyPatch):
+    class FakeRow(dict):
+        colnames = ["ID", "ra", "dec"]
+
+    class Catalogs:
+        @staticmethod
+        def query_object(*args, **kwargs):
+            return [FakeRow(ID="278892590", ra=346.6, dec=-5.04)]
+
+    mast = ModuleType("astroquery.mast")
+    mast.Catalogs = Catalogs
+    monkeypatch.setitem(sys.modules, "astroquery", ModuleType("astroquery"))
+    monkeypatch.setitem(sys.modules, "astroquery.mast", mast)
+
+    results = search_targets("trappist", mission="TESS")
+
+    assert results[0]["target_id"] == "TRAPPIST-1"
+    assert results[0]["match_type"] == "alias"
+    assert results[0]["matched_query"] == "trappist"
+    assert results[1]["target_id"] == "278892590"
+    assert results[1]["match_type"] == "catalog"
+
+
+def test_alias_search_survives_tess_catalog_resolution_failure(monkeypatch: pytest.MonkeyPatch):
+    class Catalogs:
+        @staticmethod
+        def query_object(*args, **kwargs):
+            raise RuntimeError('Could not resolve "trappist" to a sky position.')
+
+    mast = ModuleType("astroquery.mast")
+    mast.Catalogs = Catalogs
+    monkeypatch.setitem(sys.modules, "astroquery", ModuleType("astroquery"))
+    monkeypatch.setitem(sys.modules, "astroquery.mast", mast)
+
+    assert search_targets("trappist", mission="TESS") == [
+        {
+            "target_id": "TRAPPIST-1",
+            "ra": None,
+            "dec": None,
+            "catalog": "ALIAS",
+            "match_type": "alias",
+            "matched_query": "trappist",
+        }
+    ]
 
 
 def test_pipeline_extraction_uses_threshold_mask_when_pipeline_mask_is_empty(
