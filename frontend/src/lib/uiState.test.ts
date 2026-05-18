@@ -6,6 +6,7 @@ import {
   getMatchEmptyMessage,
   getOrbitEmptyMessage,
   getWorkflowMessage,
+  isVoyagerEasterEggQuery,
   normalizeOrbitLabMode,
   normalizeThemeName,
 } from './uiState';
@@ -61,6 +62,16 @@ describe('uiState helpers', () => {
     expect(normalizeThemeName('nature')).toBe('nature');
     expect(normalizeThemeName('solarized')).toBe('space');
     expect(normalizeThemeName(undefined)).toBe('space');
+  });
+
+  it('recognizes only the Voyager Mode easter egg trigger phrases', () => {
+    expect(isVoyagerEasterEggQuery('voyager')).toBe(true);
+    expect(isVoyagerEasterEggQuery(' Voyager Mode ')).toBe(true);
+    expect(isVoyagerEasterEggQuery('\tGOLDEN RECORD\n')).toBe(true);
+
+    expect(isVoyagerEasterEggQuery('voyager 1')).toBe(false);
+    expect(isVoyagerEasterEggQuery('gold record')).toBe(false);
+    expect(isVoyagerEasterEggQuery('TIC 307210830')).toBe(false);
   });
 
   it('keeps workflow guidance distinct for beginner and advanced modes', () => {

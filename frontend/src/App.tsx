@@ -6,10 +6,12 @@ import {
   History,
   Layers,
   Play,
+  Radio,
   RefreshCw,
   Save,
   Search,
   Settings,
+  Sparkles,
   SlidersHorizontal,
   Trash2,
   X,
@@ -56,6 +58,7 @@ import {
   getMatchEmptyMessage,
   getOrbitEmptyMessage,
   getWorkflowMessage,
+  isVoyagerEasterEggQuery,
   normalizeOrbitLabMode,
   normalizeThemeName,
   themeLabels,
@@ -170,6 +173,8 @@ type Mission = 'TESS' | 'Kepler' | 'K2';
 
 const MODE_STORAGE_KEY = 'orbitlab-mode';
 const THEME_STORAGE_KEY = 'orbitlab-theme';
+const VOYAGER_UNLOCKED_STORAGE_KEY = 'orbitlab-voyager-unlocked';
+const VOYAGER_ENABLED_STORAGE_KEY = 'orbitlab-voyager-enabled';
 
 function readStoredMode(): OrbitLabMode {
   if (typeof window === 'undefined') return 'beginner';
@@ -181,6 +186,11 @@ function readStoredTheme(): ThemeName {
   return normalizeThemeName(window.localStorage.getItem(THEME_STORAGE_KEY));
 }
 
+function readStoredBoolean(key: string) {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(key) === 'true';
+}
+
 function parseOptionalPositiveNumber(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
@@ -189,6 +199,8 @@ function parseOptionalPositiveNumber(value: string) {
 export default function App() {
   const [mode, setMode] = useState<OrbitLabMode>(readStoredMode);
   const [theme, setTheme] = useState<ThemeName>(readStoredTheme);
+  const [voyagerUnlocked, setVoyagerUnlocked] = useState(() => readStoredBoolean(VOYAGER_UNLOCKED_STORAGE_KEY));
+  const [voyagerEnabled, setVoyagerEnabled] = useState(() => readStoredBoolean(VOYAGER_ENABLED_STORAGE_KEY));
   const [mission, setMission] = useState<Mission>('TESS');
   const [query, setQuery] = useState('');
   const [targets, setTargets] = useState<SearchResult[]>([]);
@@ -264,6 +276,14 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
+  useEffect(() => {
+    window.localStorage.setItem(VOYAGER_UNLOCKED_STORAGE_KEY, String(voyagerUnlocked));
+  }, [voyagerUnlocked]);
+
+  useEffect(() => {
+    window.localStorage.setItem(VOYAGER_ENABLED_STORAGE_KEY, String(voyagerEnabled));
+  }, [voyagerEnabled]);
+
   async function refreshModelStatus() {
     try {
       const status = await fetchModelStatus();
@@ -328,6 +348,7 @@ export default function App() {
   }, [blsPreviewStatus, job?.status, mode, productsLoading, result, searchStatus, workflow]);
   const candidateEmptyMessage = useMemo(() => getCandidateEmptyMessage(Boolean(result)), [result]);
   const orbitEmptyMessage = useMemo(() => getOrbitEmptyMessage(Boolean(result)), [result]);
+  const isVoyagerModeActive = voyagerUnlocked && voyagerEnabled;
 
   const pixelScale = useMemo(() => {
     if (!tpfPreview) return { min: 0, span: 1 };
@@ -401,6 +422,14 @@ export default function App() {
   async function runSearch() {
     const trimmedQuery = query.trim();
     if (!trimmedQuery) return;
+    if (isVoyagerEasterEggQuery(trimmedQuery)) {
+      setError(null);
+      setVoyagerUnlocked(true);
+      setVoyagerEnabled(true);
+      openModal('voyager');
+      showSuccessMessage('Voyager Mode unlocked.');
+      return;
+    }
     const token = ++searchToken.current;
     productToken.current += 1;
     analysisToken.current += 1;
@@ -874,7 +903,12 @@ export default function App() {
   }
 
   return (
-    <main className="shell" data-mode={mode} data-theme={theme}>
+    <main
+      className="shell"
+      data-mode={mode}
+      data-theme={theme}
+      data-voyager-mode={isVoyagerModeActive ? 'true' : undefined}
+    >
       <header className="command-bar">
         <div className="brand">
           <Activity size={22} />
@@ -882,6 +916,11 @@ export default function App() {
             <strong>OrbitLab</strong>
             <span>{mode === 'beginner' ? 'Guided exoplanet workflow' : 'Real TPF exoplanet workbench'}</span>
           </div>
+          {isVoyagerModeActive && (
+            <span className="voyager-command-badge" title="Voyager Mode enabled">
+              <Radio size={13} /> Voyager
+            </span>
+          )}
         </div>
         <div className="search-strip">
           <Search size={16} />
@@ -1382,6 +1421,46 @@ export default function App() {
                 ))}
               </div>
             </section>
+            {voyagerUnlocked && (
+              <section>
+                <h3>Voyager Mode</h3>
+                <label className="settings-toggle">
+                  <input
+                    type="checkbox"
+                    checked={voyagerEnabled}
+                    onChange={(event) => setVoyagerEnabled(event.target.checked)}
+                  />
+                  <span>Mission overlay</span>
+                </label>
+                <p className="quiet">Adds subtle gold and cyan mission accents over the selected theme.</p>
+              </section>
+            )}
+          </div>
+        </ModalShell>
+      )}
+
+      {activeModal === 'voyager' && (
+        <ModalShell
+          title="Voyager Mode Unlocked"
+          titleId="voyager-modal-title"
+          onClose={closeActiveModal}
+          footer={
+            <button type="button" onClick={closeActiveModal}>
+              Continue
+            </button>
+          }
+        >
+          <div className="voyager-modal">
+            <div className="voyager-panel" role="img" aria-label="Golden record mission operations background">
+              <img src="/easter-eggs/voyager-patch.webp" alt="" />
+            </div>
+            <div className="voyager-copy">
+              <Sparkles size={18} />
+              <p>
+                Voyager Mode is now available in Settings. The selected OrbitLab theme stays active while mission
+                accents ride on top.
+              </p>
+            </div>
           </div>
         </ModalShell>
       )}

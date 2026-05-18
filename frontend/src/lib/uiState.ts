@@ -6,6 +6,7 @@ export type ThemeName = 'space' | 'sakura' | 'light' | 'dark' | 'nature';
 
 export const ORBITLAB_MODES: OrbitLabMode[] = ['beginner', 'advanced'];
 export const ORBITLAB_THEMES: ThemeName[] = ['space', 'sakura', 'light', 'dark', 'nature'];
+export const VOYAGER_EASTER_EGG_QUERIES = ['voyager', 'voyager mode', 'golden record'];
 
 export const themeLabels: Record<ThemeName, string> = {
   space: 'Space',
@@ -21,6 +22,10 @@ export function normalizeOrbitLabMode(value: unknown): OrbitLabMode {
 
 export function normalizeThemeName(value: unknown): ThemeName {
   return typeof value === 'string' && ORBITLAB_THEMES.includes(value as ThemeName) ? (value as ThemeName) : 'space';
+}
+
+export function isVoyagerEasterEggQuery(value: string) {
+  return VOYAGER_EASTER_EGG_QUERIES.includes(value.trim().toLowerCase());
 }
 
 const modelDisplayNames: Record<string, string> = {

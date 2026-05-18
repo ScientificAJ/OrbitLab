@@ -170,21 +170,37 @@ button:disabled {
 }
 
 .shell {
+  position: relative;
+  isolation: isolate;
   min-height: 100vh;
   display: grid;
   grid-template-rows: 58px 1fr;
+  background: var(--decoration-wash), var(--decoration), var(--bg);
+  background-position: center, var(--decoration-position), center;
+  background-size: cover, cover, cover;
+}
+
+.shell[data-voyager-mode='true']::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   background:
-    var(--decoration-wash),
-    var(--decoration),
-    var(--bg);
-  background-position:
-    center,
-    var(--decoration-position),
-    center;
-  background-size:
-    cover,
-    cover,
-    cover;
+    radial-gradient(circle at 12% 18%, rgba(255, 209, 122, 0.18), transparent 28%),
+    radial-gradient(circle at 84% 20%, rgba(120, 220, 232, 0.12), transparent 24%),
+    linear-gradient(115deg, transparent 0 36%, rgba(255, 209, 122, 0.1) 36.2%, transparent 36.7% 100%),
+    linear-gradient(160deg, transparent 0 58%, rgba(120, 220, 232, 0.09) 58.2%, transparent 58.7% 100%);
+  mix-blend-mode: screen;
+}
+
+.shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.shell[data-voyager-mode='true'] .command-bar {
+  box-shadow: inset 0 -1px 0 rgba(255, 209, 122, 0.28);
 }
 
 .command-bar {
@@ -201,11 +217,30 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .brand strong,
 .brand span {
   display: block;
+}
+
+.brand > div {
+  min-width: 0;
+}
+
+.voyager-command-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 2px 7px;
+  border: 1px solid rgba(255, 209, 122, 0.5);
+  border-radius: 999px;
+  color: #ffe1a3;
+  background: rgba(42, 36, 19, 0.72);
+  font-size: 11px;
 }
 
 .brand span,
@@ -977,6 +1012,59 @@ label,
 .settings-grid {
   display: grid;
   gap: 18px;
+}
+
+.settings-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.settings-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.voyager-modal {
+  display: grid;
+  gap: 14px;
+}
+
+.voyager-panel {
+  position: relative;
+  min-height: 250px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 209, 122, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(rgba(4, 10, 14, 0.12), rgba(4, 10, 14, 0.42)),
+    url('/easter-eggs/voyager-panel.webp') center / cover;
+}
+
+.voyager-panel img {
+  width: min(180px, 44vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: 0 0 42px rgba(255, 209, 122, 0.34);
+}
+
+.voyager-copy {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+}
+
+.voyager-copy p {
+  margin: 0;
 }
 
 .segmented-control {

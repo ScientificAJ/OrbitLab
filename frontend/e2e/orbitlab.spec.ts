@@ -274,17 +274,24 @@ async function installBaseMocks(page: Page) {
 
 async function openApp(
   page: Page,
-  options: { storedMode?: 'beginner' | 'advanced' | null; storedTheme?: string | null } = {},
+  options: {
+    storedMode?: 'beginner' | 'advanced' | null;
+    storedTheme?: string | null;
+    voyagerUnlocked?: boolean;
+    voyagerEnabled?: boolean;
+  } = {},
 ) {
-  const { storedMode = 'advanced', storedTheme } = options;
+  const { storedMode = 'advanced', storedTheme, voyagerUnlocked, voyagerEnabled } = options;
   await installBaseMocks(page);
-  if (storedMode || storedTheme) {
+  if (storedMode || storedTheme || voyagerUnlocked !== undefined || voyagerEnabled !== undefined) {
     await page.addInitScript(
-      ({ mode, theme }) => {
+      ({ mode, theme, unlocked, enabled }) => {
         if (mode) window.localStorage.setItem('orbitlab-mode', mode);
         if (theme) window.localStorage.setItem('orbitlab-theme', theme);
+        if (unlocked !== undefined) window.localStorage.setItem('orbitlab-voyager-unlocked', String(unlocked));
+        if (enabled !== undefined) window.localStorage.setItem('orbitlab-voyager-enabled', String(enabled));
       },
-      { mode: storedMode, theme: storedTheme },
+      { mode: storedMode, theme: storedTheme, unlocked: voyagerUnlocked, enabled: voyagerEnabled },
     );
   }
   await page.goto('/');
@@ -332,6 +339,33 @@ test('settings drawer persists mode and theme after reload', async ({ page }) =>
   await expect(page.getByRole('button', { name: /BLS Search/ })).toBeVisible();
 });
 
+test('Voyager Mode unlock intercepts secret search and persists settings toggle', async ({ page }) => {
+  let searchCalls = 0;
+  await openApp(page);
+  await page.unroute(`${API}/search?*`);
+  await page.route(`${API}/search?*`, (route) => {
+    searchCalls += 1;
+    return json(route, [target]);
+  });
+
+  await page.getByLabel('target search').fill(' voyager ');
+  await page.getByRole('button', { name: /^Search$/ }).click();
+
+  await expect(page.getByRole('dialog', { name: 'Voyager Mode Unlocked' })).toBeVisible();
+  await expect(page.locator('.shell')).toHaveAttribute('data-voyager-mode', 'true');
+  await expect(page.getByText('Voyager Mode unlocked.')).toBeVisible();
+  expect(searchCalls).toBe(0);
+
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.reload();
+  await expect(page.locator('.shell')).toHaveAttribute('data-voyager-mode', 'true');
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
+  await expect(page.getByText('Voyager Mode')).toBeVisible();
+  await page.getByLabel('Mission overlay').uncheck();
+  await expect(page.locator('.shell')).not.toHaveAttribute('data-voyager-mode', 'true');
+});
+
 test('search handles loading, success, empty, and API error states', async ({ page }) => {
   await openApp(page);
 
@@ -367,6 +401,18 @@ test('search handles loading, success, empty, and API error states', async ({ pa
   await expect(page.getByRole('alert')).toContainText('MAST search unavailable');
   await expect(page.getByText('Search failed for "error target".')).toBeVisible();
   await expect(page.getByTestId('workflow-status')).toHaveText('failed');
+});
+
+test('normal target search still works after Voyager Mode is unlocked', async ({ page }) => {
+  await openApp(page, { voyagerUnlocked: true, voyagerEnabled: true });
+
+  await page.getByLabel('target search').fill(target.target_id);
+  const searchRequest = page.waitForRequest(`${API}/search?*`);
+  await page.getByRole('button', { name: /^Search$/ }).click();
+  await searchRequest;
+
+  await expect(page.getByRole('button', { name: new RegExp(target.target_id) })).toBeVisible();
+  await expect(page.locator('.shell')).toHaveAttribute('data-voyager-mode', 'true');
 });
 
 test('trappist search shows a suggested canonical target before product lookup', async ({ page }) => {
