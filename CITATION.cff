@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If OrbitLab helps your demo, classroom, or research prototype, please cite it."
+title: "OrbitLab: real-data exoplanet candidate workbench"
+version: "0.1.0"
+date-released: "2026-05-11"
+license: MIT
+repository-code: "https://github.com/ScientificAJ/OrbitLab"
+url: "https://github.com/ScientificAJ/OrbitLab"
+abstract: >-
+  OrbitLab is a full-stack workbench for inspecting exoplanet transit candidates
+  from real TESS, Kepler, and K2 target pixel files, with BLS candidate search,
+  validation context, mission-aware model artifact readiness, and a React UI.
+keywords:
+  - exoplanets
+  - astronomy
+  - TESS
+  - Kepler
+  - K2
+  - MAST
+  - machine-learning
+authors:
+  - name: "ScientificAJ"

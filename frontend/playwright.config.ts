@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import { existsSync } from 'node:fs';
 
 const chromeExecutablePath = process.env.PLAYWRIGHT_CHROME_EXECUTABLE_PATH ?? '/opt/google/chrome/chrome';
+const launchOptions = existsSync(chromeExecutablePath) ? { executablePath: chromeExecutablePath } : undefined;
 
 export default defineConfig({
   testDir: './e2e',
@@ -15,9 +17,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    launchOptions: {
-      executablePath: chromeExecutablePath,
-    },
+    launchOptions,
   },
   projects: [
     {

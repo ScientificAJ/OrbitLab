@@ -11,5 +11,6 @@ Operational scripts live here so the root stays focused on project configuration
 - `convert_kepler_astronet_npz.py` converts the Kepler checkpoint when a converter Docker image is available.
 - `generate_nigraha_golden.py` regenerates Nigraha parity fixtures when the original Keras runtime script/image is available.
 - `dump_repo.py` writes a compact source/config/docs dump to `.orbitlab/scratch/repodump.txt`.
+- `frontend/scripts/capture-demo-assets.mjs` is exposed through `npm run capture:demo-assets --prefix frontend` and regenerates README screenshots/GIFs from a mocked UI demo flow.
 
 Run scripts from the repository root unless the script says otherwise.

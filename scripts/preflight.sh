@@ -24,11 +24,14 @@ if [[ ! -x "$PYTEST" ]]; then
 fi
 
 log "backend tests"
-"$PYTEST"
+"$PYTEST" --cov=orbitlab --cov-report=term-missing
 
 log "frontend build"
 if [[ -d frontend/node_modules ]]; then
+  npm run format:check --prefix frontend
+  npm run lint --prefix frontend
   npm run test:unit --prefix frontend
+  npm run test:e2e --prefix frontend
   npm run build --prefix frontend
 else
   printf 'Missing frontend/node_modules. Run: npm ci --prefix frontend\n' >&2

@@ -446,16 +446,9 @@ label,
   grid-template-rows: 56px minmax(300px, 1fr) 260px;
   background:
     linear-gradient(color-mix(in srgb, var(--bg) 89%, transparent), color-mix(in srgb, var(--bg) 96%, transparent)),
-    var(--decoration),
-    var(--backdrop), var(--bg);
-  background-position:
-    center,
-    var(--decoration-position),
-    center;
-  background-size:
-    cover,
-    cover,
-    cover;
+    var(--decoration), var(--backdrop), var(--bg);
+  background-position: center, var(--decoration-position), center;
+  background-size: cover, cover, cover;
 }
 
 .stage-header {
@@ -730,9 +723,7 @@ label,
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 32%, #fff4bd, #ffd17a 36%, #ff922e 72%),
-    #ffd17a;
+  background: radial-gradient(circle at 35% 32%, #fff4bd, #ffd17a 36%, #ff922e 72%), #ffd17a;
   box-shadow:
     0 0 28px rgba(255, 166, 41, 0.82),
     0 0 86px rgba(255, 166, 41, 0.36);

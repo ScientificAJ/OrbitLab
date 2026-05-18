@@ -1,0 +1,12 @@
+# Default maintainers for repository-wide changes.
+* @ScientificAJ
+
+# Science, ML, and artifact provenance changes need extra attention.
+/backend/orbitlab/science/ @ScientificAJ
+/backend/orbitlab/ml/ @ScientificAJ
+/docs/model_artifacts.md @ScientificAJ
+/docs/MODEL_CARDS.md @ScientificAJ
+
+# Release and automation surfaces.
+/.github/ @ScientificAJ
+/scripts/ @ScientificAJ

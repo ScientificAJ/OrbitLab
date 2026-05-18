@@ -196,7 +196,10 @@ export function OrbitScene({
     mount.appendChild(renderer.domElement);
 
     const starTexture = makeStarMaterial();
-    const star = new THREE.Mesh(new THREE.SphereGeometry(1.72, automatedBrowser ? 40 : 56, automatedBrowser ? 40 : 56), starTexture);
+    const star = new THREE.Mesh(
+      new THREE.SphereGeometry(1.72, automatedBrowser ? 40 : 56, automatedBrowser ? 40 : 56),
+      starTexture,
+    );
     scene.add(star);
 
     const coronaTexture = makeDiscTexture('rgba(255, 220, 142, 0.52)', 'rgba(255, 160, 56, 0)');

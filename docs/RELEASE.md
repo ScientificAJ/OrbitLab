@@ -18,7 +18,14 @@
    - science/ML limitations
    - model artifact requirements
    - known unavailable states
-4. Tag:
+4. Update `CHANGELOG.md` and keep the release entry aligned with the GitHub release body.
+5. Regenerate README demo assets if the UI changed:
+
+   ```bash
+   npm run capture:demo-assets --prefix frontend
+   ```
+
+6. Tag:
 
    ```bash
    git tag -a vX.Y.Z -m "OrbitLab vX.Y.Z"

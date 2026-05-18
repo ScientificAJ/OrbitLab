@@ -5,6 +5,7 @@
 [![CI](https://github.com/ScientificAJ/OrbitLab/actions/workflows/ci.yml/badge.svg)](https://github.com/ScientificAJ/OrbitLab/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/ScientificAJ/OrbitLab/actions/workflows/codeql.yml/badge.svg)](https://github.com/ScientificAJ/OrbitLab/actions/workflows/codeql.yml)
 [![Release](https://img.shields.io/github/v/release/ScientificAJ/OrbitLab?include_prereleases&label=release)](https://github.com/ScientificAJ/OrbitLab/releases/tag/v0.1.0-mvp)
+[![Coverage](https://codecov.io/gh/ScientificAJ/OrbitLab/branch/main/graph/badge.svg)](https://codecov.io/gh/ScientificAJ/OrbitLab)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](pyproject.toml)
 [![FastAPI](https://img.shields.io/badge/API-FastAPI-009688.svg)](backend/orbitlab/api/main.py)
@@ -45,14 +46,18 @@ See [docs/MODEL_CARDS.md](docs/MODEL_CARDS.md) and [docs/model_artifacts.md](doc
 
 ## Screenshots
 
-Add fresh screenshots before submission once the demo machine has fetched real MAST products and model artifacts:
+The repository includes deterministic UI captures generated from the mocked demo flow with `npm run capture:demo-assets --prefix frontend`. These screenshots are UI fixtures, not claimed discoveries.
 
-- Search and product selection.
-- TPF preview with aperture controls.
-- BLS periodogram and folded candidates.
-- Model readiness panel from `/api/v1/models`.
+![OrbitLab demo walkthrough](docs/assets/demo/orbitlab-demo.gif)
 
-Do not add mocked science screenshots unless they are clearly labeled as UI-only mockups.
+| Workflow | Screenshot |
+| --- | --- |
+| Search and product selection | ![OrbitLab target product workflow](docs/assets/screenshots/02-product-selected.png) |
+| Aperture editor | ![OrbitLab aperture editor](docs/assets/screenshots/03-aperture-editor.png) |
+| BLS candidate preview | ![OrbitLab BLS preview](docs/assets/screenshots/05-bls-preview.png) |
+| Analysis workbench | ![OrbitLab analysis workbench](docs/assets/screenshots/06-analysis-workbench.png) |
+| Model readiness | ![OrbitLab model status modal](docs/assets/screenshots/07-model-status.png) |
+| Voyager Mode easter egg | ![OrbitLab Voyager Mode modal](docs/assets/screenshots/08-voyager-mode.png) |
 
 ## Quick Start
 
@@ -83,6 +88,7 @@ The script starts Docker Compose services, ensures the Kepler/K1 TensorFlow runt
 
 For step-by-step app usage, LAN access, target search, BLS preview, full analysis, and troubleshooting, see [docs/USAGE.md](docs/USAGE.md).
 For deployment and release operations, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) and [docs/RELEASE.md](docs/RELEASE.md).
+For project history and citation metadata, see [CHANGELOG.md](CHANGELOG.md) and [CITATION.cff](CITATION.cff).
 
 For manual startup:
 
@@ -157,9 +163,12 @@ scripts/preflight.sh
 Frontend checks are split so fast regressions and live smoke are explicit:
 
 ```bash
+npm run lint --prefix frontend
+npm run format:check --prefix frontend
 npm run test:unit --prefix frontend
 npm run test:e2e --prefix frontend
 LIVE_ORBITLAB=1 npm run test:e2e:live --prefix frontend
+npm run build --prefix frontend
 ```
 
 The live smoke expects the local stack to already be running and will touch the real API. The regular Playwright suite keeps mocked API data isolated under `frontend/e2e`.
