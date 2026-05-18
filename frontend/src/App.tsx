@@ -1,6 +1,5 @@
 import {
   Activity,
-  CircleHelp,
   Download,
   FlaskConical,
   Gauge,
@@ -19,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { BeginnerEmptyGuide, HelpTip, TourOverlay, beginnerTourSteps, type TourStepId } from './components/Guidance';
 import { OrbitScene } from './components/OrbitScene';
 import { SciencePlot } from './components/SciencePlot';
 import { useModalState } from './hooks/useModalState';
@@ -183,41 +183,6 @@ const THEME_STORAGE_KEY = 'orbitlab-theme';
 const TOUR_COMPLETED_STORAGE_KEY = 'orbitlab-beginner-tour-completed';
 const VOYAGER_UNLOCKED_STORAGE_KEY = 'orbitlab-voyager-unlocked';
 const VOYAGER_ENABLED_STORAGE_KEY = 'orbitlab-voyager-enabled';
-
-const tourSteps = [
-  {
-    id: 'mission',
-    title: 'Choose a mission',
-    body: 'Start by picking the survey archive. TESS is the easiest first pass for the sample target.',
-  },
-  {
-    id: 'search',
-    title: 'Search a target',
-    body: 'Type a TIC ID, Kepler name, TOI, or common alias, then run Search to load matches.',
-  },
-  {
-    id: 'target',
-    title: 'Pick the match',
-    body: 'Select the target that best matches your search. OrbitLab then loads observation files for it.',
-  },
-  {
-    id: 'product',
-    title: 'Select an observation file',
-    body: 'Choose a target pixel file. This is the data product used for previews and analysis.',
-  },
-  {
-    id: 'run',
-    title: 'Preview or analyze',
-    body: 'Beginners can preview candidates first, then run the full analysis once the product looks useful.',
-  },
-  {
-    id: 'plots',
-    title: 'Read the plots',
-    body: 'Use the orbit view, periodogram, folded curve, validation, physics, and ML panels to inspect each candidate.',
-  },
-] as const;
-
-type TourStepId = (typeof tourSteps)[number]['id'];
 
 function readStoredMode(): OrbitLabMode {
   if (typeof window === 'undefined') return 'beginner';
@@ -405,7 +370,7 @@ export default function App() {
   const candidateEmptyMessage = useMemo(() => getCandidateEmptyMessage(Boolean(result)), [result]);
   const orbitEmptyMessage = useMemo(() => getOrbitEmptyMessage(Boolean(result)), [result]);
   const isVoyagerModeActive = voyagerUnlocked && voyagerEnabled;
-  const activeTourStep = tourSteps[tourStepIndex];
+  const activeTourStep = beginnerTourSteps[tourStepIndex];
 
   const pixelScale = useMemo(() => {
     if (!tpfPreview) return { min: 0, span: 1 };
@@ -488,14 +453,6 @@ export default function App() {
   function finishBeginnerTour() {
     setTourCompleted(true);
     closeActiveModal();
-  }
-
-  function HelpTip({ label }: { label: string }) {
-    return (
-      <span className="help-tip" aria-label="Help" title={label}>
-        <CircleHelp size={13} />
-      </span>
-    );
   }
 
   async function runSearch() {
@@ -1129,10 +1086,9 @@ export default function App() {
                 </p>
               )}
               {!targets.length && !isAdvanced && (
-                <div className="beginner-empty-guide">
-                  <strong>Beginner next step</strong>
-                  <span>Use the search box above with a known target, then pick a match from this list.</span>
-                </div>
+                <BeginnerEmptyGuide title="Beginner next step">
+                  Use the search box above with a known target, then pick a match from this list.
+                </BeginnerEmptyGuide>
               )}
             </div>
             <div className="field-label">
@@ -1164,10 +1120,9 @@ export default function App() {
                 </p>
               )}
               {!productsLoading && !products.length && !isAdvanced && (
-                <div className="beginner-empty-guide">
-                  <strong>What appears here?</strong>
-                  <span>After you choose a target, usable observation files appear here for preview and analysis.</span>
-                </div>
+                <BeginnerEmptyGuide title="What appears here?">
+                  After you choose a target, usable observation files appear here for preview and analysis.
+                </BeginnerEmptyGuide>
               )}
             </div>
           </div>
@@ -1349,10 +1304,9 @@ export default function App() {
               <>
                 <p className="quiet">{candidateEmptyMessage}</p>
                 {!isAdvanced && (
-                  <div className="beginner-empty-guide">
-                    <strong>Candidate cards will appear here</strong>
-                    <span>Each card shows period, SNR, and transit depth after preview or analysis finishes.</span>
-                  </div>
+                  <BeginnerEmptyGuide title="Candidate cards will appear here">
+                    Each card shows period, SNR, and transit depth after preview or analysis finishes.
+                  </BeginnerEmptyGuide>
                 )}
               </>
             )}
@@ -1590,39 +1544,14 @@ export default function App() {
       )}
 
       {activeModal === 'tour' && (
-        <div className="tour-layer" role="dialog" aria-modal="false" aria-labelledby="tour-title">
-          <div className="tour-card">
-            <span className="tour-count">
-              {tourStepIndex + 1} of {tourSteps.length}
-            </span>
-            <h2 id="tour-title">{activeTourStep.title}</h2>
-            <p>{activeTourStep.body}</p>
-            <div className="tour-actions">
-              <button
-                type="button"
-                onClick={() => setTourStepIndex(Math.max(0, tourStepIndex - 1))}
-                disabled={tourStepIndex === 0}
-              >
-                Back
-              </button>
-              <button type="button" className="quiet-action" onClick={finishBeginnerTour}>
-                Skip
-              </button>
-              {tourStepIndex < tourSteps.length - 1 ? (
-                <button
-                  type="button"
-                  onClick={() => setTourStepIndex(Math.min(tourSteps.length - 1, tourStepIndex + 1))}
-                >
-                  Next
-                </button>
-              ) : (
-                <button type="button" onClick={finishBeginnerTour}>
-                  Done
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <TourOverlay
+          step={activeTourStep}
+          stepIndex={tourStepIndex}
+          stepCount={beginnerTourSteps.length}
+          onBack={() => setTourStepIndex(Math.max(0, tourStepIndex - 1))}
+          onNext={() => setTourStepIndex(Math.min(beginnerTourSteps.length - 1, tourStepIndex + 1))}
+          onFinish={finishBeginnerTour}
+        />
       )}
 
       {activeModal === 'voyager' && (

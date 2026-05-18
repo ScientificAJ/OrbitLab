@@ -478,10 +478,11 @@ label,
 .tour-anchor.active {
   position: relative;
   z-index: 30;
+  outline: 1px solid rgba(255, 209, 122, 0.7);
+  outline-offset: 3px;
   box-shadow:
-    0 0 0 2px rgba(255, 209, 122, 0.86),
-    0 0 0 8px rgba(255, 209, 122, 0.14),
-    0 18px 42px rgba(0, 0, 0, 0.34);
+    0 0 0 7px rgba(255, 209, 122, 0.1),
+    0 16px 36px rgba(0, 0, 0, 0.28);
 }
 
 .inline-helper,
@@ -948,6 +949,7 @@ label,
   position: fixed;
   inset: 0;
   z-index: 45;
+  contain: paint;
   pointer-events: none;
 }
 
@@ -963,6 +965,7 @@ label,
   right: 18px;
   bottom: 18px;
   width: min(360px, calc(100vw - 36px));
+  contain: content;
   pointer-events: auto;
   display: grid;
   gap: 10px;
