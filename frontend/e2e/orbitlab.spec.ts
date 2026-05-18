@@ -295,7 +295,7 @@ async function openApp(
     );
   }
   await page.goto('/');
-  await expect(page.getByText('OrbitLab')).toBeVisible();
+  await expect(page.getByText('OrbitLab', { exact: true })).toBeVisible();
 }
 
 async function chooseProduct(page: Page) {
@@ -323,6 +323,31 @@ test('app loads without browser console errors', async ({ page }) => {
   await expect(page.getByTestId('orbit-empty-state')).toContainText('Run BLS Search or Analysis');
   await expect(page.getByTestId('orbit-scene').getByTestId(/orbit-label-/)).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('beginner guidance provides tour, coach marks, helper text, and tooltips', async ({ page }) => {
+  await openApp(page, { storedMode: null });
+
+  await expect(page.getByRole('dialog', { name: 'Choose a mission' })).toBeVisible();
+  await expect(page.getByText('1 of 6')).toBeVisible();
+  await expect(page.locator('.tour-anchor.active')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByRole('dialog', { name: 'Search a target' })).toBeVisible();
+  await expect(page.locator('.search-strip')).toHaveClass(/active/);
+  await page.getByRole('button', { name: 'Skip' }).click();
+
+  await expect(page.getByText('Try a TIC ID, Kepler name, TOI, or alias such as TRAPPIST.')).toBeVisible();
+  await expect(page.getByText('Beginner next step')).toBeVisible();
+  await expect(page.getByText('What appears here?')).toBeVisible();
+  await expect(
+    page.locator('[title="The mission decides which archive OrbitLab searches for target pixel files."]'),
+  ).toBeVisible();
+  await expect(
+    page.locator('[title="Observation files contain the pixel data OrbitLab needs for light curves and analysis."]'),
+  ).toBeVisible();
+
+  await page.getByRole('button', { name: 'Start beginner tour' }).click();
+  await expect(page.getByRole('dialog', { name: 'Choose a mission' })).toBeVisible();
 });
 
 test('settings drawer persists mode and theme after reload', async ({ page }) => {

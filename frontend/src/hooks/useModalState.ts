@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export type ActiveModal = 'aperture' | 'bls' | 'models' | 'sessions' | 'settings' | 'voyager' | null;
+export type ActiveModal = 'aperture' | 'bls' | 'models' | 'sessions' | 'settings' | 'tour' | 'voyager' | null;
 
 export function useModalState(isCloseBlocked: (modal: Exclude<ActiveModal, null>) => boolean = () => false) {
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);

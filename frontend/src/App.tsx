@@ -1,5 +1,6 @@
 import {
   Activity,
+  CircleHelp,
   Download,
   FlaskConical,
   Gauge,
@@ -13,6 +14,7 @@ import {
   Settings,
   Sparkles,
   SlidersHorizontal,
+  Telescope,
   Trash2,
   X,
 } from 'lucide-react';
@@ -89,7 +91,12 @@ function CandidateCard({
   onSelect: () => void;
 }) {
   return (
-    <button type="button" className={`candidate-card ${active ? 'active' : ''}`} onClick={onSelect}>
+    <button
+      type="button"
+      className={`candidate-card ${active ? 'active' : ''}`}
+      onClick={onSelect}
+      title="SNR is signal strength; depth is how much the star dims during the transit."
+    >
       <span>{candidate.candidate_id}</span>
       <strong>{formatNumber(candidate.period, 4)} d</strong>
       <small>
@@ -173,8 +180,44 @@ type Mission = 'TESS' | 'Kepler' | 'K2';
 
 const MODE_STORAGE_KEY = 'orbitlab-mode';
 const THEME_STORAGE_KEY = 'orbitlab-theme';
+const TOUR_COMPLETED_STORAGE_KEY = 'orbitlab-beginner-tour-completed';
 const VOYAGER_UNLOCKED_STORAGE_KEY = 'orbitlab-voyager-unlocked';
 const VOYAGER_ENABLED_STORAGE_KEY = 'orbitlab-voyager-enabled';
+
+const tourSteps = [
+  {
+    id: 'mission',
+    title: 'Choose a mission',
+    body: 'Start by picking the survey archive. TESS is the easiest first pass for the sample target.',
+  },
+  {
+    id: 'search',
+    title: 'Search a target',
+    body: 'Type a TIC ID, Kepler name, TOI, or common alias, then run Search to load matches.',
+  },
+  {
+    id: 'target',
+    title: 'Pick the match',
+    body: 'Select the target that best matches your search. OrbitLab then loads observation files for it.',
+  },
+  {
+    id: 'product',
+    title: 'Select an observation file',
+    body: 'Choose a target pixel file. This is the data product used for previews and analysis.',
+  },
+  {
+    id: 'run',
+    title: 'Preview or analyze',
+    body: 'Beginners can preview candidates first, then run the full analysis once the product looks useful.',
+  },
+  {
+    id: 'plots',
+    title: 'Read the plots',
+    body: 'Use the orbit view, periodogram, folded curve, validation, physics, and ML panels to inspect each candidate.',
+  },
+] as const;
+
+type TourStepId = (typeof tourSteps)[number]['id'];
 
 function readStoredMode(): OrbitLabMode {
   if (typeof window === 'undefined') return 'beginner';
@@ -199,6 +242,8 @@ function parseOptionalPositiveNumber(value: string) {
 export default function App() {
   const [mode, setMode] = useState<OrbitLabMode>(readStoredMode);
   const [theme, setTheme] = useState<ThemeName>(readStoredTheme);
+  const [tourCompleted, setTourCompleted] = useState(() => readStoredBoolean(TOUR_COMPLETED_STORAGE_KEY));
+  const [tourStepIndex, setTourStepIndex] = useState(0);
   const [voyagerUnlocked, setVoyagerUnlocked] = useState(() => readStoredBoolean(VOYAGER_UNLOCKED_STORAGE_KEY));
   const [voyagerEnabled, setVoyagerEnabled] = useState(() => readStoredBoolean(VOYAGER_ENABLED_STORAGE_KEY));
   const [mission, setMission] = useState<Mission>('TESS');
@@ -258,9 +303,16 @@ export default function App() {
   useEffect(() => {
     refreshModelStatus();
     refreshHealth();
+    let tourTimeout: number | undefined;
+    if (mode === 'beginner' && !readStoredBoolean(TOUR_COMPLETED_STORAGE_KEY)) {
+      tourTimeout = window.setTimeout(() => openModal('tour'), 350);
+    }
     const interval = window.setInterval(refreshHealth, 30_000);
     return () => {
       window.clearInterval(interval);
+      if (tourTimeout) {
+        window.clearTimeout(tourTimeout);
+      }
       if (successTimeout.current) {
         window.clearTimeout(successTimeout.current);
       }
@@ -275,6 +327,10 @@ export default function App() {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    window.localStorage.setItem(TOUR_COMPLETED_STORAGE_KEY, String(tourCompleted));
+  }, [tourCompleted]);
 
   useEffect(() => {
     window.localStorage.setItem(VOYAGER_UNLOCKED_STORAGE_KEY, String(voyagerUnlocked));
@@ -349,6 +405,7 @@ export default function App() {
   const candidateEmptyMessage = useMemo(() => getCandidateEmptyMessage(Boolean(result)), [result]);
   const orbitEmptyMessage = useMemo(() => getOrbitEmptyMessage(Boolean(result)), [result]);
   const isVoyagerModeActive = voyagerUnlocked && voyagerEnabled;
+  const activeTourStep = tourSteps[tourStepIndex];
 
   const pixelScale = useMemo(() => {
     if (!tpfPreview) return { min: 0, span: 1 };
@@ -417,6 +474,28 @@ export default function App() {
   function updateMaxCandidates(value: number) {
     const next = Math.min(8, Math.max(1, Math.round(value || 1)));
     setMaxCandidates(next);
+  }
+
+  function tourAnchorClass(id: TourStepId) {
+    return activeModal === 'tour' && activeTourStep.id === id ? 'tour-anchor active' : 'tour-anchor';
+  }
+
+  function startBeginnerTour() {
+    setTourStepIndex(0);
+    openModal('tour');
+  }
+
+  function finishBeginnerTour() {
+    setTourCompleted(true);
+    closeActiveModal();
+  }
+
+  function HelpTip({ label }: { label: string }) {
+    return (
+      <span className="help-tip" aria-label="Help" title={label}>
+        <CircleHelp size={13} />
+      </span>
+    );
   }
 
   async function runSearch() {
@@ -922,7 +1001,7 @@ export default function App() {
             </span>
           )}
         </div>
-        <div className="search-strip">
+        <div className={`search-strip ${tourAnchorClass('search')}`}>
           <Search size={16} />
           <label className="sr-only" htmlFor="target-search">
             Target search
@@ -938,8 +1017,17 @@ export default function App() {
           <button type="button" onClick={runSearch} disabled={!query.trim() || workflow === 'searching'}>
             <Search size={15} /> Search
           </button>
+          <p className="inline-helper">Try a TIC ID, Kepler name, TOI, or alias such as TRAPPIST.</p>
         </div>
         <div className="command-actions">
+          <button
+            type="button"
+            title="Start beginner tour"
+            aria-label="Start beginner tour"
+            onClick={startBeginnerTour}
+          >
+            <Telescope size={17} />
+          </button>
           <button type="button" title="Settings" aria-label="Settings" onClick={() => openModal('settings')}>
             <Settings size={17} />
           </button>
@@ -985,22 +1073,30 @@ export default function App() {
         <aside className="left-rail">
           <div className={`rail-section ${isAdvanced ? '' : 'guided-section'}`}>
             <h2>{isAdvanced ? 'Target' : '1. Choose Mission'}</h2>
-            <label htmlFor="mission-select">Mission</label>
-            <select
-              id="mission-select"
-              name="mission"
-              value={mission}
-              onChange={(event) => changeMission(event.target.value as 'TESS' | 'Kepler' | 'K2')}
-            >
-              <option value="TESS">TESS</option>
-              <option value="Kepler">Kepler</option>
-              <option value="K2">K2</option>
-            </select>
+            <div className={tourAnchorClass('mission')}>
+              <label htmlFor="mission-select">
+                Mission <HelpTip label="The mission decides which archive OrbitLab searches for target pixel files." />
+              </label>
+              <select
+                id="mission-select"
+                name="mission"
+                value={mission}
+                onChange={(event) => changeMission(event.target.value as 'TESS' | 'Kepler' | 'K2')}
+              >
+                <option value="TESS">TESS</option>
+                <option value="Kepler">Kepler</option>
+                <option value="K2">K2</option>
+              </select>
+              <p className="inline-helper">Start with TESS unless you already know a Kepler or K2 target.</p>
+            </div>
             {!isAdvanced && (
               <p className="quiet">Pick the archive you want to search, then enter a target in the top bar.</p>
             )}
-            <div className="field-label">{isAdvanced ? 'Matches' : '2. Select Target'}</div>
-            <div className="selection-list">
+            <div className="field-label">
+              {isAdvanced ? 'Matches' : '2. Select Target'}{' '}
+              <HelpTip label="Aliases can appear before catalog matches so beginners can choose the canonical target." />
+            </div>
+            <div className={`selection-list ${tourAnchorClass('target')}`}>
               {suggestedTargets.length > 0 && <div className="selection-group-label">Suggested targets</div>}
               {suggestedTargets.map((target) => (
                 <button
@@ -1032,9 +1128,18 @@ export default function App() {
                   {isAdvanced ? matchEmptyMessage : matchEmptyMessage.replace('Search', 'Use Search')}
                 </p>
               )}
+              {!targets.length && !isAdvanced && (
+                <div className="beginner-empty-guide">
+                  <strong>Beginner next step</strong>
+                  <span>Use the search box above with a known target, then pick a match from this list.</span>
+                </div>
+              )}
             </div>
-            <div className="field-label">{isAdvanced ? 'Product' : '3. Select Observation File'}</div>
-            <div className="selection-list">
+            <div className="field-label">
+              {isAdvanced ? 'Product' : '3. Select Observation File'}{' '}
+              <HelpTip label="Observation files contain the pixel data OrbitLab needs for light curves and analysis." />
+            </div>
+            <div className={`selection-list ${tourAnchorClass('product')}`}>
               {products.map((product) => (
                 <button
                   type="button"
@@ -1058,9 +1163,15 @@ export default function App() {
                       : 'Choose a matching target first.'}
                 </p>
               )}
+              {!productsLoading && !products.length && !isAdvanced && (
+                <div className="beginner-empty-guide">
+                  <strong>What appears here?</strong>
+                  <span>After you choose a target, usable observation files appear here for preview and analysis.</span>
+                </div>
+              )}
             </div>
           </div>
-          <div className="rail-section">
+          <div className={`rail-section ${tourAnchorClass('run')}`}>
             <h2>{isAdvanced ? 'Pipeline' : '4. Run'}</h2>
             {isAdvanced ? (
               <>
@@ -1069,6 +1180,7 @@ export default function App() {
                   disabled={!selectedProduct || workflow === 'running'}
                   onClick={openApertureModal}
                   className={selectedApertureMaskId ? 'active-pill' : ''}
+                  title="Choose which pixels are included in the light-curve extraction."
                 >
                   <SlidersHorizontal size={15} /> Aperture {selectedApertureMaskId ? '(Custom)' : ''}
                 </button>
@@ -1076,6 +1188,7 @@ export default function App() {
                   type="button"
                   disabled={!selectedProduct || workflow === 'running'}
                   onClick={() => openModal('bls')}
+                  title="Box Least Squares searches for repeating transit-like dips."
                 >
                   <FlaskConical size={15} /> BLS Search
                 </button>
@@ -1085,6 +1198,7 @@ export default function App() {
                 type="button"
                 disabled={!selectedProduct || workflow === 'running' || blsRunning}
                 onClick={runBlsPreview}
+                title="Run a quick transit preview before the full analysis."
               >
                 <FlaskConical size={15} /> Preview Candidates
               </button>
@@ -1096,11 +1210,18 @@ export default function App() {
             >
               <Play size={15} /> Run Analysis
             </button>
+            {!isAdvanced && (
+              <p className="inline-helper">
+                Preview is faster. Run Analysis creates the richer validation, physics, and ML result.
+              </p>
+            )}
             {isAdvanced && (
               <>
                 <div className="expert-options" aria-label="Expert options">
                   <h3>Expert Options</h3>
-                  <label htmlFor="max-candidates">Max Candidates</label>
+                  <label htmlFor="max-candidates">
+                    Max Candidates <HelpTip label="Limits how many strongest transit-like signals are returned." />
+                  </label>
                   <input
                     id="max-candidates"
                     type="number"
@@ -1109,7 +1230,9 @@ export default function App() {
                     value={maxCandidates}
                     onChange={(event) => updateMaxCandidates(Number(event.target.value))}
                   />
-                  <label htmlFor="stellar-radius">Stellar Radius (solar)</label>
+                  <label htmlFor="stellar-radius">
+                    Stellar Radius (solar) <HelpTip label="Optional star radius used to estimate planet size." />
+                  </label>
                   <input
                     id="stellar-radius"
                     type="number"
@@ -1169,7 +1292,9 @@ export default function App() {
                     onChange={(event) => setStellarDensity(event.target.value)}
                     placeholder="optional"
                   />
-                  <label htmlFor="stellar-rotation">Rotation Period (days)</label>
+                  <label htmlFor="stellar-rotation">
+                    Rotation Period (days) <HelpTip label="Optional stellar rotation period for extra context." />
+                  </label>
                   <input
                     id="stellar-rotation"
                     type="number"
@@ -1180,7 +1305,11 @@ export default function App() {
                     placeholder="optional"
                   />
                 </div>
-                <button type="button" onClick={() => openModal('models')}>
+                <button
+                  type="button"
+                  onClick={() => openModal('models')}
+                  title="Shows whether the mission-specific ML model is ready."
+                >
                   <Gauge size={15} /> ML Status {activeModelStatus}
                 </button>
               </>
@@ -1217,12 +1346,20 @@ export default function App() {
                 />
               ))
             ) : (
-              <p className="quiet">{candidateEmptyMessage}</p>
+              <>
+                <p className="quiet">{candidateEmptyMessage}</p>
+                {!isAdvanced && (
+                  <div className="beginner-empty-guide">
+                    <strong>Candidate cards will appear here</strong>
+                    <span>Each card shows period, SNR, and transit depth after preview or analysis finishes.</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </aside>
 
-        <section className="center-stage">
+        <section className={`center-stage ${tourAnchorClass('plots')}`}>
           <div className="stage-header">
             <div>
               <span>{result?.mission ?? 'Mission'}</span>
@@ -1276,7 +1413,9 @@ export default function App() {
 
         <aside className="right-rail">
           <div className="panel">
-            <h2>Periodogram</h2>
+            <h2>
+              Periodogram <HelpTip label="BLS power peaks point to repeating dips that may be transit periods." />
+            </h2>
             <SciencePlot
               title="BLS Power"
               testId="periodogram-plot"
@@ -1287,7 +1426,9 @@ export default function App() {
             />
           </div>
           <div className="panel">
-            <h2>Folded Curve</h2>
+            <h2>
+              Folded Curve <HelpTip label="Folds the light curve on one period so repeated transit dips line up." />
+            </h2>
             <SciencePlot
               title={selected?.candidate_id ?? 'Candidate'}
               testId="folded-curve-plot"
@@ -1299,7 +1440,10 @@ export default function App() {
             />
           </div>
           <div className="panel details">
-            <h2>Validation</h2>
+            <h2>
+              Validation{' '}
+              <HelpTip label="Quick checks for common false-positive signs like odd-even differences or secondary eclipses." />
+            </h2>
             <dl>
               <dt>Odd-even</dt>
               <dd>{formatScientific(selected?.validation?.odd_even_depth_delta, 3)}</dd>
@@ -1312,7 +1456,10 @@ export default function App() {
             </dl>
           </div>
           <div className="panel details">
-            <h2>Physics & Habitability</h2>
+            <h2>
+              Physics & Habitability{' '}
+              <HelpTip label="Estimated planet size, orbit distance, and rough habitability context." />
+            </h2>
             <dl>
               <dt>Rp/Rs</dt>
               <dd>{formatNumber(selected?.physics?.radius_ratio, 4)}</dd>
@@ -1333,7 +1480,10 @@ export default function App() {
             </dl>
           </div>
           <div className="panel details">
-            <h2>Pretrained ML</h2>
+            <h2>
+              Pretrained ML{' '}
+              <HelpTip label="Model readiness and prediction details from the selected mission adapter." />
+            </h2>
             <dl>
               <dt>Readiness</dt>
               <dd>{activeModelStatus}</dd>
@@ -1439,6 +1589,42 @@ export default function App() {
         </ModalShell>
       )}
 
+      {activeModal === 'tour' && (
+        <div className="tour-layer" role="dialog" aria-modal="false" aria-labelledby="tour-title">
+          <div className="tour-card">
+            <span className="tour-count">
+              {tourStepIndex + 1} of {tourSteps.length}
+            </span>
+            <h2 id="tour-title">{activeTourStep.title}</h2>
+            <p>{activeTourStep.body}</p>
+            <div className="tour-actions">
+              <button
+                type="button"
+                onClick={() => setTourStepIndex(Math.max(0, tourStepIndex - 1))}
+                disabled={tourStepIndex === 0}
+              >
+                Back
+              </button>
+              <button type="button" className="quiet-action" onClick={finishBeginnerTour}>
+                Skip
+              </button>
+              {tourStepIndex < tourSteps.length - 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setTourStepIndex(Math.min(tourSteps.length - 1, tourStepIndex + 1))}
+                >
+                  Next
+                </button>
+              ) : (
+                <button type="button" onClick={finishBeginnerTour}>
+                  Done
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeModal === 'voyager' && (
         <ModalShell
           title="Voyager Mode Unlocked"
@@ -1523,7 +1709,9 @@ export default function App() {
           }
         >
           <div className="period-control">
-            <label htmlFor="min-period">Min Period (days)</label>
+            <label htmlFor="min-period">
+              Min Period (days) <HelpTip label="Shortest repeating orbit period to include in the BLS preview." />
+            </label>
             <div className="range-row">
               <input
                 id="min-period"
@@ -1547,7 +1735,9 @@ export default function App() {
             </div>
           </div>
           <div className="period-control">
-            <label htmlFor="max-period">Max Period (days)</label>
+            <label htmlFor="max-period">
+              Max Period (days) <HelpTip label="Longest repeating orbit period to include in the BLS preview." />
+            </label>
             <div className="range-row">
               <input
                 id="max-period"
