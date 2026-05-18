@@ -420,12 +420,79 @@ label,
   height: 100%;
   position: relative;
   overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(255, 193, 104, 0.18), transparent 12%),
+    radial-gradient(circle at 50% 62%, rgba(120, 220, 232, 0.1), transparent 42%),
+    linear-gradient(180deg, #03080d, #071016 54%, #08141b);
 }
 
 .orbit-scene canvas {
   position: absolute;
   inset: 0;
   z-index: 1;
+}
+
+.orbit-hud {
+  position: absolute;
+  z-index: 4;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.orbit-hud button {
+  min-height: 31px;
+  min-width: 32px;
+  padding: 5px 8px;
+  border-color: rgba(120, 220, 232, 0.42);
+  background: rgba(7, 16, 22, 0.78);
+  color: #c8f6ff;
+  box-shadow: 0 0 22px rgba(120, 220, 232, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+.orbit-hud button span {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.orbit-metric-badge {
+  position: absolute;
+  z-index: 3;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  max-width: min(470px, calc(100% - 24px));
+  padding: 8px 9px;
+  border: 1px solid rgba(120, 220, 232, 0.42);
+  border-radius: 6px;
+  background: rgba(4, 12, 18, 0.76);
+  box-shadow: 0 0 28px rgba(120, 220, 232, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.orbit-metric-badge strong,
+.orbit-metric-badge span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+
+.orbit-metric-badge strong {
+  color: #f0fbfd;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.orbit-metric-badge span {
+  padding-left: 7px;
+  border-left: 1px solid rgba(120, 220, 232, 0.25);
+  color: #a8dfe8;
 }
 
 .orbit-empty-state {
@@ -465,7 +532,6 @@ label,
   display: grid;
   gap: 6px;
   width: min(190px, calc(100% - 24px));
-  pointer-events: none;
 }
 
 .orbit-label {
@@ -473,10 +539,14 @@ label,
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: baseline;
+  min-height: 0;
   padding: 7px 9px;
   border: 1px solid rgba(79, 182, 199, 0.6);
   border-radius: 6px;
   background: rgba(7, 16, 22, 0.76);
+  text-align: left;
+  box-shadow: 0 0 18px rgba(79, 182, 199, 0.08);
+  backdrop-filter: blur(10px);
 }
 
 .orbit-label.active {
@@ -509,28 +579,52 @@ label,
   display: grid;
   place-items: center;
   background:
-    radial-gradient(circle at center, rgba(255, 209, 122, 0.14), transparent 12%),
-    linear-gradient(180deg, #071016, #091922);
+    radial-gradient(circle at center, rgba(255, 209, 122, 0.2), transparent 13%),
+    radial-gradient(circle at center, rgba(120, 220, 232, 0.11), transparent 47%),
+    linear-gradient(180deg, #03080d, #091922);
+}
+
+.fallback-plane {
+  position: absolute;
+  width: min(86%, 620px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(120, 220, 232, 0.18);
+  border-radius: 50%;
+  transform: rotateX(64deg);
+  background:
+    repeating-radial-gradient(circle, transparent 0 28px, rgba(120, 220, 232, 0.12) 29px 30px),
+    repeating-linear-gradient(90deg, transparent 0 30px, rgba(120, 220, 232, 0.08) 31px 32px);
+  opacity: 0.72;
 }
 
 .fallback-star {
   position: absolute;
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: #ffd17a;
-  box-shadow: 0 0 34px rgba(255, 166, 41, 0.7);
+  background:
+    radial-gradient(circle at 35% 32%, #fff4bd, #ffd17a 36%, #ff922e 72%),
+    #ffd17a;
+  box-shadow:
+    0 0 28px rgba(255, 166, 41, 0.82),
+    0 0 86px rgba(255, 166, 41, 0.36);
 }
 
 .fallback-orbit {
   position: absolute;
-  border: 2px solid #4fb6c7;
+  min-height: 0;
+  border: 1px solid rgba(79, 182, 199, 0.72);
   border-radius: 50%;
+  background: transparent;
+  transform: rotateX(64deg);
+  pointer-events: auto;
 }
 
 .fallback-orbit.active {
   border-color: #76e4f7;
-  box-shadow: 0 0 16px rgba(118, 228, 247, 0.22);
+  box-shadow:
+    0 0 16px rgba(118, 228, 247, 0.24),
+    inset 0 0 18px rgba(118, 228, 247, 0.12);
 }
 
 .fallback-planet {
@@ -540,8 +634,19 @@ label,
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #b6ccd2;
+  background: #a8eaf5;
+  box-shadow: 0 0 14px rgba(142, 231, 255, 0.55);
   transform: translateY(-50%);
+}
+
+.fallback-transit {
+  position: absolute;
+  left: 46%;
+  top: -3px;
+  width: 26px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .fallback-orbit.active .fallback-planet {

@@ -1200,6 +1200,7 @@ export default function App() {
             candidates={result?.candidates ?? []}
             selectedId={selected?.candidate_id}
             emptyMessage={orbitEmptyMessage}
+            onSelectCandidate={setSelectedId}
           />
           <div className="timeline">
             <SciencePlot

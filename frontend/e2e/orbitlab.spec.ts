@@ -568,6 +568,12 @@ test('BLS preview renders candidates, periodogram, folded plot, and API errors',
   await expect(page.getByTestId('orbit-label-preview-1')).toHaveClass(/active/);
   await page.getByRole('button', { name: /preview-2/ }).click();
   await expect(page.getByTestId('orbit-label-preview-2')).toHaveClass(/active/);
+  await page.getByTestId('orbit-label-preview-1').click();
+  await expect(page.getByTestId('orbit-label-preview-1')).toHaveClass(/active/);
+  await expect(page.getByTestId('orbit-play-toggle')).toBeVisible();
+  await expect(page.getByTestId('orbit-speed-toggle')).toBeVisible();
+  await expect(page.getByTestId('orbit-camera-reset')).toBeVisible();
+  await expect(page.getByRole('button', { name: /Pause orbit simulation|Play orbit simulation/ })).toBeVisible();
   const orbitCanvas = page.getByTestId('orbit-canvas');
   await expect(orbitCanvas).toBeVisible();
   expect(pngHasColorVariance(await orbitCanvas.screenshot())).toBe(true);
