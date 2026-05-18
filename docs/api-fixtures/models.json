@@ -22,11 +22,5 @@
     "checksum": "d8a28d99cb29be8cfd0870d964bdde0bb3e97ee8d0aee9fded946ad5a54b2c2c",
     "schema_version": "orbitlab.exomac-kkt.v1",
     "status": "ready"
-  },
-  "k2_astronet": {
-    "model_id": "k2-astronet-family",
-    "mission": "K2",
-    "status": "unavailable",
-    "detail": "Published AstroNet-K2 paper found; no public downloadable checkpoint is registered."
   }
 }

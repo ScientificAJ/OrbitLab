@@ -215,12 +215,6 @@ async function installBaseMocks(page: Page) {
         checksum: 'd8a28d99cb29be8cfd0870d964bdde0bb3e97ee8d0aee9fded946ad5a54b2c2c',
         schema_version: 'orbitlab.exomac-kkt.v1',
       },
-      k2_astronet: {
-        model_id: 'k2-astronet-family',
-        mission: 'K2',
-        status: 'unavailable',
-        detail: 'Published AstroNet-K2 paper found; no public downloadable checkpoint is registered.',
-      },
     }),
   );
 
@@ -699,18 +693,15 @@ test('analysis jobs handle complete, failed, and polling timeout states', async 
   await expect(page.getByTestId('workflow-status')).toHaveText('running');
 });
 
-test('model readiness modal shows ready and unavailable setup information', async ({ page }) => {
+test('model readiness modal shows K2 ExoMAC as the K2 readiness surface', async ({ page }) => {
   await openApp(page);
 
   await page.getByRole('button', { name: /ML Status ready/ }).click();
 
   await expect(page.getByRole('dialog', { name: 'Model Status & Registry' })).toBeVisible();
   await expect(page.getByText('ready').first()).toBeVisible();
-  await expect(page.getByText('unavailable').first()).toBeVisible();
-  await expect(
-    page.getByText('No public downloadable K2 AstroNet checkpoint is registered for OrbitLab.'),
-  ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'K2 ExoMAC KKT' })).toBeVisible();
+  await expect(page.locator('.model-info-card')).toHaveCount(3);
   await expect(page.locator('.model-info-card h3').filter({ hasText: '_' })).toHaveCount(0);
 });
 

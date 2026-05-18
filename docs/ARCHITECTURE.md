@@ -13,11 +13,9 @@ flowchart LR
     G -->|TESS| H[Nigraha readiness and inference]
     G -->|Kepler/K1| I[AstroNet checkpoint readiness and inference]
     G -->|K2| J[ExoMAC-KKT readiness and inference]
-    G -->|K2 AstroNet| K[Unavailable provenance note]
     H --> L[API result]
     I --> L
     J --> L
-    K --> L
     L --> M[React/Vite UI]
 ```
 

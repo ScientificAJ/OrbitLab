@@ -35,7 +35,7 @@ These targets are practical starting points for local demos and smoke checks. Re
 - Mission: `K2`
 - Expected flow: K2 search/product exploration and model registry caveats.
 - Runtime notes: K2 product availability can be more variable than TESS demo targets.
-- Model notes: ExoMAC-KKT is the K2-capable tabular classifier; K2 AstroNet remains unavailable without a registered public checkpoint.
+- Model notes: ExoMAC-KKT is the registered K2 replacement model and should be the K2 readiness surface.
 - Demo caveat: use this target primarily to show honest unavailable states and mission-specific handling.
 
 ## Recommended Demo Script

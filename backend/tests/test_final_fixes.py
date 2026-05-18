@@ -60,6 +60,14 @@ def test_bls_preview_rejects_invalid_period_range():
         })
         assert response.status_code == 422 # Pydantic validation error
 
+def test_model_status_uses_exomac_for_k2_surface():
+    with TestClient(app) as client:
+        response = client.get("/api/v1/models")
+        assert response.status_code == 200
+        payload = response.json()
+        assert "k2_exomac_kkt" in payload
+        assert "k2_astronet" not in payload
+
 def test_aperture_mask_rejects_empty_selection():
     with TestClient(app) as client:
         response = client.post("/api/v1/aperture-masks", json={

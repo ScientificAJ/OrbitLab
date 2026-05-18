@@ -37,16 +37,8 @@ OrbitLab treats model artifacts as external scientific dependencies. A model is 
 - Format: sklearn joblib bundle with feature schema, labels, and metadata
 - Input contract: 16 catalog-style features mapped from a detected K2 candidate, including period, depth, duration, SNR, stellar context when supplied, and derived log/duty-cycle features.
 - Checksum policy: every bundle file is checked against a hard-coded SHA-256; feature columns, labels, and model metadata are validated before registration.
-- Limitations: ExoMAC-KKT is a tabular candidate classifier, not an AstroNet-K2 light-curve CNN. Its output should be interpreted as triage support.
-
-## K2 AstroNet Provenance Note
-
-- Model ID: `k2-astronet-family`
-- Mission: K2
-- Source: published AstroNet-K2 work
-- Status in OrbitLab: unavailable
-- Reason: OrbitLab has not registered a public downloadable checkpoint with reproducible checksums.
-- Limitation: the repository should not claim K2 AstroNet inference until a verifiable artifact is available.
+- Limitations: ExoMAC-KKT is a tabular candidate classifier, not a light-curve CNN. Its output should be interpreted as triage support.
+- Replacement note: this is OrbitLab's registered K2 ML surface in place of the previously documented K2 AstroNet provenance-only entry.
 
 ## Public Readiness Surface
 

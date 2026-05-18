@@ -8,9 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 
 import fetch_kepler_astronet
 from orbitlab.ml.artifact_registry import (
-    K2_ASTRONET_MODEL_ID,
     K2_EXOMAC_MODEL_ID,
-    K2_UNAVAILABLE_DETAIL,
     artifact_status,
     get_registered_artifact,
     register_artifact,
@@ -242,13 +240,6 @@ def test_register_artifact_records_exomac_bundle_format(tmp_path: Path):
 
     assert artifact.format == "sklearn-joblib-bundle"
     assert artifact_status(K2_EXOMAC_MODEL_ID, registry_path)["status"] == "ready"
-
-
-def test_k2_status_is_explicitly_unavailable(tmp_path: Path):
-    status = artifact_status(K2_ASTRONET_MODEL_ID, tmp_path / "models.json")
-
-    assert status["status"] == "unavailable"
-    assert status["detail"] == K2_UNAVAILABLE_DETAIL
 
 
 def test_kepler_fetcher_rejects_lfs_pointer():

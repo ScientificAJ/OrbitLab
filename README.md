@@ -40,7 +40,6 @@ OrbitLab is the opposite tradeoff: a usable full-stack workbench that keeps the 
 | TESS        | Nigraha global no-dropout binary ensemble       | `ExoplanetML/Nigraha` at pinned commit `c4365b41dd02b187c3210189ffe8e3ead584f4f5`            | Ready only when all registered HDF5 weights exist and match expected SHA-256 values.          |
 | Kepler/K1   | AstroNet-family CNN/BiLSTM/attention checkpoint | `bibinthomas123/Astronet` at pinned commit `9809ce92306f11fbdc96f9830b522026710a3883`        | Ready only when the TensorFlow checkpoint is fetched, registered, and checksum-valid.         |
 | K2          | ExoMAC-KKT RandomForest catalog classifier      | `ZapatoProgramming/ExoMAC-KKT` at pinned revision `5cda5310d5a163679c6915f9463a4d6afc312483` | Ready only when the sklearn bundle, feature schema, labels, metadata, and checksums validate. |
-| K2 AstroNet | Paper/provenance note only                      | Published AstroNet-K2 work                                                                   | Marked unavailable because no public downloadable checkpoint is registered.                   |
 
 See [docs/MODEL_CARDS.md](docs/MODEL_CARDS.md) and [docs/model_artifacts.md](docs/model_artifacts.md) for provenance and limitations.
 
@@ -146,7 +145,7 @@ Base prefix: `/api/v1`
 - Real archive data first: no generated light curves or model outputs.
 - Reproducible artifact provenance with pinned sources and checksums.
 - Mission-aware ML behavior for TESS, Kepler/K1, and K2.
-- Clear unavailable states for missing models and missing public K2 AstroNet weights.
+- Clear unavailable states for missing models, with K2 handled by the registered ExoMAC-KKT replacement.
 - Full-stack demo path with FastAPI, React/Vite, Docker Compose, and local preflight checks.
 
 Run the same core checks used by contributors:

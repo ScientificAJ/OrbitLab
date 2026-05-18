@@ -39,8 +39,8 @@ OrbitLab combines a full-stack user experience with strict data provenance. The 
 
 - Hosted demo and walkthrough video are not part of this pass.
 - MAST access, large model downloads, and Docker image pulls require network access.
-- K2 AstroNet light-curve checkpoint inference is unavailable because OrbitLab has not registered a public downloadable checkpoint.
-- ExoMAC-KKT is a K2-capable tabular classifier, not an AstroNet-K2 CNN.
+- K2 uses ExoMAC-KKT as the registered replacement model for mission-aware ML readiness and inference.
+- ExoMAC-KKT is a K2-capable tabular classifier, not a light-curve CNN.
 - Candidate labels are decision support, not discovery confirmation.
 
 ## Judging Notes

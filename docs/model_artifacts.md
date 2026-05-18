@@ -21,7 +21,7 @@ Fetch and register K2:
 scripts/fetch_k2_exomac_kkt.py
 ```
 
-K2 inference is tabular candidate-vetting ML, not an AstroNet-K2 light-curve CNN. OrbitLab maps each detected K2 candidate into the model's 16 catalog features, including period, duration in hours, depth, SNR, stellar context when supplied, and derived log/duty-cycle features.
+K2 inference is tabular candidate-vetting ML through the registered ExoMAC-KKT replacement model. OrbitLab maps each detected K2 candidate into the model's 16 catalog features, including period, duration in hours, depth, SNR, stellar context when supplied, and derived log/duty-cycle features.
 
 ## Input Normalization
 

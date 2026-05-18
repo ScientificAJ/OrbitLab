@@ -38,7 +38,7 @@ The fetcher uses GitHub media URLs so Git LFS objects resolve to checkpoint byte
 
 ## K2 ExoMAC-KKT Artifact
 
-The AstroNet-K2 paper is published, but no public downloadable AstroNet-K2 checkpoint has been registered in this project. OrbitLab therefore uses a separate K2-capable pretrained ML artifact instead of reusing the Kepler checkpoint:
+OrbitLab uses ExoMAC-KKT as the registered K2 replacement artifact instead of exposing a separate K2 AstroNet unavailable entry:
 
 - Repository: `https://huggingface.co/ZapatoProgramming/ExoMAC-KKT`
 - Commit: `5cda5310d5a163679c6915f9463a4d6afc312483`

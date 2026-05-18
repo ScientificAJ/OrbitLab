@@ -32,7 +32,7 @@ from orbitlab.api.schemas import (
 )
 from orbitlab.config import settings
 from orbitlab.exceptions import ModelArtifactError
-from orbitlab.ml.artifact_registry import K2_ASTRONET_MODEL_ID, K2_EXOMAC_MODEL_ID, KEPLER_ASTRONET_MODEL_ID, artifact_status
+from orbitlab.ml.artifact_registry import K2_EXOMAC_MODEL_ID, KEPLER_ASTRONET_MODEL_ID, artifact_status
 from orbitlab.ml.exomac_service import ExoMACService
 from orbitlab.ml.nigraha_service import NigrahaService
 from orbitlab.ml.service import KeplerAstroNetService
@@ -349,7 +349,6 @@ def model_status():
         statuses["kepler_astronet"] = KeplerAstroNetService().validate_artifact().__dict__
     except (ModelArtifactError, KeyError, FileNotFoundError) as exc:
         statuses["kepler_astronet"] = statuses["kepler_astronet"] | {"status": "unavailable", "detail": str(exc)}
-    statuses["k2_astronet"] = artifact_status(K2_ASTRONET_MODEL_ID)
     statuses["k2_exomac_kkt"] = artifact_status(K2_EXOMAC_MODEL_ID)
     try:
         statuses["k2_exomac_kkt"] = ExoMACService().validate_artifact().__dict__

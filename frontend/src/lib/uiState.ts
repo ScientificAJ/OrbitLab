@@ -27,7 +27,6 @@ const modelDisplayNames: Record<string, string> = {
   nigraha_tess: 'Nigraha TESS',
   kepler_astronet: 'Kepler AstroNet',
   k2_exomac_kkt: 'K2 ExoMAC KKT',
-  k2_astronet: 'K2 AstroNet',
 };
 
 export function formatModelDisplayName(key: string) {

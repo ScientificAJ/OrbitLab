@@ -136,7 +136,6 @@ const setupHints: Record<string, { label: string; command?: string }> = {
   nigraha_tess: { label: 'Fetch and register the TESS weights.', command: 'scripts/fetch_nigraha_weights.py' },
   kepler_astronet: { label: 'Fetch and register the Kepler checkpoint.', command: 'scripts/fetch_kepler_astronet.py' },
   k2_exomac_kkt: { label: 'Fetch and register the K2 ExoMAC bundle.', command: 'scripts/fetch_k2_exomac_kkt.py' },
-  k2_astronet: { label: 'No public downloadable K2 AstroNet checkpoint is registered for OrbitLab.' },
 };
 
 function ModelSetupHint({ modelKey }: { modelKey: string }) {

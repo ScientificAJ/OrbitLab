@@ -8,11 +8,7 @@ from orbitlab.config import settings
 from orbitlab.ml.checksum import sha256_path
 
 KEPLER_ASTRONET_MODEL_ID = "kepler-astronet-cnn-bilstm-attention"
-K2_ASTRONET_MODEL_ID = "k2-astronet-family"
 K2_EXOMAC_MODEL_ID = "k2-exomac-kkt-randomforest"
-K2_UNAVAILABLE_DETAIL = (
-    "Published AstroNet-K2 paper found; no public downloadable checkpoint is registered."
-)
 
 
 @dataclass(frozen=True)
@@ -90,13 +86,6 @@ def get_registered_artifact(model_id: str, registry_path: Path = settings.model_
 
 
 def artifact_status(model_id: str, registry_path: Path = settings.model_registry_path) -> dict:
-    if model_id == K2_ASTRONET_MODEL_ID:
-        return {
-            "model_id": model_id,
-            "mission": "K2",
-            "status": "unavailable",
-            "detail": K2_UNAVAILABLE_DETAIL,
-        }
     try:
         artifact = get_registered_artifact(model_id, registry_path)
     except (FileNotFoundError, KeyError, ValueError, TypeError) as exc:
