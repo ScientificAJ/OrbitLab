@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -38,6 +38,7 @@ class AnalysisJobCreate(BaseModel):
     aperture_mask_id: str | None = None
     artifact_mask_id: str | None = None
     max_candidates: int = Field(default=4, ge=1, le=8)
+    vetting_mode: Literal["fast", "deep"] = "fast"
     stellar_radius_solar: float | None = Field(default=None, gt=0)
     stellar_mass_solar: float | None = Field(default=None, gt=0)
     stellar_teff: float | None = Field(default=None, gt=0)
@@ -82,6 +83,25 @@ class CandidatePayload(BaseModel):
     ml: dict[str, Any] | None = None
 
 
+class TcePayload(CandidatePayload):
+    tce_id: str | None = None
+    period_days: float | None = None
+    epoch_days: float | None = None
+    duration_days: float | None = None
+    depth_fraction: float | None = None
+    depth_ppm: float | None = None
+    disposition: Literal["planet_candidate", "borderline_tce", "rejected_signal"] | None = None
+    action_label: Literal["none", "review_needed", "follow_up_needed"] | None = None
+    disposition_score: float | None = None
+    confidence_band: str | None = None
+    flags: list[dict[str, Any]] = Field(default_factory=list)
+    detection_metrics: dict[str, Any] | None = None
+    aperture_stability: dict[str, Any] | None = None
+    vetting: dict[str, Any] | None = None
+    catalog_context: dict[str, Any] | None = None
+    fpp: dict[str, Any] | None = None
+
+
 class StellarContext(BaseModel):
     radius_solar: float | None = None
     mass_solar: float | None = None
@@ -97,6 +117,16 @@ class AnalysisResult(BaseModel):
     target_id: str
     mission: str
     candidates: list[CandidatePayload]
+    schema_version: str | None = None
+    pipeline_version: str | None = None
+    science_config_hash: str | None = None
+    vetting_mode: Literal["fast", "deep"] | None = None
+    data_quality: dict[str, Any] | None = None
+    tces: list[TcePayload] = Field(default_factory=list)
+    planet_candidates: list[TcePayload] = Field(default_factory=list)
+    validation_status: str | None = None
+    engine_status: dict[str, Any] | None = None
+    deep_mode_progress: dict[str, Any] | None = None
     periodogram: dict[str, list[float]]
     folded_curves: dict[str, dict[str, list[float]]]
     light_curve: dict[str, list[float]]

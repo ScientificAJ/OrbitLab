@@ -397,6 +397,31 @@ label,
   margin-bottom: 8px;
 }
 
+.tce-card strong {
+  text-transform: none;
+}
+
+.flag-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.flag-badge {
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 1px 5px;
+  font-size: 10px;
+}
+
+.flag-badge.warning {
+  color: var(--warning);
+}
+
+.flag-badge.hard_fail {
+  color: var(--error);
+}
+
 .candidate-card.active,
 .selection-list button.active {
   border-color: var(--accent);

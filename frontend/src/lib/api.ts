@@ -36,6 +36,25 @@ export type Candidate = {
   };
 };
 
+export type Tce = Candidate & {
+  tce_id?: string | null;
+  period_days?: number | null;
+  epoch_days?: number | null;
+  duration_days?: number | null;
+  depth_fraction?: number | null;
+  depth_ppm?: number | null;
+  disposition?: 'planet_candidate' | 'borderline_tce' | 'rejected_signal' | null;
+  action_label?: 'none' | 'review_needed' | 'follow_up_needed' | null;
+  disposition_score?: number | null;
+  confidence_band?: string | null;
+  flags?: Array<{ code: string; severity: 'info' | 'warning' | 'hard_fail'; message: string }>;
+  detection_metrics?: Record<string, unknown>;
+  aperture_stability?: Record<string, unknown>;
+  vetting?: Record<string, unknown>;
+  catalog_context?: Record<string, unknown>;
+  fpp?: Record<string, unknown>;
+};
+
 export type FluxSeries = {
   time: number[];
   flux: number[];
@@ -53,6 +72,16 @@ export type AnalysisResult = {
   target_id: string;
   mission: string;
   candidates: Candidate[];
+  schema_version?: string;
+  pipeline_version?: string;
+  science_config_hash?: string;
+  vetting_mode?: 'fast' | 'deep';
+  data_quality?: Record<string, unknown>;
+  tces?: Tce[];
+  planet_candidates?: Tce[];
+  validation_status?: string;
+  engine_status?: Record<string, unknown>;
+  deep_mode_progress?: Record<string, unknown>;
   periodogram: { period: number[]; power: number[]; duration?: number[] };
   folded_curves: Record<string, { phase: number[]; flux: number[] }>;
   light_curve: FluxSeries;
@@ -113,6 +142,7 @@ export type AnalysisJobCreate = {
   product_uri: string;
   mission: 'TESS' | 'Kepler' | 'K2';
   max_candidates?: number;
+  vetting_mode?: 'fast' | 'deep';
   stellar_radius_solar?: number;
   stellar_mass_solar?: number;
   stellar_teff?: number;

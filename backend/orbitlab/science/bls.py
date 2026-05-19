@@ -308,13 +308,15 @@ def find_multi_planet_candidates(
     max_period: float = 30.0,
     duration_grid: np.ndarray | None = None,
     period_samples: int = 8192,
+    min_signal_to_noise: float = 6.0,
+    preserve_initial_candidate: bool = False,
 ) -> list[TransitCandidate]:
     residual_time = np.asarray(time)
     residual_flux = np.asarray(flux)
     candidates: list[TransitCandidate] = []
 
     if initial_candidate is not None:
-        if initial_candidate.signal_to_noise >= 6.0:
+        if preserve_initial_candidate or initial_candidate.signal_to_noise >= min_signal_to_noise:
             candidates.append(initial_candidate)
             residual_time, residual_flux = mask_transit_windows(residual_time, residual_flux, initial_candidate)
             max_candidates -= 1
@@ -339,7 +341,7 @@ def find_multi_planet_candidates(
 
         candidate = bls_result.candidate
 
-        if candidate.signal_to_noise < 6.0:
+        if candidate.signal_to_noise < min_signal_to_noise:
             break
 
         candidates.append(candidate)

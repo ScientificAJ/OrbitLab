@@ -1,0 +1,10 @@
+promotion_snr = 6.0
+borderline_snr_min = 4.5
+aperture_percentiles = [80, 85, 90, 92, 95]
+max_duration_period_ratio = 0.2
+secondary_eclipse_hard_fail_snr = 5.0
+odd_even_hard_fail_sigma = 3.0
+centroid_hard_fail_pixels = 1.0
+quality_flag_dominance_fraction = 0.5
+red_noise_warning_beta = 1.5
+forced_period_tolerance_fraction = 0.01

@@ -29,6 +29,7 @@ import {
   Product,
   SearchResult,
   TpfPreview,
+  Tce,
   createAnalysisJob,
   fetchAnalysisJob,
   fetchHealth,
@@ -102,6 +103,41 @@ function CandidateCard({
       <small>
         SNR {formatNumber(candidate.signal_to_noise, 2)} · depth {formatNumber(candidate.depth * 1_000_000, 0)} ppm
       </small>
+    </button>
+  );
+}
+
+function TceCard({
+  tce,
+  active,
+  onSelect,
+}: {
+  tce: Tce;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  const action = tce.action_label && tce.action_label !== 'none' ? tce.action_label : tce.disposition;
+  return (
+    <button
+      type="button"
+      className={`candidate-card tce-card ${active ? 'active' : ''}`}
+      onClick={onSelect}
+      title="TCEs preserve signals that need vetting even when they are not promoted candidates."
+    >
+      <span>{tce.tce_id ?? tce.candidate_id}</span>
+      <strong>{action ?? 'tce'}</strong>
+      <small>
+        SNR {formatNumber(tce.signal_to_noise, 2)} · period {formatNumber(tce.period_days ?? tce.period, 4)} d
+      </small>
+      {tce.flags?.length ? (
+        <small className="flag-badges">
+          {tce.flags.slice(0, 3).map((flag) => (
+            <span key={`${tce.candidate_id}-${flag.code}`} className={`flag-badge ${flag.severity}`}>
+              {flag.code}
+            </span>
+          ))}
+        </small>
+      ) : null}
     </button>
   );
 }
@@ -236,6 +272,7 @@ export default function App() {
   const [minPeriod, setMinPeriod] = useState(0.5);
   const [maxPeriod, setMaxPeriod] = useState(30.0);
   const [maxCandidates, setMaxCandidates] = useState(4);
+  const [vettingMode, setVettingMode] = useState<'fast' | 'deep'>('fast');
   const [stellarRadius, setStellarRadius] = useState('');
   const [stellarMass, setStellarMass] = useState('');
   const [stellarTeff, setStellarTeff] = useState('');
@@ -333,9 +370,19 @@ export default function App() {
     successTimeout.current = window.setTimeout(() => setSuccess(null), 3000);
   }
 
-  const selected = useMemo(() => {
-    return result?.candidates.find((candidate) => candidate.candidate_id === selectedId) ?? result?.candidates[0];
-  }, [result, selectedId]);
+  const tces = useMemo<Tce[]>(() => {
+    if (result?.tces?.length) return result.tces;
+    if (result?.planet_candidates?.length) return result.planet_candidates;
+    return (result?.candidates ?? []) as Tce[];
+  }, [result]);
+  const selected = useMemo<Candidate | Tce | undefined>(() => {
+    return (
+      result?.candidates.find((candidate) => candidate.candidate_id === selectedId) ??
+      tces.find((tce) => tce.candidate_id === selectedId || tce.tce_id === selectedId) ??
+      result?.candidates[0] ??
+      tces[0]
+    );
+  }, [result, selectedId, tces]);
   const isAdvanced = mode === 'advanced';
 
   const folded = selected && result ? result.folded_curves[selected.candidate_id] : undefined;
@@ -362,7 +409,7 @@ export default function App() {
       blsStatus: blsPreviewStatus,
       jobStatus: job?.status,
       hasResult: Boolean(result),
-      candidateCount: result?.candidates.length,
+      candidateCount: result ? result.candidates.length || tces.length : undefined,
       resultKind: result?.result_id === 'preview' ? 'preview' : result ? 'analysis' : undefined,
       mode,
     });
@@ -574,6 +621,7 @@ export default function App() {
         product_uri: selectedProduct.product_uri,
         mission,
         max_candidates: maxCandidates,
+        vetting_mode: vettingMode,
         stellar_radius_solar: parseOptionalPositiveNumber(stellarRadius),
         stellar_mass_solar: parseOptionalPositiveNumber(stellarMass),
         stellar_teff: parseOptionalPositiveNumber(stellarTeff),
@@ -610,7 +658,7 @@ export default function App() {
       const payload = await fetchResult(current.result_id);
       if (token !== analysisToken.current) return;
       setResult(payload);
-      setSelectedId(payload.candidates[0]?.candidate_id);
+      setSelectedId(payload.candidates[0]?.candidate_id ?? payload.tces?.[0]?.candidate_id);
       setWorkflow('complete');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -671,6 +719,7 @@ export default function App() {
           minPeriod,
           maxPeriod,
           maxCandidates,
+          vettingMode,
           stellarRadius,
           stellarMass,
           stellarTeff,
@@ -732,6 +781,7 @@ export default function App() {
     setMaxCandidates(
       Number.isFinite(payload.maxCandidates) ? Math.min(8, Math.max(1, Number(payload.maxCandidates))) : 4,
     );
+    setVettingMode(payload.vettingMode === 'deep' ? 'deep' : 'fast');
     setStellarRadius(typeof payload.stellarRadius === 'string' ? payload.stellarRadius : '');
     setStellarMass(typeof payload.stellarMass === 'string' ? payload.stellarMass : '');
     setStellarTeff(typeof payload.stellarTeff === 'string' ? payload.stellarTeff : '');
@@ -741,7 +791,11 @@ export default function App() {
     setStellarRotationPeriod(typeof payload.stellarRotationPeriod === 'string' ? payload.stellarRotationPeriod : '');
     setResult(restoredResult);
     setSelectedId(
-      typeof payload.selectedId === 'string' ? payload.selectedId : restoredResult?.candidates[0]?.candidate_id,
+      typeof payload.selectedId === 'string'
+        ? payload.selectedId
+        : (restoredResult?.candidates[0]?.candidate_id ??
+            restoredResult?.tces?.[0]?.candidate_id ??
+            restoredResult?.planet_candidates?.[0]?.candidate_id),
     );
     setJob(null);
 
@@ -1185,6 +1239,17 @@ export default function App() {
                     value={maxCandidates}
                     onChange={(event) => updateMaxCandidates(Number(event.target.value))}
                   />
+                  <label htmlFor="vetting-mode">
+                    Vetting Mode <HelpTip label="Fast runs the required ledger and core checks; deep records optional enrichment progress." />
+                  </label>
+                  <select
+                    id="vetting-mode"
+                    value={vettingMode}
+                    onChange={(event) => setVettingMode(event.target.value === 'deep' ? 'deep' : 'fast')}
+                  >
+                    <option value="fast">Fast</option>
+                    <option value="deep">Deep</option>
+                  </select>
                   <label htmlFor="stellar-radius">
                     Stellar Radius (solar) <HelpTip label="Optional star radius used to estimate planet size." />
                   </label>
@@ -1311,6 +1376,23 @@ export default function App() {
               </>
             )}
           </div>
+          {result && result.result_id !== 'preview' && (
+            <div className="rail-section">
+              <h2>TCE Ledger</h2>
+              {tces.length ? (
+                tces.map((tce) => (
+                  <TceCard
+                    key={tce.tce_id ?? tce.candidate_id}
+                    tce={tce}
+                    active={tce.candidate_id === selected?.candidate_id}
+                    onSelect={() => setSelectedId(tce.candidate_id)}
+                  />
+                ))
+              ) : (
+                <p className="quiet">No TCEs found for this result.</p>
+              )}
+            </div>
+          )}
         </aside>
 
         <section className={`center-stage ${tourAnchorClass('plots')}`}>
@@ -1407,6 +1489,14 @@ export default function App() {
               <dd>{String(selected?.validation?.duration_plausible ?? 'n/a')}</dd>
               <dt>Flags</dt>
               <dd>{selected?.validation?.false_positive_flags?.join(', ') || 'none'}</dd>
+              {'disposition' in (selected ?? {}) && (
+                <>
+                  <dt>Disposition</dt>
+                  <dd>{(selected as Tce | undefined)?.disposition ?? 'n/a'}</dd>
+                  <dt>Action</dt>
+                  <dd>{(selected as Tce | undefined)?.action_label ?? 'n/a'}</dd>
+                </>
+              )}
             </dl>
           </div>
           <div className="panel details">

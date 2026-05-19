@@ -47,6 +47,7 @@ def _ensure_analysis_job_columns() -> None:
     expected_columns = {
         "artifact_mask_id": "VARCHAR(64)",
         "max_candidates": "INTEGER DEFAULT 4",
+        "vetting_mode": "VARCHAR(16) DEFAULT 'fast'",
         "stellar_radius_solar": "FLOAT",
         "stellar_mass_solar": "FLOAT",
         "stellar_teff": "FLOAT",

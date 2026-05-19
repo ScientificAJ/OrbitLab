@@ -79,6 +79,7 @@ def run_analysis_job(self, job_id: str) -> str:
                 stellar_density_solar=float(job.stellar_density_solar) if job.stellar_density_solar else None,
                 stellar_rotation_period=float(job.stellar_rotation_period) if job.stellar_rotation_period else None,
                 max_candidates=job.max_candidates,
+                vetting_mode=job.vetting_mode,
             )
             result_id = str(uuid4())
             payload["result_id"] = result_id

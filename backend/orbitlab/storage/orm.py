@@ -26,6 +26,7 @@ class AnalysisJobRecord(Base):
     aperture_mask_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     artifact_mask_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     max_candidates: Mapped[int] = mapped_column(Integer, default=4)
+    vetting_mode: Mapped[str] = mapped_column(String(16), default="fast")
     stellar_radius_solar: Mapped[float | None] = mapped_column(Float, nullable=True)
     stellar_mass_solar: Mapped[float | None] = mapped_column(Float, nullable=True)
     stellar_teff: Mapped[float | None] = mapped_column(Float, nullable=True)

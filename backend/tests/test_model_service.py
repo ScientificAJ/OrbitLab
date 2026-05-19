@@ -195,7 +195,9 @@ def test_k2_pipeline_uses_exomac_service(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
         pipeline,
         "find_multi_planet_candidates",
-        lambda clean_time, clean_flux, max_candidates, initial_candidate, min_period, max_period: [initial_candidate],
+        lambda clean_time, clean_flux, max_candidates, initial_candidate, min_period, max_period, **kwargs: [
+            initial_candidate
+        ],
     )
 
     result = pipeline.analyze_light_curve_arrays(
@@ -213,7 +215,8 @@ def test_k2_pipeline_uses_exomac_service(monkeypatch: pytest.MonkeyPatch):
         k2_service=TinyK2Service(),
     )
 
-    assert result["candidates"][0]["ml"]["label"] == "candidate"
-    assert result["candidates"][0]["ml"]["class_probabilities"]["CANDIDATE"] == pytest.approx(0.7)
+    assert "candidates" not in result
+    assert result["planet_candidates"][0]["ml"]["label"] == "candidate"
+    assert result["planet_candidates"][0]["ml"]["class_probabilities"]["CANDIDATE"] == pytest.approx(0.7)
     assert result["stellar_context"]["teff"] == pytest.approx(5778.0)
     assert result["stellar_context"]["rotation_period"] == pytest.approx(10.0)

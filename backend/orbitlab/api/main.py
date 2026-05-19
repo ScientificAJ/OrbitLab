@@ -110,6 +110,22 @@ def _job_payload(record: AnalysisJobRecord) -> AnalysisJob:
     )
 
 
+def _stored_payload(record: AnalysisResultRecord) -> dict[str, Any]:
+    payload = json.loads(record.payload_json) if isinstance(record.payload_json, str) else record.payload_json
+    return dict(payload)
+
+
+def _analysis_response_payload(record: AnalysisResultRecord) -> dict[str, Any]:
+    payload = _stored_payload(record)
+    if "planet_candidates" not in payload and "candidates" in payload:
+        payload["planet_candidates"] = payload["candidates"]
+    if "candidates" not in payload:
+        payload["candidates"] = payload.get("planet_candidates", [])
+    if "tces" not in payload:
+        payload["tces"] = payload.get("planet_candidates", payload.get("candidates", []))
+    return payload
+
+
 @app.get(f"{settings.api_prefix}/search", response_model=list[SearchResult])
 def search(query: str = Query(min_length=1), mission: str | None = None):
     try:
@@ -245,6 +261,7 @@ async def create_analysis_job(
         aperture_mask_id=payload.aperture_mask_id,
         artifact_mask_id=payload.artifact_mask_id,
         max_candidates=payload.max_candidates,
+        vetting_mode=payload.vetting_mode,
         stellar_radius_solar=payload.stellar_radius_solar,
         stellar_mass_solar=payload.stellar_mass_solar,
         stellar_teff=payload.stellar_teff,
@@ -291,7 +308,7 @@ def get_analysis_result(result_id: str, db: Session = Depends(get_db)):
     record = db.get(AnalysisResultRecord, result_id)
     if record is None:
         raise HTTPException(status_code=404, detail="result not found")
-    return json.loads(record.payload_json) if isinstance(record.payload_json, str) else record.payload_json
+    return _analysis_response_payload(record)
 
 
 @app.post(f"{settings.api_prefix}/artifact-masks", response_model=ArtifactMaskResponse, status_code=201)
@@ -400,5 +417,5 @@ def report(report_id: str, db: Session = Depends(get_db)):
         "report_id": report_id,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "format": "json",
-        "result": json.loads(record.payload_json) if isinstance(record.payload_json, str) else record.payload_json,
+        "result": _analysis_response_payload(record),
     }

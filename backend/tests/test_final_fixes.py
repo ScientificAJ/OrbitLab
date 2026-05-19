@@ -129,7 +129,9 @@ def test_analysis_job_schema_accepts_richer_stellar_context():
         stellar_luminosity_solar=1.0,
         stellar_density_solar=1.0,
         stellar_rotation_period=25.0,
+        vetting_mode="deep",
     )
 
     assert payload.stellar_teff == 5778
     assert payload.stellar_rotation_period == 25.0
+    assert payload.vetting_mode == "deep"
