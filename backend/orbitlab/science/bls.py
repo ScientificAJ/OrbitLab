@@ -158,7 +158,11 @@ def _build_period_grid(
     period_samples: int,
     max_period_samples: int,
 ) -> tuple[np.ndarray, str]:
-    fallback = np.geomspace(min_period, max_period, max(period_samples, 32)).astype(np.float64)
+    sample_count = max(period_samples, 32)
+    geom_periods = np.geomspace(min_period, max_period, sample_count).astype(np.float64)
+    frequencies = np.linspace(1.0 / max_period, 1.0 / min_period, sample_count, dtype=np.float64)
+    frequency_periods = np.sort(1.0 / frequencies)
+    fallback = np.unique(np.concatenate([geom_periods, frequency_periods])).astype(np.float64)
 
     try:
         auto_periods = model.autoperiod(
@@ -168,7 +172,7 @@ def _build_period_grid(
             minimum_n_transit=2,
             frequency_factor=1.0,
         )
-        grid_source = "astropy_autoperiod_plus_geomspace_floor"
+        grid_source = "astropy_autoperiod_plus_geomspace_and_frequency_floor"
     except TypeError:
         auto_periods = model.autoperiod(
             durations,
@@ -176,17 +180,17 @@ def _build_period_grid(
             maximum_period=max_period,
             frequency_factor=1.0,
         )
-        grid_source = "astropy_autoperiod_plus_geomspace_floor"
+        grid_source = "astropy_autoperiod_plus_geomspace_and_frequency_floor"
     except Exception:
         auto_periods = np.asarray([], dtype=np.float64)
-        grid_source = "geomspace_fallback"
+        grid_source = "geomspace_and_frequency_fallback"
 
     periods = np.unique(np.concatenate([np.asarray(auto_periods, dtype=np.float64), fallback]))
     periods = periods[np.isfinite(periods) & (periods >= min_period) & (periods <= max_period)]
 
     if periods.size < 32:
         periods = fallback
-        grid_source = "geomspace_fallback"
+        grid_source = "geomspace_and_frequency_fallback"
 
     if periods.size > max_period_samples:
         indices = np.unique(np.linspace(0, periods.size - 1, max_period_samples).astype(int))
@@ -194,6 +198,45 @@ def _build_period_grid(
         grid_source = f"{grid_source}_capped"
 
     return periods.astype(np.float64), grid_source
+
+
+def _robust_scatter(values: np.ndarray) -> float:
+    values = np.asarray(values, dtype=np.float64)
+    finite = values[np.isfinite(values)]
+    if finite.size == 0:
+        return 0.0
+    median = float(np.nanmedian(finite))
+    mad = float(np.nanmedian(np.abs(finite - median)))
+    if np.isfinite(mad) and mad > 0:
+        return 1.4826 * mad
+    std = float(np.nanstd(finite))
+    return std if np.isfinite(std) else 0.0
+
+
+def _transit_detection_snr(
+    time: np.ndarray,
+    flux: np.ndarray,
+    *,
+    period: float,
+    epoch: float,
+    duration: float,
+    depth: float,
+) -> float:
+    if period <= 0 or duration <= 0 or depth <= 0:
+        return 0.0
+
+    phase = ((time - epoch + 0.5 * period) % period) - 0.5 * period
+    in_transit = np.abs(phase) <= 0.5 * duration
+    if int(np.count_nonzero(in_transit)) < 2:
+        return 0.0
+
+    out_of_transit = np.abs(phase) >= duration
+    scatter_source = flux[out_of_transit] if np.count_nonzero(out_of_transit) >= 16 else flux
+    scatter = _robust_scatter(scatter_source - np.nanmedian(scatter_source))
+    if scatter <= 0:
+        return 0.0
+
+    return float(depth / scatter * np.sqrt(np.count_nonzero(in_transit)))
 
 
 def run_bls(
@@ -254,8 +297,14 @@ def run_bls(
     depth = float(max(result.depth[index], 0.0))
     power = float(result.power[index])
 
-    residual_std = float(np.nanstd(search_flux - np.nanmedian(search_flux)))
-    snr = float(depth / residual_std) if residual_std > 0 else 0.0
+    snr = _transit_detection_snr(
+        search_time,
+        search_flux,
+        period=period,
+        epoch=epoch,
+        duration=duration,
+        depth=depth,
+    )
 
     metadata: dict[str, Any] = {
         "baseline_days": baseline_days,
@@ -270,6 +319,7 @@ def run_bls(
         "max_duration_days": float(np.nanmax(durations)),
         "sigma_clip_kept_cadences": int(search_time.size),
         "clean_cadences": int(clean_time.size),
+        "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences",
     }
 
     return BlsResult(

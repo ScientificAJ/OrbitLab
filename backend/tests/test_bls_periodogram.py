@@ -1,5 +1,4 @@
 import numpy as np
-
 from orbitlab.science.bls import BlsResult, run_bls
 
 
@@ -37,6 +36,25 @@ def test_run_bls_keeps_detected_period_near_injected_period():
 
     assert abs(result.candidate.period - 3.0) < 0.15
     assert result.candidate.signal_to_noise > 0
+
+
+def test_run_bls_uses_transit_cadence_weighted_snr():
+    rng = np.random.default_rng(7)
+    time = np.linspace(0, 27, 2500, dtype=np.float32)
+    period = 2.15
+    duration = 0.11
+    depth = 0.0018
+    noise = 0.00045
+    flux = 1.0 + rng.normal(0, noise, size=time.size).astype(np.float32)
+    phase = ((time - 0.35 + 0.5 * period) % period) - 0.5 * period
+    flux[np.abs(phase) < duration / 2] -= depth
+
+    result = run_bls(time, flux, min_period=1.5, max_period=3.0, period_samples=4096)
+
+    old_depth_over_scatter = result.candidate.depth / np.nanstd(result.search_flux - np.nanmedian(result.search_flux))
+    assert abs(result.candidate.period - period) < 0.08
+    assert result.candidate.signal_to_noise > old_depth_over_scatter * 2
+    assert result.metadata["snr_estimator"] == "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
 
 
 def test_multi_candidate_search_preserves_primary_when_residual_is_too_small(monkeypatch):

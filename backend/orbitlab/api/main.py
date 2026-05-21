@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 import json
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
 try:
-    from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, Depends
+    from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
     from fastapi.middleware.cors import CORSMiddleware
     from sqlalchemy.orm import Session
 except ImportError as exc:  # pragma: no cover - import guard for minimal environments
@@ -26,9 +26,9 @@ from orbitlab.api.schemas import (
     MaskCreate,
     Product,
     ReportResponse,
-    SearchResult,
     SavedSession,
     SavedSessionCreate,
+    SearchResult,
 )
 from orbitlab.config import settings
 from orbitlab.exceptions import ModelArtifactError
@@ -39,6 +39,7 @@ from orbitlab.ml.service import KeplerAstroNetService
 from orbitlab.science.bls import find_multi_planet_candidates, run_bls
 from orbitlab.science.data_quality import clean_light_curve
 from orbitlab.science.mast import extract_light_curve_from_tpf, list_tpf_products, resolve_tpf_path, search_targets
+from orbitlab.science.science_config import load_science_config
 from orbitlab.storage.database import SessionLocal, engine, init_db
 from orbitlab.storage.orm import (
     AnalysisJobRecord,
@@ -196,6 +197,7 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
         candidate = bls_result.candidate
         periodogram = bls_result.periodogram
 
+        science_config = load_science_config()
         candidates = find_multi_planet_candidates(
             clean_time,
             clean_flux,
@@ -204,6 +206,8 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
             min_period=payload.min_period,
             max_period=payload.max_period,
             period_samples=4096,
+            min_signal_to_noise=science_config.borderline_snr_min,
+            preserve_initial_candidate=candidate.signal_to_noise >= science_config.borderline_snr_min,
         )
 
         folded_curves = {}

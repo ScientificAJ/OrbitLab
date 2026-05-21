@@ -107,15 +107,7 @@ function CandidateCard({
   );
 }
 
-function TceCard({
-  tce,
-  active,
-  onSelect,
-}: {
-  tce: Tce;
-  active: boolean;
-  onSelect: () => void;
-}) {
+function TceCard({ tce, active, onSelect }: { tce: Tce; active: boolean; onSelect: () => void }) {
   const action = tce.action_label && tce.action_label !== 'none' ? tce.action_label : tce.disposition;
   return (
     <button
@@ -367,7 +359,7 @@ export default function App() {
       window.clearTimeout(successTimeout.current);
     }
     setSuccess(message);
-    successTimeout.current = window.setTimeout(() => setSuccess(null), 3000);
+    successTimeout.current = window.setTimeout(() => setSuccess(null), 6000);
   }
 
   const tces = useMemo<Tce[]>(() => {
@@ -375,6 +367,10 @@ export default function App() {
     if (result?.planet_candidates?.length) return result.planet_candidates;
     return (result?.candidates ?? []) as Tce[];
   }, [result]);
+  const reviewTces = useMemo<Tce[]>(() => {
+    const promotedIds = new Set((result?.candidates ?? []).map((candidate) => candidate.candidate_id));
+    return tces.filter((tce) => !promotedIds.has(tce.candidate_id));
+  }, [result?.candidates, tces]);
   const selected = useMemo<Candidate | Tce | undefined>(() => {
     return (
       result?.candidates.find((candidate) => candidate.candidate_id === selectedId) ??
@@ -1240,7 +1236,8 @@ export default function App() {
                     onChange={(event) => updateMaxCandidates(Number(event.target.value))}
                   />
                   <label htmlFor="vetting-mode">
-                    Vetting Mode <HelpTip label="Fast runs the required ledger and core checks; deep records optional enrichment progress." />
+                    Vetting Mode{' '}
+                    <HelpTip label="Fast runs the required ledger and core checks; deep records optional enrichment progress." />
                   </label>
                   <select
                     id="vetting-mode"
@@ -1379,8 +1376,8 @@ export default function App() {
           {result && result.result_id !== 'preview' && (
             <div className="rail-section">
               <h2>TCE Ledger</h2>
-              {tces.length ? (
-                tces.map((tce) => (
+              {reviewTces.length ? (
+                reviewTces.map((tce) => (
                   <TceCard
                     key={tce.tce_id ?? tce.candidate_id}
                     tce={tce}
@@ -1389,7 +1386,7 @@ export default function App() {
                   />
                 ))
               ) : (
-                <p className="quiet">No TCEs found for this result.</p>
+                <p className="quiet">No additional review TCEs beyond promoted candidates.</p>
               )}
             </div>
           )}
