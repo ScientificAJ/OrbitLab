@@ -154,3 +154,80 @@ def test_response_aliases_new_and_old_payloads():
 
     assert _analysis_response_payload(new_record)["candidates"][0]["candidate_id"] == "pc-1"
     assert _analysis_response_payload(old_record)["planet_candidates"][0]["candidate_id"] == "old-1"
+
+
+def test_analysis_uses_solar_like_physics_fallback_when_stellar_context_is_missing(monkeypatch):
+    candidate = TransitCandidate(2.0, 0.1, 0.08, 0.0025, 11.0, 9.0)
+
+    class _BlsResult:
+        periodogram = {
+            "period": np.array([candidate.period], dtype=np.float32),
+            "power": np.array([candidate.power], dtype=np.float32),
+            "duration": np.array([candidate.duration], dtype=np.float32),
+        }
+        search_time = np.linspace(0, 20, 800, dtype=np.float32)
+        search_flux = 1.0 + 0.001 * np.sin(np.linspace(0, 18, 800, dtype=np.float32))
+        clean_time = search_time
+        clean_flux = search_flux
+        metadata = {"min_period_days": 0.5, "max_period_days": 10.0}
+
+        def __init__(self):
+            self.candidate = candidate
+
+    monkeypatch.setattr("orbitlab.science.pipeline.run_bls", lambda *args, **kwargs: _BlsResult())
+    monkeypatch.setattr("orbitlab.science.pipeline.find_multi_planet_candidates", lambda *args, **kwargs: [candidate])
+
+    time, flux = _light_curve(period=2.0)
+    payload = analyze_light_curve_arrays(
+        target_id="fallback-star",
+        mission="TESS",
+        time=time,
+        flux=flux,
+        nigraha_service=_UnavailableModel(),
+    )
+
+    physics = payload["tces"][0]["physics"]
+    assert physics["stellar_context_source"] == "solar_like_fallback"
+    assert physics["radius_ratio"] > 0
+    assert physics["semi_major_axis_au"] > 0
+    assert payload["stellar_context"]["physics_source"] == "solar_like_fallback"
+
+
+def test_harmonic_residual_signal_stays_in_tce_ledger_but_is_not_promoted(monkeypatch):
+    primary = TransitCandidate(2.0, 0.1, 0.08, 0.0025, 11.0, 9.0)
+    harmonic = TransitCandidate(4.0, 0.1, 0.08, 0.0019, 10.0, 8.5)
+
+    class _BlsResult:
+        periodogram = {
+            "period": np.array([primary.period, harmonic.period], dtype=np.float32),
+            "power": np.array([primary.power, harmonic.power], dtype=np.float32),
+            "duration": np.array([primary.duration, harmonic.duration], dtype=np.float32),
+        }
+        search_time = np.linspace(0, 24, 900, dtype=np.float32)
+        search_flux = 1.0 + 0.001 * np.sin(np.linspace(0, 20, 900, dtype=np.float32))
+        clean_time = search_time
+        clean_flux = search_flux
+        metadata = {"min_period_days": 0.5, "max_period_days": 12.0}
+
+        def __init__(self):
+            self.candidate = primary
+
+    monkeypatch.setattr("orbitlab.science.pipeline.run_bls", lambda *args, **kwargs: _BlsResult())
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.find_multi_planet_candidates",
+        lambda *args, **kwargs: [primary, harmonic],
+    )
+
+    time, flux = _light_curve(period=2.0)
+    payload = analyze_light_curve_arrays(
+        target_id="single-known-planet",
+        mission="TESS",
+        time=time,
+        flux=flux,
+        nigraha_service=_UnavailableModel(),
+    )
+
+    assert [candidate["period"] for candidate in payload["planet_candidates"]] == [primary.period]
+    assert len(payload["tces"]) == 2
+    assert payload["tces"][1]["disposition"] == "rejected_signal"
+    assert "period_harmonic" in payload["tces"][1]["alias_flags"]

@@ -82,6 +82,16 @@ function formatScientific(value: number | null | undefined, digits = 3) {
   return typeof value === 'number' && Number.isFinite(value) ? value.toExponential(digits) : 'n/a';
 }
 
+function metricNumber(metrics: Record<string, unknown> | undefined, key: string) {
+  const value = metrics?.[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function metricList(metrics: Record<string, unknown> | undefined, key: string) {
+  const value = metrics?.[key];
+  return Array.isArray(value) && value.length ? value.join(', ') : 'none';
+}
+
 function CandidateCard({
   candidate,
   active,
@@ -373,10 +383,10 @@ export default function App() {
   }, [result?.candidates, tces]);
   const selected = useMemo<Candidate | Tce | undefined>(() => {
     return (
-      result?.candidates.find((candidate) => candidate.candidate_id === selectedId) ??
       tces.find((tce) => tce.candidate_id === selectedId || tce.tce_id === selectedId) ??
-      result?.candidates[0] ??
-      tces[0]
+      result?.candidates.find((candidate) => candidate.candidate_id === selectedId) ??
+      tces[0] ??
+      result?.candidates[0]
     );
   }, [result, selectedId, tces]);
   const isAdvanced = mode === 'advanced';
@@ -689,7 +699,7 @@ export default function App() {
       if (token !== analysisToken.current) return;
 
       setResult(payload);
-      setSelectedId(payload.candidates[0]?.candidate_id);
+      setSelectedId(payload.candidates[0]?.candidate_id ?? payload.tces?.[0]?.candidate_id);
       setWorkflow('complete');
     } catch (err) {
       if (token !== analysisToken.current) return;
@@ -1474,6 +1484,31 @@ export default function App() {
           </div>
           <div className="panel details">
             <h2>
+              Detection <HelpTip label="Numerical BLS period and signal support for the selected transit event." />
+            </h2>
+            <dl>
+              <dt>Period</dt>
+              <dd>{formatNumber(selected?.period_days ?? selected?.period, 6)} d</dd>
+              <dt>Epoch</dt>
+              <dd>{formatNumber(selected?.epoch_days ?? selected?.epoch, 5)} d</dd>
+              <dt>Duration</dt>
+              <dd>{formatNumber(selected?.duration_days ?? selected?.duration, 5)} d</dd>
+              <dt>Depth</dt>
+              <dd>
+                {formatNumber(selected?.depth_ppm ?? (selected?.depth ? selected.depth * 1_000_000 : undefined), 0)} ppm
+              </dd>
+              <dt>SNR</dt>
+              <dd>{formatNumber(selected?.signal_to_noise, 2)}</dd>
+              <dt>Transits</dt>
+              <dd>{formatNumber(metricNumber(selected?.detection_metrics, 'observed_transit_count'), 0)}</dd>
+              <dt>Duty Cycle</dt>
+              <dd>{formatNumber(metricNumber(selected?.detection_metrics, 'duration_period_ratio'), 4)}</dd>
+              <dt>Aliases</dt>
+              <dd>{metricList(selected?.detection_metrics, 'alias_flags')}</dd>
+            </dl>
+          </div>
+          <div className="panel details">
+            <h2>
               Validation{' '}
               <HelpTip label="Quick checks for common false-positive signs like odd-even differences or secondary eclipses." />
             </h2>
@@ -1517,6 +1552,10 @@ export default function App() {
               <dt>Habitable</dt>
               <dd className={selected?.physics?.is_temperature_habitable ? 'status-ready' : ''}>
                 {formatTriState(selected?.physics?.is_temperature_habitable, 'Potential', 'Unlikely')}
+              </dd>
+              <dt>Source</dt>
+              <dd>
+                {String(selected?.physics?.stellar_context_source ?? result?.stellar_context?.physics_source ?? 'n/a')}
               </dd>
             </dl>
           </div>

@@ -110,6 +110,10 @@ class StellarContext(BaseModel):
     luminosity_solar: float | None = None
     density_solar: float | None = None
     rotation_period: float | None = None
+    effective_radius_solar: float | None = None
+    effective_mass_solar: float | None = None
+    effective_teff: float | None = None
+    physics_source: str | None = None
 
 
 class AnalysisResult(BaseModel):

@@ -1,4 +1,4 @@
-import { Pause, Play, RotateCcw, Gauge } from 'lucide-react';
+import { Pause, Play, RotateCcw, Gauge, ZoomIn, ZoomOut } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { Candidate } from '../lib/api';
@@ -30,6 +30,7 @@ type PlanetMesh = CandidateRenderData & {
 };
 
 const speedModes = [0.65, 1, 1.8];
+const zoomModes = [0.65, 1, 1.45, 2.1];
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -154,6 +155,7 @@ export function OrbitScene({
   const [webglUnavailable, setWebglUnavailable] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [speedMode, setSpeedMode] = useState(1);
+  const [zoomMode, setZoomMode] = useState(1);
   const [cameraReset, setCameraReset] = useState(0);
   const renderData = useMemo(() => candidateRenderData(candidates, selectedId), [candidates, selectedId]);
   const selected = candidates.find((candidate) => candidate.candidate_id === selectedId) ?? candidates[0];
@@ -174,8 +176,11 @@ export function OrbitScene({
     const width = Math.max(mount.clientWidth, 1);
     const height = Math.max(mount.clientHeight, 1);
     const camera = new THREE.PerspectiveCamera(43, width / height, 0.1, 1000);
+    const zoom = zoomModes[zoomMode] ?? 1;
+    const cameraHeight = 14.5 / zoom;
+    const cameraDistance = 24 / zoom;
     const resetCamera = () => {
-      camera.position.set(0, 14.5, 24);
+      camera.position.set(0, cameraHeight, cameraDistance);
       camera.lookAt(0, 0, 0);
     };
     resetCamera();
@@ -204,7 +209,15 @@ export function OrbitScene({
 
     const coronaTexture = makeDiscTexture('rgba(255, 220, 142, 0.52)', 'rgba(255, 160, 56, 0)');
     const corona = new THREE.Sprite(
-      new THREE.SpriteMaterial({ map: coronaTexture ?? undefined, color: 0xffb661, transparent: true, opacity: 0.88 }),
+      new THREE.SpriteMaterial({
+        map: coronaTexture ?? undefined,
+        color: 0xffb661,
+        transparent: true,
+        opacity: 0.88,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        depthTest: false,
+      }),
     );
     corona.scale.set(8.2, 8.2, 1);
     scene.add(corona);
@@ -256,7 +269,7 @@ export function OrbitScene({
     starfieldGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
     const starfield = new THREE.Points(
       starfieldGeometry,
-      new THREE.PointsMaterial({ size: 0.09, vertexColors: true, transparent: true, opacity: 0.84 }),
+      new THREE.PointsMaterial({ size: 0.09, vertexColors: true, transparent: true, opacity: 0.84, depthWrite: false }),
     );
     scene.add(starfield);
 
@@ -380,7 +393,7 @@ export function OrbitScene({
 
       const selectedPlanet = planetMeshes.find((planet) => planet.candidate.candidate_id === selectedId);
       if (selectedPlanet) {
-        const desired = new THREE.Vector3(selectedPlanet.mesh.position.x * 0.08, 14.5, 24);
+        const desired = new THREE.Vector3(selectedPlanet.mesh.position.x * 0.08, cameraHeight, cameraDistance);
         camera.position.lerp(desired, 0.018);
         camera.lookAt(0, 0, 0);
       }
@@ -418,7 +431,7 @@ export function OrbitScene({
         mount.removeChild(renderer.domElement);
       }
     };
-  }, [renderData, selectedId, onSelectCandidate, isPlaying, speedMode, cameraReset]);
+  }, [renderData, selectedId, onSelectCandidate, isPlaying, speedMode, zoomMode, cameraReset]);
 
   return (
     <div className="orbit-scene" ref={mountRef} data-testid="orbit-scene">
@@ -441,6 +454,27 @@ export function OrbitScene({
         >
           <Gauge size={15} />
           <span>{speedModes[speedMode]}x</span>
+        </button>
+        <button
+          type="button"
+          aria-label="Zoom orbit view out"
+          title="Zoom out"
+          onClick={() => setZoomMode((mode) => Math.max(0, mode - 1))}
+          disabled={zoomMode === 0}
+          data-testid="orbit-zoom-out"
+        >
+          <ZoomOut size={15} />
+        </button>
+        <button
+          type="button"
+          aria-label={`Zoom orbit view in, current ${zoomModes[zoomMode]}x`}
+          title={`Zoom ${zoomModes[zoomMode]}x`}
+          onClick={() => setZoomMode((mode) => Math.min(zoomModes.length - 1, mode + 1))}
+          disabled={zoomMode === zoomModes.length - 1}
+          data-testid="orbit-zoom-in"
+        >
+          <ZoomIn size={15} />
+          <span>{zoomModes[zoomMode]}x</span>
         </button>
         <button
           type="button"

@@ -68,8 +68,47 @@ def _flag(code: str, severity: str, message: str) -> dict:
     return {"code": code, "severity": severity, "message": message}
 
 
-def _structured_flags(candidate, validation: dict, config) -> list[dict]:
+def _observed_transit_count(time: np.ndarray, candidate) -> int:
+    if candidate.period <= 0 or candidate.duration <= 0:
+        return 0
+    phase_number = np.floor((np.asarray(time) - candidate.epoch) / candidate.period).astype(int)
+    phase = ((np.asarray(time) - candidate.epoch + 0.5 * candidate.period) % candidate.period) - 0.5 * candidate.period
+    in_transit = np.abs(phase) <= 0.5 * candidate.duration
+    return int(np.unique(phase_number[in_transit]).size)
+
+
+def _period_alias_code(candidate, accepted_candidates) -> str | None:
+    if candidate.period <= 0:
+        return None
+    for accepted in accepted_candidates:
+        if accepted.period <= 0:
+            continue
+        ratio = candidate.period / accepted.period
+        for harmonic in (0.25, 0.5, 1.0, 2.0, 4.0):
+            if abs(ratio - harmonic) <= 0.015:
+                return "duplicate_period" if harmonic == 1.0 else "period_harmonic"
+    return None
+
+
+def _stellar_context_for_physics(
+    *,
+    stellar_radius_solar: float | None,
+    stellar_mass_solar: float | None,
+    stellar_teff: float | None,
+) -> tuple[float, float, float | None, str]:
+    radius = stellar_radius_solar if stellar_radius_solar and stellar_radius_solar > 0 else 1.0
+    mass = stellar_mass_solar if stellar_mass_solar and stellar_mass_solar > 0 else 1.0
+    teff = stellar_teff if stellar_teff and stellar_teff > 0 else 5778.0
+    if stellar_radius_solar and stellar_mass_solar:
+        source = "user_supplied"
+    else:
+        source = "solar_like_fallback"
+    return radius, mass, teff, source
+
+
+def _structured_flags(candidate, validation: dict, config, support: dict | None = None) -> list[dict]:
     flags: list[dict] = []
+    support = support or {}
     duration_ratio = candidate.duration / candidate.period if candidate.period else float("inf")
     if candidate.signal_to_noise < config.promotion_snr:
         flags.append(_flag("low_snr", "warning", "Signal is below the planet-candidate promotion threshold."))
@@ -77,6 +116,16 @@ def _structured_flags(candidate, validation: dict, config) -> list[dict]:
         flags.append(
             _flag("implausible_duration", "hard_fail", "Transit duration is too large for the detected period.")
         )
+    observed_transits = support.get("observed_transit_count")
+    if isinstance(observed_transits, int) and observed_transits < 2:
+        flags.append(
+            _flag("single_transit", "hard_fail", "Fewer than two observed transit events support this period.")
+        )
+    alias_code = support.get("period_alias_code")
+    if alias_code == "duplicate_period":
+        flags.append(_flag("duplicate_period", "hard_fail", "Period duplicates an already stronger detected signal."))
+    elif alias_code == "period_harmonic":
+        flags.append(_flag("period_harmonic", "hard_fail", "Period is a simple harmonic of another detected signal."))
     if validation.get("harmonic_flag"):
         flags.append(_flag("stellar_rotation_harmonic", "warning", "Period is close to a stellar rotation harmonic."))
     secondary_depth = validation.get("secondary_depth")
@@ -167,6 +216,7 @@ def analyze_light_curve_arrays(
 
     service = ml_service
     tess_service = nigraha_service
+    promoted_candidates = []
 
     for index, candidate in enumerate(ledger_candidates, start=1):
         candidate_id = f"{mission.lower()}-{target_id}-tce-{index}"
@@ -181,17 +231,21 @@ def analyze_light_curve_arrays(
             "phase": binned_phase.astype(float).tolist(),
             "flux": binned_flux.astype(float).tolist(),
         }
-        physics = None
-        if stellar_radius_solar and stellar_mass_solar:
-            physics = asdict(
-                infer_planet_physics(
-                    depth=candidate.depth,
-                    period_days=candidate.period,
-                    stellar_radius_solar=stellar_radius_solar,
-                    stellar_mass_solar=stellar_mass_solar,
-                    stellar_teff=stellar_teff,
-                )
+        physics_radius, physics_mass, physics_teff, physics_source = _stellar_context_for_physics(
+            stellar_radius_solar=stellar_radius_solar,
+            stellar_mass_solar=stellar_mass_solar,
+            stellar_teff=stellar_teff,
+        )
+        physics = asdict(
+            infer_planet_physics(
+                depth=candidate.depth,
+                period_days=candidate.period,
+                stellar_radius_solar=physics_radius,
+                stellar_mass_solar=physics_mass,
+                stellar_teff=physics_teff,
             )
+        )
+        physics["stellar_context_source"] = physics_source
         validation = asdict(
             validate_candidate(
                 clean_time,
@@ -200,7 +254,14 @@ def analyze_light_curve_arrays(
                 stellar_rotation_period=stellar_rotation_period,
             )
         )
-        flags = _structured_flags(candidate, validation, config)
+        observed_transits = _observed_transit_count(bls_result.search_time, candidate)
+        period_alias_code = _period_alias_code(candidate, promoted_candidates)
+        alias_flags = [period_alias_code] if period_alias_code else []
+        support = {
+            "observed_transit_count": observed_transits,
+            "period_alias_code": period_alias_code,
+        }
+        flags = _structured_flags(candidate, validation, config, support)
         disposition, action_label, confidence_band, disposition_score = _disposition(candidate, flags, config)
 
         try:
@@ -271,10 +332,8 @@ def analyze_light_curve_arrays(
             "sde": candidate.power,
             "local_noise_snr": candidate.signal_to_noise,
             "duration_period_ratio": duration_period_ratio,
-            "transit_count": int(np.floor((np.nanmax(clean_time) - np.nanmin(clean_time)) / candidate.period))
-            if candidate.period > 0
-            else 0,
-            "alias_flags": [],
+            "transit_count": observed_transits,
+            "alias_flags": alias_flags,
             "disposition": disposition,
             "action_label": action_label,
             "disposition_score": disposition_score,
@@ -283,12 +342,11 @@ def analyze_light_curve_arrays(
             "detection_metrics": {
                 "bls_snr": candidate.signal_to_noise,
                 "sde": candidate.power,
-                "transit_count": int(np.floor((np.nanmax(clean_time) - np.nanmin(clean_time)) / candidate.period))
-                if candidate.period > 0
-                else 0,
+                "transit_count": observed_transits,
+                "observed_transit_count": observed_transits,
                 "local_noise_snr": candidate.signal_to_noise,
                 "duration_period_ratio": duration_period_ratio,
-                "alias_flags": [],
+                "alias_flags": alias_flags,
             },
             "aperture_stability": {
                 "pipeline_mask": "pipeline",
@@ -320,6 +378,7 @@ def analyze_light_curve_arrays(
         tce_payloads.append(tce_payload)
         if disposition == "planet_candidate":
             planet_candidate_payloads.append(tce_payload)
+            promoted_candidates.append(candidate)
 
     return {
         "schema_version": "orbitlab.analysis_result.v2",
@@ -366,6 +425,10 @@ def analyze_light_curve_arrays(
             "luminosity_solar": stellar_luminosity_solar,
             "density_solar": stellar_density_solar,
             "rotation_period": stellar_rotation_period,
+            "effective_radius_solar": stellar_radius_solar or 1.0,
+            "effective_mass_solar": stellar_mass_solar or 1.0,
+            "effective_teff": stellar_teff or 5778.0,
+            "physics_source": "user_supplied" if stellar_radius_solar and stellar_mass_solar else "solar_like_fallback",
         },
         "preprocessing": bls_result.metadata,
     }

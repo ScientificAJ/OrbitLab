@@ -23,6 +23,13 @@ export type Candidate = {
     false_positive_flags?: string[];
     [key: string]: number | boolean | string[] | null | undefined;
   };
+  period_days?: number | null;
+  epoch_days?: number | null;
+  duration_days?: number | null;
+  depth_fraction?: number | null;
+  depth_ppm?: number | null;
+  detection_metrics?: Record<string, unknown>;
+  flags?: Array<{ code: string; severity: 'info' | 'warning' | 'hard_fail'; message: string }>;
   ml?: {
     probability: number | null;
     threshold: number | null;
@@ -86,7 +93,7 @@ export type AnalysisResult = {
   folded_curves: Record<string, { phase: number[]; flux: number[] }>;
   light_curve: FluxSeries;
   bls_light_curve?: FluxSeries;
-  stellar_context?: Record<string, number | null | undefined>;
+  stellar_context?: Record<string, number | string | null | undefined>;
   preprocessing?: Record<string, unknown>;
 };
 

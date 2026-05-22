@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from contextlib import asynccontextmanager
+from dataclasses import asdict
 from datetime import datetime
 from typing import Any
 from uuid import uuid4
@@ -38,6 +39,7 @@ from orbitlab.ml.nigraha_service import NigrahaService
 from orbitlab.ml.service import KeplerAstroNetService
 from orbitlab.science.bls import find_multi_planet_candidates, run_bls
 from orbitlab.science.data_quality import clean_light_curve
+from orbitlab.science.pipeline import _disposition, _observed_transit_count, _period_alias_code, _structured_flags
 from orbitlab.science.mast import extract_light_curve_from_tpf, list_tpf_products, resolve_tpf_path, search_targets
 from orbitlab.science.science_config import load_science_config
 from orbitlab.storage.database import SessionLocal, engine, init_db
@@ -210,15 +212,74 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
             preserve_initial_candidate=candidate.signal_to_noise >= science_config.borderline_snr_min,
         )
 
+        from orbitlab.science.physics import infer_planet_physics
+        from orbitlab.science.validation import validate_candidate
+
         folded_curves = {}
-        for index, c in enumerate(candidates, start=1):
-            candidate_id = f"preview-{index}"
+        candidate_payloads = []
+        promoted_candidates = []
+        for c in candidates:
+            observed_transits = _observed_transit_count(bls_result.search_time, c)
+            period_alias_code = _period_alias_code(c, promoted_candidates)
+            alias_flags = [period_alias_code] if period_alias_code else []
+            validation = asdict(validate_candidate(clean_time, clean_flux, c))
+            physics = asdict(
+                infer_planet_physics(
+                    depth=c.depth,
+                    period_days=c.period,
+                    stellar_radius_solar=1.0,
+                    stellar_mass_solar=1.0,
+                    stellar_teff=5778.0,
+                )
+            )
+            physics["stellar_context_source"] = "solar_like_fallback"
+            flags = _structured_flags(
+                c,
+                validation,
+                science_config,
+                {"observed_transit_count": observed_transits, "period_alias_code": period_alias_code},
+            )
+            disposition, action_label, confidence_band, disposition_score = _disposition(c, flags, science_config)
+            if disposition == "rejected_signal":
+                continue
+            candidate_id = f"preview-{len(candidate_payloads) + 1}"
             phase, folded_flux = phase_fold(bls_result.search_time, bls_result.search_flux, c.period, c.epoch)
             binned_phase, binned_flux = bin_phase_curve(phase, folded_flux, 401)
             folded_curves[candidate_id] = {
                 "phase": binned_phase.astype(float).tolist(),
                 "flux": binned_flux.astype(float).tolist(),
             }
+            candidate_payloads.append(
+                {
+                    "candidate_id": candidate_id,
+                    "period": c.period,
+                    "epoch": c.epoch,
+                    "duration": c.duration,
+                    "depth": c.depth,
+                    "signal_to_noise": c.signal_to_noise,
+                    "period_days": c.period,
+                    "epoch_days": c.epoch,
+                    "duration_days": c.duration,
+                    "depth_fraction": c.depth,
+                    "depth_ppm": c.depth * 1_000_000,
+                    "disposition": disposition,
+                    "action_label": action_label,
+                    "disposition_score": disposition_score,
+                    "confidence_band": confidence_band,
+                    "flags": flags,
+                    "physics": physics,
+                    "detection_metrics": {
+                        "bls_snr": c.signal_to_noise,
+                        "sde": c.power,
+                        "transit_count": observed_transits,
+                        "observed_transit_count": observed_transits,
+                        "duration_period_ratio": c.duration / c.period if c.period > 0 else None,
+                        "alias_flags": alias_flags,
+                    },
+                    "validation": validation,
+                }
+            )
+            promoted_candidates.append(c)
 
         return {
             "periodogram": {
@@ -226,17 +287,7 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
                 "power": periodogram["power"].astype(float).tolist(),
                 "duration": periodogram["duration"].astype(float).tolist(),
             },
-            "candidates": [
-                {
-                    "candidate_id": f"preview-{i}",
-                    "period": c.period,
-                    "epoch": c.epoch,
-                    "duration": c.duration,
-                    "depth": c.depth,
-                    "signal_to_noise": c.signal_to_noise,
-                }
-                for i, c in enumerate(candidates, start=1)
-            ],
+            "candidates": candidate_payloads,
             "folded_curves": folded_curves,
             "bls_light_curve": {
                 "time": bls_result.search_time.astype(float).tolist(),
