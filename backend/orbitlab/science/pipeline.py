@@ -126,8 +126,25 @@ def _structured_flags(candidate, validation: dict, config, support: dict | None 
         flags.append(_flag("duplicate_period", "hard_fail", "Period duplicates an already stronger detected signal."))
     elif alias_code == "period_harmonic":
         flags.append(_flag("period_harmonic", "hard_fail", "Period is a simple harmonic of another detected signal."))
+    candidate_rank = support.get("candidate_rank")
+    primary_snr = support.get("primary_signal_to_noise")
+    if (
+        isinstance(candidate_rank, int)
+        and candidate_rank > 1
+        and isinstance(primary_snr, (int, float))
+        and np.isfinite(primary_snr)
+        and candidate.signal_to_noise < max(config.promotion_snr * 1.25, primary_snr * 0.15)
+    ):
+        flags.append(
+            _flag("weak_residual_signal", "warning", "Residual signal is weak relative to the primary transit.")
+        )
     if validation.get("harmonic_flag"):
         flags.append(_flag("stellar_rotation_harmonic", "warning", "Period is close to a stellar rotation harmonic."))
+    existing_codes = {flag["code"] for flag in flags}
+    for validation_flag in validation.get("false_positive_flags", ()) or ():
+        if validation_flag not in existing_codes:
+            flags.append(_flag(str(validation_flag), "warning", "Validation marked this signal for follow-up review."))
+            existing_codes.add(str(validation_flag))
     secondary_depth = validation.get("secondary_depth")
     if (
         isinstance(secondary_depth, (int, float))
@@ -162,11 +179,54 @@ def _disposition(candidate, flags: list[dict], config) -> tuple[str, str, str, f
     if has_hard_fail:
         return "rejected_signal", "none", "low", min(candidate.signal_to_noise / config.promotion_snr, 1.0)
     score = min(max(candidate.signal_to_noise / config.promotion_snr, 0.0), 1.0)
+    has_review_warning = any(flag["severity"] == "warning" for flag in flags)
+    if has_review_warning and candidate.signal_to_noise >= config.borderline_snr_min:
+        return "borderline_tce", "review_needed", "medium", score
     if candidate.signal_to_noise >= config.promotion_snr:
         return "planet_candidate", "follow_up_needed", "high", score
     if candidate.signal_to_noise >= config.borderline_snr_min:
         return "borderline_tce", "review_needed", "medium", score
     return "rejected_signal", "none", "low", score
+
+
+def _resolve_secondary_period_alias(
+    time: np.ndarray,
+    flux: np.ndarray,
+    candidate,
+    config,
+    *,
+    min_period: float,
+    max_period: float,
+):
+    validation = asdict(validate_candidate(time, flux, candidate))
+    if "secondary_eclipse" not in validation.get("false_positive_flags", ()):
+        return candidate
+
+    half_period = candidate.period / 2.0
+    if half_period < min_period or half_period > max_period:
+        return candidate
+
+    window_min = max(min_period, half_period * 0.98)
+    window_max = min(max_period, half_period * 1.02)
+    if window_max <= window_min:
+        return candidate
+
+    try:
+        alias_result = run_bls(
+            time,
+            flux,
+            min_period=window_min,
+            max_period=window_max,
+            period_samples=2048,
+            max_period_samples=4096,
+        )
+    except (RuntimeError, ValueError):
+        return candidate
+
+    alias = alias_result.candidate
+    if alias.signal_to_noise >= config.borderline_snr_min and alias.signal_to_noise >= candidate.signal_to_noise * 0.75:
+        return alias
+    return candidate
 
 
 def analyze_light_curve_arrays(
@@ -195,6 +255,14 @@ def analyze_light_curve_arrays(
     bls_result = run_bls(clean_time, clean_flux)
     primary = bls_result.candidate
     periodogram = bls_result.periodogram
+    primary = _resolve_secondary_period_alias(
+        clean_time,
+        clean_flux,
+        primary,
+        config,
+        min_period=bls_result.metadata["min_period_days"],
+        max_period=bls_result.metadata["max_period_days"],
+    )
 
     ledger_candidates = find_multi_planet_candidates(
         clean_time,
@@ -217,6 +285,7 @@ def analyze_light_curve_arrays(
     service = ml_service
     tess_service = nigraha_service
     promoted_candidates = []
+    primary_signal_to_noise = ledger_candidates[0].signal_to_noise if ledger_candidates else 0.0
 
     for index, candidate in enumerate(ledger_candidates, start=1):
         candidate_id = f"{mission.lower()}-{target_id}-tce-{index}"
@@ -260,6 +329,8 @@ def analyze_light_curve_arrays(
         support = {
             "observed_transit_count": observed_transits,
             "period_alias_code": period_alias_code,
+            "candidate_rank": index,
+            "primary_signal_to_noise": primary_signal_to_noise,
         }
         flags = _structured_flags(candidate, validation, config, support)
         disposition, action_label, confidence_band, disposition_score = _disposition(candidate, flags, config)
@@ -347,6 +418,8 @@ def analyze_light_curve_arrays(
                 "local_noise_snr": candidate.signal_to_noise,
                 "duration_period_ratio": duration_period_ratio,
                 "alias_flags": alias_flags,
+                "candidate_rank": index,
+                "primary_signal_to_noise": primary_signal_to_noise,
             },
             "aperture_stability": {
                 "pipeline_mask": "pipeline",

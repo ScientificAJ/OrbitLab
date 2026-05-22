@@ -1,5 +1,5 @@
 import numpy as np
-from orbitlab.science.bls import BlsResult, run_bls
+from orbitlab.science.bls import BlsResult, bin_light_curve_for_search, run_bls
 
 
 def synthetic_transit_curve(period=3.0, duration=0.12, depth=0.01):
@@ -55,6 +55,28 @@ def test_run_bls_uses_transit_cadence_weighted_snr():
     assert abs(result.candidate.period - period) < 0.08
     assert result.candidate.signal_to_noise > old_depth_over_scatter * 2
     assert result.metadata["snr_estimator"] == "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
+
+
+def test_bls_search_binning_caps_fast_cadence_without_losing_transit_period():
+    rng = np.random.default_rng(13)
+    time = np.linspace(0, 18, 18000, dtype=np.float32)
+    period = 1.51
+    duration = 0.055
+    flux = 1.0 + rng.normal(0, 0.00035, size=time.size).astype(np.float32)
+    phase = ((time - 0.22 + 0.5 * period) % period) - 0.5 * period
+    flux[np.abs(phase) < duration / 2] -= 0.0022
+
+    binned_time, binned_flux, metadata = bin_light_curve_for_search(time, flux, max_cadences=3000)
+
+    assert metadata["applied"] is True
+    assert binned_time.size <= 3000
+    assert binned_time.size == binned_flux.size
+
+    result = run_bls(time, flux, min_period=1.0, max_period=2.0, period_samples=1024, max_search_cadences=3000)
+
+    assert result.metadata["search_binning"]["applied"] is True
+    assert result.metadata["search_binning"]["search_cadences"] <= 3000
+    assert abs(result.candidate.period - period) < 0.08
 
 
 def test_multi_candidate_search_preserves_primary_when_residual_is_too_small(monkeypatch):

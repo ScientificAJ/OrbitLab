@@ -39,7 +39,13 @@ from orbitlab.ml.nigraha_service import NigrahaService
 from orbitlab.ml.service import KeplerAstroNetService
 from orbitlab.science.bls import find_multi_planet_candidates, run_bls
 from orbitlab.science.data_quality import clean_light_curve
-from orbitlab.science.pipeline import _disposition, _observed_transit_count, _period_alias_code, _structured_flags
+from orbitlab.science.pipeline import (
+    _disposition,
+    _observed_transit_count,
+    _period_alias_code,
+    _resolve_secondary_period_alias,
+    _structured_flags,
+)
 from orbitlab.science.mast import extract_light_curve_from_tpf, list_tpf_products, resolve_tpf_path, search_targets
 from orbitlab.science.science_config import load_science_config
 from orbitlab.storage.database import SessionLocal, engine, init_db
@@ -200,6 +206,14 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
         periodogram = bls_result.periodogram
 
         science_config = load_science_config()
+        candidate = _resolve_secondary_period_alias(
+            clean_time,
+            clean_flux,
+            candidate,
+            science_config,
+            min_period=payload.min_period,
+            max_period=payload.max_period,
+        )
         candidates = find_multi_planet_candidates(
             clean_time,
             clean_flux,
@@ -218,7 +232,8 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
         folded_curves = {}
         candidate_payloads = []
         promoted_candidates = []
-        for c in candidates:
+        primary_signal_to_noise = candidates[0].signal_to_noise if candidates else 0.0
+        for index, c in enumerate(candidates, start=1):
             observed_transits = _observed_transit_count(bls_result.search_time, c)
             period_alias_code = _period_alias_code(c, promoted_candidates)
             alias_flags = [period_alias_code] if period_alias_code else []
@@ -237,7 +252,12 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
                 c,
                 validation,
                 science_config,
-                {"observed_transit_count": observed_transits, "period_alias_code": period_alias_code},
+                {
+                    "observed_transit_count": observed_transits,
+                    "period_alias_code": period_alias_code,
+                    "candidate_rank": index,
+                    "primary_signal_to_noise": primary_signal_to_noise,
+                },
             )
             disposition, action_label, confidence_band, disposition_score = _disposition(c, flags, science_config)
             if disposition == "rejected_signal":
@@ -275,6 +295,8 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
                         "observed_transit_count": observed_transits,
                         "duration_period_ratio": c.duration / c.period if c.period > 0 else None,
                         "alias_flags": alias_flags,
+                        "candidate_rank": index,
+                        "primary_signal_to_noise": primary_signal_to_noise,
                     },
                     "validation": validation,
                 }

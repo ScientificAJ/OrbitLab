@@ -216,7 +216,7 @@ def test_k2_pipeline_uses_exomac_service(monkeypatch: pytest.MonkeyPatch):
     )
 
     assert "candidates" not in result
-    assert result["planet_candidates"][0]["ml"]["label"] == "candidate"
-    assert result["planet_candidates"][0]["ml"]["class_probabilities"]["CANDIDATE"] == pytest.approx(0.7)
+    assert result["tces"][0]["ml"]["label"] == "candidate"
+    assert result["tces"][0]["ml"]["class_probabilities"]["CANDIDATE"] == pytest.approx(0.7)
     assert result["stellar_context"]["teff"] == pytest.approx(5778.0)
     assert result["stellar_context"]["rotation_period"] == pytest.approx(10.0)

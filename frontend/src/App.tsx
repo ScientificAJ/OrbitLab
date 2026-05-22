@@ -391,6 +391,11 @@ export default function App() {
   }, [result, selectedId, tces]);
   const isAdvanced = mode === 'advanced';
 
+  const renderedOrbitCandidates = useMemo<Candidate[]>(() => {
+    if (result?.candidates.length) return result.candidates;
+    return tces.filter((tce) => tce.disposition !== 'rejected_signal');
+  }, [result?.candidates, tces]);
+
   const folded = selected && result ? result.folded_curves[selected.candidate_id] : undefined;
   const activeModel =
     mission === 'TESS' ? model?.nigraha_tess : mission === 'Kepler' ? model?.kepler_astronet : model?.k2_exomac_kkt;
@@ -1416,7 +1421,7 @@ export default function App() {
             </div>
           </div>
           <OrbitScene
-            candidates={result?.candidates ?? []}
+            candidates={renderedOrbitCandidates}
             selectedId={selected?.candidate_id}
             emptyMessage={orbitEmptyMessage}
             onSelectCandidate={setSelectedId}

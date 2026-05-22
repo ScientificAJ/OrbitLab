@@ -39,6 +39,56 @@ def sigma_clip_flux(time: np.ndarray, flux: np.ndarray, sigma: float = 6.0) -> t
     return time[keep], flux[keep]
 
 
+def bin_light_curve_for_search(
+    time: np.ndarray,
+    flux: np.ndarray,
+    *,
+    max_cadences: int = 6000,
+) -> tuple[np.ndarray, np.ndarray, dict[str, Any]]:
+    t = np.asarray(time, dtype=np.float64)
+    f = np.asarray(flux, dtype=np.float64)
+    if t.shape != f.shape:
+        raise ValueError("time and flux must have the same shape before BLS binning")
+    if max_cadences <= 0 or t.size <= max_cadences:
+        return (
+            t,
+            f,
+            {
+                "applied": False,
+                "input_cadences": int(t.size),
+                "search_cadences": int(t.size),
+                "bin_size": 1,
+            },
+        )
+
+    order = np.argsort(t)
+    t = t[order]
+    f = f[order]
+    bin_size = int(np.ceil(t.size / max_cadences))
+    binned_time = []
+    binned_flux = []
+    for start in range(0, t.size, bin_size):
+        stop = min(start + bin_size, t.size)
+        time_chunk = t[start:stop]
+        flux_chunk = f[start:stop]
+        finite = np.isfinite(time_chunk) & np.isfinite(flux_chunk)
+        if not finite.any():
+            continue
+        binned_time.append(float(np.nanmedian(time_chunk[finite])))
+        binned_flux.append(float(np.nanmedian(flux_chunk[finite])))
+
+    return (
+        np.asarray(binned_time, dtype=np.float64),
+        np.asarray(binned_flux, dtype=np.float64),
+        {
+            "applied": True,
+            "input_cadences": int(t.size),
+            "search_cadences": int(len(binned_time)),
+            "bin_size": bin_size,
+        },
+    )
+
+
 def _largest_valid_odd_window(size: int, preferred: int) -> int:
     if size < 7:
         return size if size % 2 == 1 else max(size - 1, 1)
@@ -249,14 +299,25 @@ def run_bls(
     period_samples: int = 8192,
     max_period_samples: int = 50000,
     min_transits: float = 2.0,
+    max_search_cadences: int = 6000,
 ) -> BlsResult:
     clean_time, clean_flux = clean_light_curve(time, flux)
-    search_time, clipped_flux = sigma_clip_flux(clean_time, clean_flux)
+    clipped_time, clipped_flux = sigma_clip_flux(clean_time, clean_flux)
 
-    if search_time.size < 64:
+    if clipped_time.size < 64:
         raise ValueError("BLS requires at least 64 cadences after quality filtering and sigma clipping")
 
-    search_flux = transit_safe_flatten(search_time, clipped_flux)
+    snr_flux = transit_safe_flatten(clipped_time, clipped_flux)
+    search_time, search_flux_source, binning = bin_light_curve_for_search(
+        clipped_time,
+        snr_flux,
+        max_cadences=max_search_cadences,
+    )
+
+    if search_time.size < 64:
+        raise ValueError("BLS requires at least 64 cadences after adaptive search binning")
+
+    search_flux = transit_safe_flatten(search_time, search_flux_source)
 
     min_period, max_period, baseline_days, cadence_days = _clamp_period_range(
         search_time,
@@ -273,13 +334,15 @@ def run_bls(
         raise RuntimeError("astropy is required for BLS detection") from exc
 
     model = BoxLeastSquares(search_time.astype(np.float64), search_flux.astype(np.float64))
+    cadence_bound_period_samples = max(4096, int(search_time.size * 2))
+    effective_max_period_samples = min(max_period_samples, cadence_bound_period_samples)
     periods, grid_source = _build_period_grid(
         model,
         durations,
         min_period=min_period,
         max_period=max_period,
         period_samples=period_samples,
-        max_period_samples=max_period_samples,
+        max_period_samples=effective_max_period_samples,
     )
 
     result = model.power(periods, durations)
@@ -298,8 +361,8 @@ def run_bls(
     power = float(result.power[index])
 
     snr = _transit_detection_snr(
-        search_time,
-        search_flux,
+        clipped_time,
+        snr_flux,
         period=period,
         epoch=epoch,
         duration=duration,
@@ -314,11 +377,14 @@ def run_bls(
         "min_transits_required": min_transits,
         "period_grid_source": grid_source,
         "period_count": int(np.asarray(result.period).size),
+        "max_period_samples_requested": int(max_period_samples),
+        "max_period_samples_effective": int(effective_max_period_samples),
         "duration_count": int(durations.size),
         "min_duration_days": float(np.nanmin(durations)),
         "max_duration_days": float(np.nanmax(durations)),
-        "sigma_clip_kept_cadences": int(search_time.size),
+        "sigma_clip_kept_cadences": int(clipped_time.size),
         "clean_cadences": int(clean_time.size),
+        "search_binning": binning,
         "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences",
     }
 
@@ -358,6 +424,7 @@ def find_multi_planet_candidates(
     max_period: float = 30.0,
     duration_grid: np.ndarray | None = None,
     period_samples: int = 8192,
+    max_period_samples: int = 50000,
     min_signal_to_noise: float = 6.0,
     preserve_initial_candidate: bool = False,
 ) -> list[TransitCandidate]:
@@ -385,6 +452,7 @@ def find_multi_planet_candidates(
                 max_period=max_period,
                 duration_grid=duration_grid,
                 period_samples=period_samples,
+                max_period_samples=max_period_samples,
             )
         except (ValueError, RuntimeError):
             break
