@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+
 import numpy as np
 
 from orbitlab.config import settings
 from orbitlab.science.data_quality import clean_light_curve
+from orbitlab.science.tpf_diagnostics import TpfLightCurveBundle
 
 
 @dataclass(frozen=True)
@@ -253,10 +255,50 @@ def resolve_tpf_path(product_uri: str, *, cache_dir: Path | None = None) -> Path
     return _resolve_existing_cache_path(product_uri, safe_cache_dir)
 
 
-def extract_light_curve_from_tpf(
+def _mask_from_tpf(tpf, aperture_mask: np.ndarray | list[list[bool]] | str | None):
+    if isinstance(aperture_mask, list):
+        mask = np.asarray(aperture_mask, dtype=bool)
+        if mask.shape != tuple(tpf.flux.shape[1:]):
+            raise ValueError(f"aperture mask shape {mask.shape} does not match TPF shape {tuple(tpf.flux.shape[1:])}")
+        if not mask.any():
+            raise ValueError("aperture mask must select at least one pixel")
+        return mask, np.asarray(getattr(tpf, "pipeline_mask", []), dtype=bool), None
+    if aperture_mask == "pipeline":
+        pipeline_mask = np.asarray(getattr(tpf, "pipeline_mask", []), dtype=bool)
+        mask = pipeline_mask
+        threshold_mask = None
+        if mask.shape != tuple(tpf.flux.shape[1:]) or not mask.any():
+            threshold_mask = np.asarray(tpf.create_threshold_mask(threshold=3), dtype=bool)
+            mask = threshold_mask
+        if mask.shape != tuple(tpf.flux.shape[1:]) or not mask.any():
+            raise ValueError("TPF has no usable pipeline or threshold aperture pixels")
+        return mask, pipeline_mask, threshold_mask
+    return aperture_mask, np.asarray(getattr(tpf, "pipeline_mask", []), dtype=bool), None
+
+
+def _tpf_pixel_scale_arcsec(tpf) -> float | None:
+    for attr in ("wcs",):
+        wcs = getattr(tpf, attr, None)
+        if wcs is None:
+            continue
+        try:
+            scales = np.asarray(wcs.proj_plane_pixel_scales(), dtype=float)
+            if scales.size:
+                return float(np.nanmedian(np.abs(scales)) * 3600.0)
+        except Exception:
+            pass
+    mission = str(getattr(tpf, "mission", "")).upper()
+    if "TESS" in mission:
+        return 21.0
+    if "KEPLER" in mission or "K2" in mission:
+        return 3.98
+    return None
+
+
+def extract_light_curve_bundle_from_tpf(
     product_uri: str,
     aperture_mask: np.ndarray | list[list[bool]] | str | None = "pipeline",
-) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+) -> TpfLightCurveBundle:
     try:
         import lightkurve as lk
     except ImportError as exc:  # pragma: no cover
@@ -265,24 +307,31 @@ def extract_light_curve_from_tpf(
     tpf = lk.read(str(tpf_path))
     if not hasattr(tpf, "to_lightcurve"):
         raise TypeError(f"file is not a Lightkurve target pixel file: {tpf_path}")
-    if isinstance(aperture_mask, list):
-        mask = np.asarray(aperture_mask, dtype=bool)
-        if mask.shape != tuple(tpf.flux.shape[1:]):
-            raise ValueError(f"aperture mask shape {mask.shape} does not match TPF shape {tuple(tpf.flux.shape[1:])}")
-        if not mask.any():
-            raise ValueError("aperture mask must select at least one pixel")
-    elif aperture_mask == "pipeline":
-        mask = np.asarray(getattr(tpf, "pipeline_mask", []), dtype=bool)
-        if mask.shape != tuple(tpf.flux.shape[1:]) or not mask.any():
-            mask = np.asarray(tpf.create_threshold_mask(threshold=3), dtype=bool)
-        if mask.shape != tuple(tpf.flux.shape[1:]) or not mask.any():
-            raise ValueError("TPF has no usable pipeline or threshold aperture pixels")
-    else:
-        mask = aperture_mask
+    mask, pipeline_mask, threshold_mask = _mask_from_tpf(tpf, aperture_mask)
     lc = tpf.to_lightcurve(aperture_mask=mask)
     quality = getattr(lc, "quality", None)
     time = np.asarray(lc.time.value, dtype=np.float32)
     flux = np.asarray(lc.flux.value, dtype=np.float32)
     quality_arr = np.asarray(quality) if quality is not None else None
     clean_light_curve(time, flux, quality_arr)
-    return time, flux, quality_arr
+    pixel_flux = np.asarray(tpf.flux.value, dtype=np.float32) if hasattr(getattr(tpf, "flux", None), "value") else None
+    return TpfLightCurveBundle(
+        time=time,
+        flux=flux,
+        quality=quality_arr,
+        pixel_flux=pixel_flux,
+        selected_mask=np.asarray(mask, dtype=bool) if mask is not None else None,
+        pipeline_mask=pipeline_mask if pipeline_mask.shape == tuple(tpf.flux.shape[1:]) else None,
+        threshold_mask=threshold_mask if threshold_mask is not None else None,
+        pixel_scale_arcsec=_tpf_pixel_scale_arcsec(tpf),
+        reference_row=float(getattr(tpf, "row", np.nan)) if np.isfinite(getattr(tpf, "row", np.nan)) else None,
+        reference_column=float(getattr(tpf, "column", np.nan)) if np.isfinite(getattr(tpf, "column", np.nan)) else None,
+    )
+
+
+def extract_light_curve_from_tpf(
+    product_uri: str,
+    aperture_mask: np.ndarray | list[list[bool]] | str | None = "pipeline",
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+    bundle = extract_light_curve_bundle_from_tpf(product_uri, aperture_mask=aperture_mask)
+    return bundle.time, bundle.flux, bundle.quality

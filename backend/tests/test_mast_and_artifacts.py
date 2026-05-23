@@ -1,7 +1,8 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
+import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
@@ -14,7 +15,13 @@ from orbitlab.ml.artifact_registry import (
     register_artifact,
 )
 from orbitlab.ml.checksum import sha256_path
-from orbitlab.science.mast import extract_light_curve_from_tpf, resolve_target_alias, resolve_tpf_path, search_targets
+from orbitlab.science.mast import (
+    extract_light_curve_bundle_from_tpf,
+    extract_light_curve_from_tpf,
+    resolve_target_alias,
+    resolve_tpf_path,
+    search_targets,
+)
 
 
 def test_resolve_tpf_path_accepts_existing_fits_file(tmp_path: Path):
@@ -251,7 +258,7 @@ def test_kepler_fetcher_rejects_lfs_pointer():
 
 def test_kepler_fetcher_validates_downloaded_hashes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     payloads = {
-        name: f"checkpoint bytes for {name}".encode("utf-8")
+        name: f"checkpoint bytes for {name}".encode()
         for name in fetch_kepler_astronet.CHECKPOINT_FILES
     }
     monkeypatch.setattr(
@@ -268,3 +275,43 @@ def test_kepler_fetcher_validates_downloaded_hashes(tmp_path: Path, monkeypatch:
     written = fetch_kepler_astronet.fetch_checkpoint(tmp_path)
 
     assert sorted(path.name for path in written) == sorted(payloads)
+
+
+def test_tpf_bundle_preserves_pixel_diagnostics(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    cache_dir = tmp_path / "mast-cache"
+    cache_dir.mkdir()
+    monkeypatch.setattr("orbitlab.science.mast.settings", SimpleNamespace(mast_cache_dir=cache_dir))
+    product = cache_dir / "target-bundle.fits"
+    product.write_bytes(b"fits")
+
+    class FakeTpf:
+        mission = "TESS"
+        row = 12
+        column = 34
+        flux = SimpleNamespace(
+            shape=(8, 2, 2),
+            value=np.arange(32, dtype=np.float32).reshape(8, 2, 2) + 100.0,
+        )
+        pipeline_mask = [[False, False], [False, False]]
+
+        def create_threshold_mask(self, threshold=3):
+            return [[True, False], [False, True]]
+
+        def to_lightcurve(self, aperture_mask):
+            return SimpleNamespace(
+                time=SimpleNamespace(value=[1, 2, 3, 4, 5, 6, 7, 8]),
+                flux=SimpleNamespace(value=[1.0, 1.01, 0.99, 1.02, 0.98, 1.03, 0.97, 1.04]),
+                quality=[0, 0, 0, 0, 0, 0, 0, 0],
+            )
+
+    lightkurve = ModuleType("lightkurve")
+    lightkurve.read = lambda path: FakeTpf()
+    monkeypatch.setitem(sys.modules, "lightkurve", lightkurve)
+
+    bundle = extract_light_curve_bundle_from_tpf(str(product), aperture_mask="pipeline")
+
+    assert bundle.pixel_flux.shape == (8, 2, 2)
+    assert bundle.selected_mask.tolist() == [[True, False], [False, True]]
+    assert bundle.pixel_scale_arcsec == 21.0
+    assert bundle.reference_row == 12.0
+    assert bundle.reference_column == 34.0

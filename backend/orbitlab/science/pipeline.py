@@ -25,6 +25,7 @@ from orbitlab.science.science_config import (
     science_config_hash,
 )
 from orbitlab.science.tls_refinement import refine_with_tls
+from orbitlab.science.tpf_diagnostics import aperture_stability_diagnostics, difference_image_diagnostics
 from orbitlab.science.validation import validate_candidate
 
 
@@ -357,6 +358,9 @@ def analyze_light_curve_arrays(
     ml_service: AstroNetService | None = None,
     nigraha_service: NigrahaService | None = None,
     k2_service: ExoMACService | None = None,
+    pixel_flux: np.ndarray | None = None,
+    aperture_mask: np.ndarray | None = None,
+    pixel_scale_arcsec: float | None = None,
 ) -> dict:
     config = load_science_config()
     profile_name = search_profile or ("science_deep" if vetting_mode == "deep" else "science_standard")
@@ -448,8 +452,23 @@ def analyze_light_curve_arrays(
         )
         physics["stellar_context_source"] = physics_source
         physics = _apply_habitability_caution(physics, physics_source)
+        difference_image = difference_image_diagnostics(
+            time=clean_time,
+            pixel_flux=pixel_flux,
+            candidate=candidate,
+            pixel_scale_arcsec=pixel_scale_arcsec,
+        )
+        centroid_shift_pixels = difference_image.get("centroid_shift_pixels")
+        centroid_uncertainty_pixels = difference_image.get("centroid_uncertainty_pixels")
         validation = asdict(
-            validate_candidate(clean_time, clean_flux, candidate, stellar_rotation_period=stellar_rotation_period)
+            validate_candidate(
+                clean_time,
+                clean_flux,
+                candidate,
+                centroid_shift_pixels=centroid_shift_pixels,
+                centroid_uncertainty_pixels=centroid_uncertainty_pixels,
+                stellar_rotation_period=stellar_rotation_period,
+            )
         )
         observed_transits = _observed_transit_count(bls_result.search_time, candidate)
         period_alias_code = _period_alias_code(candidate, evaluated_candidates)
@@ -559,11 +578,13 @@ def analyze_light_curve_arrays(
                 "candidate_rank": index,
                 "primary_signal_to_noise": primary_signal_to_noise,
             },
-            "aperture_stability": {
-                "pipeline_mask": "pipeline",
-                "percentiles": list(config.aperture_percentiles),
-                "status": "not_computed",
-            },
+            "aperture_stability": aperture_stability_diagnostics(
+                time=clean_time,
+                pixel_flux=pixel_flux,
+                candidate=candidate,
+                selected_mask=aperture_mask,
+                percentiles=config.aperture_percentiles,
+            ),
             "vetting": {
                 "odd_even": {
                     "depth_delta_fraction": _finite_float(validation.get("odd_even_depth_delta")),
@@ -577,9 +598,9 @@ def analyze_light_curve_arrays(
                     "centroid_shift_pixels": _finite_float(validation.get("centroid_shift_pixels")),
                     "centroid_uncertainty_pixels": _finite_float(validation.get("centroid_uncertainty_pixels")),
                     "centroid_significance": _finite_float(validation.get("centroid_significance")),
-                    "centroid_shift_arcsec": None,
+                    "centroid_shift_arcsec": _finite_float(difference_image.get("centroid_shift_arcsec")),
                 },
-                "difference_image": {"status": "unavailable"},
+                "difference_image": difference_image,
                 "quality_cadence_dominance": {
                     "status": "warning"
                     if data_quality["quality_flag_fraction"] >= config.quality_flag_dominance_fraction
