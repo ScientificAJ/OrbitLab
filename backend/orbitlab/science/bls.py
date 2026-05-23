@@ -160,7 +160,12 @@ def _clamp_period_range(
 
     if safe_max_period <= safe_min_period:
         raise ValueError(
-            f"invalid BLS period range after baseline clamp: {safe_min_period:.6g} to {safe_max_period:.6g} days"
+            f"invalid BLS period range after baseline clamp: "
+            f"requested={min_period:.6g}-{max_period:.6g} days, "
+            f"usable_baseline={baseline:.6g} days, "
+            f"two_transit_max={baseline / min_transits:.6g} days, "
+            f"single_segment_fallback_max={baseline * 0.8:.6g} days. "
+            f"Select/stitch longer products for this target."
         )
 
     return safe_min_period, safe_max_period, baseline, cadence

@@ -20,6 +20,8 @@
   --accent: #78dce8;
   --accent-soft: #12313b;
   --warning: #ffd17a;
+  --warning-bg: #2d2412;
+  --warning-border: #8d7a42;
   --success: #a8f0bf;
   --success-bg: #122818;
   --success-border: #3f7d58;
@@ -48,6 +50,8 @@
   --accent: #f08db8;
   --accent-soft: #44233a;
   --warning: #f7d89a;
+  --warning-bg: #2b2316;
+  --warning-border: #937d55;
   --success: #bce9c8;
   --success-bg: #16271d;
   --success-border: #558a65;
@@ -74,6 +78,8 @@
   --accent: #146f7d;
   --accent-soft: #e1f3f6;
   --warning: #7a5300;
+  --warning-bg: #fff8e1;
+  --warning-border: #d6b361;
   --success: #126034;
   --success-bg: #e7f7ec;
   --success-border: #8bc59f;
@@ -1025,6 +1031,7 @@ label,
 
 .modal-status,
 .modal-error,
+.modal-warning,
 .setup-hint {
   margin-top: 12px;
   padding: 10px;
@@ -1044,7 +1051,14 @@ label,
   color: var(--error);
 }
 
-.modal-error p {
+.modal-warning {
+  border: 1px solid var(--warning-border);
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.modal-error p,
+.modal-warning p {
   margin: 6px 0 0;
 }
 

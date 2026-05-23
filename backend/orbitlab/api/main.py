@@ -168,11 +168,16 @@ def tpf_preview(product_uri: str):
         fill_value = float(np.nanmedian(image[finite]))
         image = np.where(finite, image, fill_value).astype(float)
 
+        time = np.asarray(tpf.time.value, dtype=float)
+        finite_time = np.isfinite(time)
+        baseline = float(np.nanmax(time[finite_time]) - np.nanmin(time[finite_time])) if finite_time.any() else 0.0
+
         return {
             "shape": list(image.shape),
             "image": image.tolist(),
             "finite_min": float(np.nanmin(image)),
             "finite_max": float(np.nanmax(image)),
+            "baseline": baseline,
         }
     except HTTPException:
         raise
@@ -330,6 +335,8 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
         }
     except HTTPException:
         raise
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 

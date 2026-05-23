@@ -89,6 +89,7 @@ export type TpfPreview = {
   image: number[][];
   finite_min?: number;
   finite_max?: number;
+  baseline?: number;
 };
 
 export type AnalysisResult = {

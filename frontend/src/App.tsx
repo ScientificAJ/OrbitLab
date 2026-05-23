@@ -1902,6 +1902,20 @@ export default function App() {
               />
             </div>
           </div>
+          {tpfPreview?.baseline && maxPeriod > tpfPreview.baseline * 0.8 && (
+            <div className="modal-warning" style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>
+              <strong>Limited data baseline</strong>
+              <p>
+                This product has only {tpfPreview.baseline.toFixed(2)} usable days.
+                {minPeriod > tpfPreview.baseline * 0.8 ? (
+                  <> Requested range {minPeriod}–{maxPeriod} days is too long for this file. Search will likely fail.</>
+                ) : (
+                  <> Periods above {(tpfPreview.baseline * 0.8).toFixed(2)} days cannot be reliably searched in this segment.</>
+                )}
+                {' '}Select or stitch longer observations for long-period planets.
+              </p>
+            </div>
+          )}
           <div className={`modal-status bls-status-${blsPreviewStatus}`}>
             BLS preview status: <strong>{blsPreviewStatus}</strong>
           </div>
