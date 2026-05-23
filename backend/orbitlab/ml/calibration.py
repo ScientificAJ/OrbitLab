@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -27,8 +27,8 @@ def _calibration_path(mission: str, root: Path = CALIBRATION_DIR) -> Path:
     return root / f"{mission.lower()}-probability-calibration.json"
 
 
-def load_probability_calibration(mission: str, root: Path = CALIBRATION_DIR) -> ProbabilityCalibration | None:
-    path = _calibration_path(mission, root)
+def load_probability_calibration(mission: str, root: Path | None = None) -> ProbabilityCalibration | None:
+    path = _calibration_path(mission, root or CALIBRATION_DIR)
     if not path.exists():
         return None
     payload = json.loads(path.read_text(encoding="utf-8"))

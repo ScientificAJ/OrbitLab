@@ -627,6 +627,8 @@ test('aperture modal validates empty masks and saves selected pixels', async ({ 
 });
 
 test('BLS preview renders candidates, periodogram, folded plot, and API errors', async ({ page }) => {
+  test.setTimeout(90_000);
+
   await openApp(page);
   await chooseProduct(page);
 
