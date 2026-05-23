@@ -46,11 +46,13 @@ log "python compile checks"
 "$PYTHON" -m py_compile \
   scripts/convert_kepler_astronet_npz.py \
   scripts/dump_repo.py \
+  scripts/fetch_calibration_sources.py \
   scripts/fetch_k2_exomac_kkt.py \
   scripts/fetch_kepler_astronet.py \
   scripts/fetch_nigraha_weights.py \
   scripts/generate_nigraha_golden.py \
   scripts/predict_kepler_astronet_tf.py \
-  scripts/register_astronet_artifact.py
+  scripts/register_astronet_artifact.py \
+  scripts/train_probability_calibration.py
 
 log "ok"

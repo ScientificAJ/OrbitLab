@@ -92,6 +92,16 @@ function metricList(metrics: Record<string, unknown> | undefined, key: string) {
   return Array.isArray(value) && value.length ? value.join(', ') : 'none';
 }
 
+function evidenceNumber(evidence: Record<string, unknown> | undefined, key: string) {
+  const value = evidence?.[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function evidenceText(evidence: Record<string, unknown> | undefined, key: string) {
+  const value = evidence?.[key];
+  return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
 function CandidateCard({
   candidate,
   active,
@@ -932,6 +942,7 @@ export default function App() {
         result_id: 'preview',
         target_id: targetId,
         mission: missionAtRequest,
+        search_profile: payload.search_profile,
         candidates: payload.candidates,
         periodogram: payload.periodogram,
         folded_curves: payload.folded_curves,
@@ -1502,12 +1513,35 @@ export default function App() {
               <dd>
                 {formatNumber(selected?.depth_ppm ?? (selected?.depth ? selected.depth * 1_000_000 : undefined), 0)} ppm
               </dd>
-              <dt>SNR</dt>
-              <dd>{formatNumber(selected?.signal_to_noise, 2)}</dd>
+              <dt>Raw SNR</dt>
+              <dd>{formatNumber(selected?.raw_snr ?? selected?.signal_to_noise, 2)}</dd>
+              <dt>Effective SNR</dt>
+              <dd>
+                {formatNumber(selected?.effective_snr ?? metricNumber(selected?.detection_metrics, 'effective_snr'), 2)}
+              </dd>
+              <dt>Red Noise</dt>
+              <dd>
+                {formatNumber(
+                  selected?.red_noise_beta ?? metricNumber(selected?.detection_metrics, 'red_noise_beta'),
+                  2,
+                )}
+              </dd>
+              <dt>Final Score</dt>
+              <dd>
+                {formatNumber(
+                  selected?.final_score ??
+                    ('disposition_score' in (selected ?? {})
+                      ? (selected as Tce | undefined)?.disposition_score
+                      : undefined),
+                  3,
+                )}
+              </dd>
               <dt>Transits</dt>
               <dd>{formatNumber(metricNumber(selected?.detection_metrics, 'observed_transit_count'), 0)}</dd>
               <dt>Duty Cycle</dt>
               <dd>{formatNumber(metricNumber(selected?.detection_metrics, 'duration_period_ratio'), 4)}</dd>
+              <dt>Coverage</dt>
+              <dd>{formatNumber(metricNumber(selected?.detection_metrics, 'phase_coverage_score'), 3)}</dd>
               <dt>Aliases</dt>
               <dd>{metricList(selected?.detection_metrics, 'alias_flags')}</dd>
             </dl>
@@ -1520,8 +1554,26 @@ export default function App() {
             <dl>
               <dt>Odd-even</dt>
               <dd>{formatScientific(selected?.validation?.odd_even_depth_delta, 3)}</dd>
+              <dt>Odd-even σ</dt>
+              <dd>
+                {formatNumber(
+                  typeof selected?.validation?.odd_even_sigma === 'number'
+                    ? selected.validation.odd_even_sigma
+                    : undefined,
+                  2,
+                )}
+              </dd>
               <dt>Secondary</dt>
               <dd>{formatScientific(selected?.validation?.secondary_depth, 3)}</dd>
+              <dt>Secondary SNR</dt>
+              <dd>
+                {formatNumber(
+                  typeof selected?.validation?.secondary_snr === 'number'
+                    ? selected.validation.secondary_snr
+                    : undefined,
+                  2,
+                )}
+              </dd>
               <dt>Duration</dt>
               <dd>{String(selected?.validation?.duration_plausible ?? 'n/a')}</dd>
               <dt>Flags</dt>
@@ -1558,6 +1610,10 @@ export default function App() {
               <dd className={selected?.physics?.is_temperature_habitable ? 'status-ready' : ''}>
                 {formatTriState(selected?.physics?.is_temperature_habitable, 'Potential', 'Unlikely')}
               </dd>
+              <dt>Habitability Status</dt>
+              <dd>
+                {String((selected?.physics?.habitability as Record<string, unknown> | undefined)?.status ?? 'n/a')}
+              </dd>
               <dt>Source</dt>
               <dd>
                 {String(selected?.physics?.stellar_context_source ?? result?.stellar_context?.physics_source ?? 'n/a')}
@@ -1578,6 +1634,12 @@ export default function App() {
               <dd>{selected?.ml?.label ?? 'n/a'}</dd>
               <dt>Probability</dt>
               <dd>{formatNumber(selected?.ml?.probability, 4)}</dd>
+              <dt>Raw Probability</dt>
+              <dd>{formatNumber(selected?.ml?.raw_ml_probability, 4)}</dd>
+              <dt>Calibrated</dt>
+              <dd>{formatNumber(selected?.ml?.calibrated_ml_probability, 4)}</dd>
+              <dt>Calibration</dt>
+              <dd>{selected?.ml?.calibration_source ?? 'n/a'}</dd>
               {selected?.ml?.class_probabilities &&
                 Object.entries(selected.ml.class_probabilities).map(([label, probability]) => (
                   <Fragment key={label}>
@@ -1589,6 +1651,26 @@ export default function App() {
               <dd>{selected?.ml?.model_source ?? activeModelSource}</dd>
               <dt>Input</dt>
               <dd>{selected?.ml?.input_tensor_checksum?.slice(0, 12) ?? 'n/a'}</dd>
+            </dl>
+          </div>
+
+          <div className="panel details">
+            <h2>Evidence</h2>
+            <dl>
+              <dt>Detection</dt>
+              <dd>{formatNumber(evidenceNumber(selected?.evidence_scores, 'detection'), 3)}</dd>
+              <dt>Vetting</dt>
+              <dd>{formatNumber(evidenceNumber(selected?.evidence_scores, 'vetting'), 3)}</dd>
+              <dt>Data Quality</dt>
+              <dd>{formatNumber(evidenceNumber(selected?.evidence_scores, 'data_quality'), 3)}</dd>
+              <dt>Centroid</dt>
+              <dd>{formatNumber(evidenceNumber(selected?.evidence_scores, 'centroid'), 3)}</dd>
+              <dt>Physics</dt>
+              <dd>{formatNumber(evidenceNumber(selected?.evidence_scores, 'physics_plausibility'), 3)}</dd>
+              <dt>TLS</dt>
+              <dd>{evidenceText(selected?.evidence?.tls as Record<string, unknown> | undefined, 'status') ?? 'n/a'}</dd>
+              <dt>Why</dt>
+              <dd>{selected?.explanation?.join('; ') || 'n/a'}</dd>
             </dl>
           </div>
           {error && (

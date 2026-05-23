@@ -27,6 +27,7 @@ science = [
   "lightkurve>=2.5",
   "scipy>=1.13",
   "batman-package>=2.4",
+  "transitleastsquares>=1.32",
 ]
 ml = [
   "h5py>=3.11",

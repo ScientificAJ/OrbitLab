@@ -78,6 +78,13 @@ class CandidatePayload(BaseModel):
     duration: float
     depth: float
     signal_to_noise: float
+    raw_snr: float | None = None
+    red_noise_beta: float | None = None
+    effective_snr: float | None = None
+    final_score: float | None = None
+    evidence: dict[str, Any] | None = None
+    evidence_scores: dict[str, Any] | None = None
+    explanation: list[str] = Field(default_factory=list)
     physics: dict[str, Any] | None = None
     validation: dict[str, Any] | None = None
     ml: dict[str, Any] | None = None
@@ -90,6 +97,7 @@ class TcePayload(CandidatePayload):
     duration_days: float | None = None
     depth_fraction: float | None = None
     depth_ppm: float | None = None
+    duration_hours: float | None = None
     disposition: Literal["planet_candidate", "borderline_tce", "rejected_signal"] | None = None
     action_label: Literal["none", "review_needed", "follow_up_needed"] | None = None
     disposition_score: float | None = None
@@ -131,6 +139,11 @@ class AnalysisResult(BaseModel):
     validation_status: str | None = None
     engine_status: dict[str, Any] | None = None
     deep_mode_progress: dict[str, Any] | None = None
+    search_profile: str | None = None
+    active_science_config_keys: list[str] = Field(default_factory=list)
+    inactive_science_config_keys: list[str] = Field(default_factory=list)
+    missing_science_config_keys: list[str] = Field(default_factory=list)
+    injection_recovery: dict[str, Any] | None = None
     periodogram: dict[str, list[float]]
     folded_curves: dict[str, dict[str, list[float]]]
     light_curve: dict[str, list[float]]

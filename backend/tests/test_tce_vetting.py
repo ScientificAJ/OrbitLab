@@ -227,7 +227,54 @@ def test_harmonic_residual_signal_stays_in_tce_ledger_but_is_not_promoted(monkey
         nigraha_service=_UnavailableModel(),
     )
 
-    assert [candidate["period"] for candidate in payload["planet_candidates"]] == [primary.period]
+    assert payload["planet_candidates"] == []
     assert len(payload["tces"]) == 2
+    assert payload["tces"][0]["disposition"] == "borderline_tce"
+    assert payload["tces"][0]["effective_snr"] < payload["tces"][0]["raw_snr"]
     assert payload["tces"][1]["disposition"] == "rejected_signal"
     assert "period_harmonic" in payload["tces"][1]["alias_flags"]
+
+
+def test_science_config_audit_exposes_active_keys():
+    from orbitlab.science.science_config import config_usage_audit
+
+    audit = config_usage_audit()
+
+    assert "red_noise_warning_beta" in audit["active_science_config_keys"]
+    assert "quality_flag_dominance_fraction" in audit["active_science_config_keys"]
+    assert "forced_period_tolerance_fraction" in audit["active_science_config_keys"]
+    assert audit["inactive_science_config_keys"] == []
+
+
+def test_solar_like_fallback_disables_habitability_claim(monkeypatch):
+    candidate = TransitCandidate(2.0, 0.1, 0.08, 0.0025, 11.0, 9.0)
+
+    class _BlsResult:
+        periodogram = {
+            "period": np.array([candidate.period], dtype=np.float32),
+            "power": np.array([candidate.power], dtype=np.float32),
+            "duration": np.array([candidate.duration], dtype=np.float32),
+        }
+        search_time = np.linspace(0, 20, 800, dtype=np.float32)
+        search_flux = (1.0 + 0.001 * np.sin(np.linspace(0, 10, 800, dtype=np.float32))).astype(np.float32)
+        clean_time = search_time
+        clean_flux = search_flux
+        metadata = {"min_period_days": 0.5, "max_period_days": 10.0}
+
+        def __init__(self):
+            self.candidate = candidate
+
+    monkeypatch.setattr("orbitlab.science.pipeline.run_bls", lambda *args, **kwargs: _BlsResult())
+    monkeypatch.setattr("orbitlab.science.pipeline.find_multi_planet_candidates", lambda *args, **kwargs: [candidate])
+
+    time, flux = _light_curve(period=2.0)
+    payload = analyze_light_curve_arrays(
+        target_id="fallback-star",
+        mission="TESS",
+        time=time,
+        flux=flux,
+        nigraha_service=_UnavailableModel(),
+    )
+
+    assert payload["tces"][0]["physics"]["habitability"]["status"] == "insufficient_stellar_data"
+    assert payload["tces"][0]["physics"]["is_in_habitable_zone"] is None

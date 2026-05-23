@@ -5,6 +5,13 @@ export type Candidate = {
   duration: number;
   depth: number;
   signal_to_noise: number;
+  raw_snr?: number | null;
+  red_noise_beta?: number | null;
+  effective_snr?: number | null;
+  final_score?: number | null;
+  evidence?: Record<string, unknown>;
+  evidence_scores?: Record<string, unknown>;
+  explanation?: string[];
   physics?: {
     radius_ratio?: number | null;
     planet_radius_earth?: number | null;
@@ -14,7 +21,8 @@ export type Candidate = {
     habitable_zone_outer_au?: number | null;
     is_in_habitable_zone?: boolean | null;
     is_temperature_habitable?: boolean | null;
-    [key: string]: number | string | boolean | null | undefined;
+    habitability?: Record<string, unknown>;
+    [key: string]: number | string | boolean | Record<string, unknown> | null | undefined;
   };
   validation?: {
     odd_even_depth_delta?: number | null;
@@ -32,6 +40,11 @@ export type Candidate = {
   flags?: Array<{ code: string; severity: 'info' | 'warning' | 'hard_fail'; message: string }>;
   ml?: {
     probability: number | null;
+    raw_ml_probability?: number | null;
+    calibrated_ml_probability?: number | null;
+    calibration_source?: string | null;
+    calibration_method?: string | null;
+    calibration_checksum?: string | null;
     threshold: number | null;
     label: string;
     model_version: string;
@@ -53,6 +66,7 @@ export type Tce = Candidate & {
   disposition?: 'planet_candidate' | 'borderline_tce' | 'rejected_signal' | null;
   action_label?: 'none' | 'review_needed' | 'follow_up_needed' | null;
   disposition_score?: number | null;
+  final_score?: number | null;
   confidence_band?: string | null;
   flags?: Array<{ code: string; severity: 'info' | 'warning' | 'hard_fail'; message: string }>;
   detection_metrics?: Record<string, unknown>;
@@ -60,6 +74,9 @@ export type Tce = Candidate & {
   vetting?: Record<string, unknown>;
   catalog_context?: Record<string, unknown>;
   fpp?: Record<string, unknown>;
+  evidence?: Record<string, unknown>;
+  evidence_scores?: Record<string, unknown>;
+  explanation?: string[];
 };
 
 export type FluxSeries = {
@@ -82,6 +99,11 @@ export type AnalysisResult = {
   schema_version?: string;
   pipeline_version?: string;
   science_config_hash?: string;
+  search_profile?: string;
+  active_science_config_keys?: string[];
+  inactive_science_config_keys?: string[];
+  missing_science_config_keys?: string[];
+  injection_recovery?: Record<string, unknown>;
   vetting_mode?: 'fast' | 'deep';
   data_quality?: Record<string, unknown>;
   tces?: Tce[];
@@ -298,6 +320,7 @@ export async function createApertureMask(payload: {
 }
 
 export type BlsPreviewResult = {
+  search_profile?: string;
   periodogram: { period: number[]; power: number[]; duration?: number[] };
   candidates: Candidate[];
   folded_curves: Record<string, { phase: number[]; flux: number[] }>;

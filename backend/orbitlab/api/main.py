@@ -47,7 +47,7 @@ from orbitlab.science.pipeline import (
     _structured_flags,
 )
 from orbitlab.science.mast import extract_light_curve_from_tpf, list_tpf_products, resolve_tpf_path, search_targets
-from orbitlab.science.science_config import load_science_config
+from orbitlab.science.science_config import get_search_profile, load_science_config
 from orbitlab.storage.database import SessionLocal, engine, init_db
 from orbitlab.storage.orm import (
     AnalysisJobRecord,
@@ -195,17 +195,26 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
             aperture_mask = record.mask_json
         time, flux, quality = extract_light_curve_from_tpf(payload.product_uri, aperture_mask=aperture_mask)
         clean_time, clean_flux = clean_light_curve(time, flux, quality)
+        science_config = load_science_config()
+        profile = get_search_profile(science_config, "preview_fast")
         bls_result = run_bls(
             clean_time,
             clean_flux,
             min_period=payload.min_period,
             max_period=payload.max_period,
-            period_samples=4096,
+            period_samples=profile.period_samples,
+            max_period_samples=profile.max_period_samples,
+            min_transits=profile.min_transits,
+            max_search_cadences=profile.max_search_cadences,
         )
+        bls_result.metadata.update({
+            "search_profile": profile.name,
+            "search_profile_warning": profile.warning,
+            "period_samples_requested": profile.period_samples,
+        })
         candidate = bls_result.candidate
         periodogram = bls_result.periodogram
 
-        science_config = load_science_config()
         candidate = _resolve_secondary_period_alias(
             clean_time,
             clean_flux,
@@ -221,7 +230,8 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
             initial_candidate=candidate,
             min_period=payload.min_period,
             max_period=payload.max_period,
-            period_samples=4096,
+            period_samples=profile.period_samples,
+            max_period_samples=profile.max_period_samples,
             min_signal_to_noise=science_config.borderline_snr_min,
             preserve_initial_candidate=candidate.signal_to_noise >= science_config.borderline_snr_min,
         )
@@ -304,6 +314,7 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
             promoted_candidates.append(c)
 
         return {
+            "search_profile": profile.name,
             "periodogram": {
                 "period": periodogram["period"].astype(float).tolist(),
                 "power": periodogram["power"].astype(float).tolist(),
