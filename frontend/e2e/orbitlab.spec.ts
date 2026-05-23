@@ -355,8 +355,14 @@ test('settings drawer persists mode and theme after reload', async ({ page }) =>
 
   await page.getByRole('button', { name: 'Settings' }).click();
   await expect(page.getByRole('dialog', { name: 'Settings' })).toBeVisible();
-  await page.getByRole('radio', { name: 'Advanced' }).click();
-  await page.getByRole('radio', { name: 'Sakura' }).click();
+  const advancedMode = page.getByRole('radio', { name: 'Advanced' });
+  await advancedMode.dispatchEvent('click');
+  await expect(advancedMode).toHaveAttribute('aria-checked', 'true');
+
+  const sakuraTheme = page.getByRole('radio', { name: 'Sakura' });
+  await sakuraTheme.dispatchEvent('click');
+  await expect(sakuraTheme).toHaveAttribute('aria-checked', 'true');
+
   await page.reload();
 
   await expect(page.locator('.shell')).toHaveAttribute('data-mode', 'advanced');
