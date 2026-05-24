@@ -1908,11 +1908,18 @@ export default function App() {
               <p>
                 This product has only {tpfPreview.baseline.toFixed(2)} usable days.
                 {minPeriod > tpfPreview.baseline * 0.8 ? (
-                  <> Requested range {minPeriod}–{maxPeriod} days is too long for this file. Search will likely fail.</>
+                  <>
+                    {' '}
+                    Requested range {minPeriod}–{maxPeriod} days is too long for this file. Search will likely fail.
+                  </>
                 ) : (
-                  <> Periods above {(tpfPreview.baseline * 0.8).toFixed(2)} days cannot be reliably searched in this segment.</>
-                )}
-                {' '}Select or stitch longer observations for long-period planets.
+                  <>
+                    {' '}
+                    Periods above {(tpfPreview.baseline * 0.8).toFixed(2)} days cannot be reliably searched in this
+                    segment.
+                  </>
+                )}{' '}
+                Select or stitch longer observations for long-period planets.
               </p>
             </div>
           )}
