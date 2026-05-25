@@ -91,6 +91,20 @@ def _flag(code: str, severity: str, message: str) -> dict:
     return {"code": code, "severity": severity, "message": message}
 
 
+_FLAG_SEVERITY_RANK = {"info": 0, "warning": 1, "hard_fail": 2}
+
+
+def _add_flag(flags: list[dict], code: str, severity: str, message: str) -> None:
+    for flag in flags:
+        if flag["code"] != code:
+            continue
+        if _FLAG_SEVERITY_RANK.get(severity, 0) > _FLAG_SEVERITY_RANK.get(flag["severity"], 0):
+            flag["severity"] = severity
+            flag["message"] = message
+        return
+    flags.append(_flag(code, severity, message))
+
+
 def _observed_transit_count(time: np.ndarray, candidate) -> int:
     if candidate.period <= 0 or candidate.duration <= 0:
         return 0
@@ -149,25 +163,26 @@ def _structured_flags(candidate, validation: dict, config, support: dict | None 
     effective_snr = float(support.get("effective_snr", candidate.signal_to_noise))
     duration_ratio = candidate.duration / candidate.period if candidate.period else float("inf")
     if effective_snr < config.promotion_snr:
-        flags.append(_flag("low_snr", "warning", "Effective signal is below the planet-candidate promotion threshold."))
+        _add_flag(flags, "low_snr", "warning", "Effective signal is below the planet-candidate promotion threshold.")
     if support.get("red_noise_beta", 1.0) >= config.red_noise_warning_beta:
-        flags.append(_flag("red_noise", "warning", "Correlated noise reduces the effective transit significance."))
+        _add_flag(flags, "red_noise", "warning", "Correlated noise reduces the effective transit significance.")
     if support.get("quality_flag_fraction", 0.0) >= config.quality_flag_dominance_fraction:
-        flags.append(_flag("quality_flag_dominance", "warning", "Quality-flagged cadences dominate this light curve."))
-    if duration_ratio > config.max_duration_period_ratio or not validation.get("duration_plausible", False):
-        flags.append(
-            _flag("implausible_duration", "hard_fail", "Transit duration is too large for the detected period.")
+        _add_flag(
+            flags,
+            "quality_flag_dominance",
+            "warning",
+            "Quality-flagged cadences dominate this light curve.",
         )
+    if duration_ratio > config.max_duration_period_ratio or not validation.get("duration_plausible", False):
+        _add_flag(flags, "implausible_duration", "hard_fail", "Transit duration is too large for the detected period.")
     observed_transits = support.get("observed_transit_count")
     if isinstance(observed_transits, int) and observed_transits < 2:
-        flags.append(
-            _flag("single_transit", "hard_fail", "Fewer than two observed transit events support this period.")
-        )
+        _add_flag(flags, "single_transit", "hard_fail", "Fewer than two observed transit events support this period.")
     alias_code = support.get("period_alias_code")
     if alias_code == "duplicate_period":
-        flags.append(_flag("duplicate_period", "hard_fail", "Period duplicates an already stronger detected signal."))
+        _add_flag(flags, "duplicate_period", "hard_fail", "Period duplicates an already stronger detected signal.")
     elif alias_code == "period_harmonic":
-        flags.append(_flag("period_harmonic", "hard_fail", "Period is a simple harmonic of another detected signal."))
+        _add_flag(flags, "period_harmonic", "hard_fail", "Period is a simple harmonic of another detected signal.")
     candidate_rank = support.get("candidate_rank")
     primary_snr = support.get("primary_signal_to_noise")
     if (
@@ -177,16 +192,9 @@ def _structured_flags(candidate, validation: dict, config, support: dict | None 
         and np.isfinite(primary_snr)
         and effective_snr < max(config.promotion_snr * 1.25, primary_snr * 0.15)
     ):
-        flags.append(
-            _flag("weak_residual_signal", "warning", "Residual signal is weak relative to the primary transit.")
-        )
+        _add_flag(flags, "weak_residual_signal", "warning", "Residual signal is weak relative to the primary transit.")
     if validation.get("harmonic_flag"):
-        flags.append(_flag("stellar_rotation_harmonic", "warning", "Period is close to a stellar rotation harmonic."))
-    existing_codes = {flag["code"] for flag in flags}
-    for validation_flag in validation.get("false_positive_flags", ()) or ():
-        if validation_flag not in existing_codes:
-            flags.append(_flag(str(validation_flag), "warning", "Validation marked this signal for follow-up review."))
-            existing_codes.add(str(validation_flag))
+        _add_flag(flags, "stellar_rotation_harmonic", "warning", "Period is close to a stellar rotation harmonic.")
     secondary_snr = validation.get("secondary_snr")
     secondary_depth = validation.get("secondary_depth")
     if (
@@ -194,7 +202,7 @@ def _structured_flags(candidate, validation: dict, config, support: dict | None 
         and np.isfinite(secondary_snr)
         and secondary_snr >= config.secondary_eclipse_hard_fail_snr
     ):
-        flags.append(_flag("secondary_eclipse", "hard_fail", "Secondary eclipse SNR exceeds hard-fail threshold."))
+        _add_flag(flags, "secondary_eclipse", "hard_fail", "Secondary eclipse SNR exceeds hard-fail threshold.")
     elif (
         isinstance(secondary_depth, (int, float))
         and np.isfinite(secondary_depth)
@@ -202,20 +210,25 @@ def _structured_flags(candidate, validation: dict, config, support: dict | None 
         and secondary_depth / max(candidate.depth, np.finfo(float).eps) * candidate.signal_to_noise
         >= config.secondary_eclipse_hard_fail_snr
     ):
-        flags.append(_flag("secondary_eclipse", "hard_fail", "Secondary eclipse evidence exceeds hard-fail threshold."))
+        _add_flag(flags, "secondary_eclipse", "hard_fail", "Secondary eclipse evidence exceeds hard-fail threshold.")
     odd_even_sigma = validation.get("odd_even_sigma")
     if (
         isinstance(odd_even_sigma, (int, float))
         and np.isfinite(odd_even_sigma)
         and odd_even_sigma >= config.odd_even_hard_fail_sigma
     ):
-        flags.append(_flag("odd_even_depth_mismatch", "hard_fail", "Odd/even depth mismatch exceeds sigma threshold."))
+        _add_flag(flags, "odd_even_depth_mismatch", "hard_fail", "Odd/even depth mismatch exceeds sigma threshold.")
     centroid_significance = validation.get("centroid_significance")
     if isinstance(centroid_significance, (int, float)) and np.isfinite(centroid_significance):
         if centroid_significance >= 3.0:
-            flags.append(_flag("centroid_shift", "hard_fail", "Centroid shift exceeds 3 sigma."))
+            _add_flag(
+                flags,
+                "centroid_shift",
+                "warning",
+                "Centroid shift exceeds 3 sigma; review source position before promotion.",
+            )
         elif centroid_significance >= 2.0:
-            flags.append(_flag("centroid_shift", "warning", "Centroid shift exceeds 2 sigma."))
+            _add_flag(flags, "centroid_shift", "warning", "Centroid shift exceeds 2 sigma.")
     else:
         centroid_shift = validation.get("centroid_shift_pixels")
         if (
@@ -223,7 +236,9 @@ def _structured_flags(candidate, validation: dict, config, support: dict | None 
             and np.isfinite(centroid_shift)
             and centroid_shift > config.centroid_hard_fail_pixels
         ):
-            flags.append(_flag("centroid_shift", "hard_fail", "Centroid shift exceeds pixel fallback threshold."))
+            _add_flag(flags, "centroid_shift", "warning", "Centroid shift exceeds pixel fallback threshold.")
+    for validation_flag in validation.get("false_positive_flags", ()) or ():
+        _add_flag(flags, str(validation_flag), "warning", "Validation marked this signal for follow-up review.")
     return flags
 
 

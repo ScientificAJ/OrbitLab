@@ -105,6 +105,33 @@ def test_hard_fail_secondary_rejects_high_snr_signal():
     assert _disposition(candidate, flags, config)[0] == "rejected_signal"
 
 
+def test_centroid_shift_is_single_review_warning_not_hard_rejection():
+    config = load_science_config()
+    candidate = TransitCandidate(2.2054, 0.1, 0.08, 0.002, 12.0, 7.89)
+    flags = _structured_flags(
+        candidate,
+        {
+            "duration_plausible": True,
+            "secondary_depth": 0.0,
+            "odd_even_depth_delta": 0.0,
+            "centroid_significance": 3.4,
+            "false_positive_flags": ("centroid_shift",),
+        },
+        config,
+        {"red_noise_beta": config.red_noise_warning_beta},
+    )
+
+    centroid_flags = [flag for flag in flags if flag["code"] == "centroid_shift"]
+    assert centroid_flags == [
+        {
+            "code": "centroid_shift",
+            "severity": "warning",
+            "message": "Centroid shift exceeds 3 sigma; review source position before promotion.",
+        }
+    ]
+    assert _disposition(candidate, flags, config)[0] == "borderline_tce"
+
+
 def test_response_aliases_new_and_old_payloads():
     new_record = AnalysisResultRecord(
         id="new",
