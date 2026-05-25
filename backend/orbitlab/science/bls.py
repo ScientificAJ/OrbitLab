@@ -16,6 +16,7 @@ class TransitCandidate:
     depth: float
     power: float
     signal_to_noise: float
+    metadata: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)

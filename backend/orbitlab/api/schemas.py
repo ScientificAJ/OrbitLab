@@ -87,6 +87,12 @@ class CandidatePayload(BaseModel):
     explanation: list[str] = Field(default_factory=list)
     physics: dict[str, Any] | None = None
     validation: dict[str, Any] | None = None
+    period_source: str | None = None
+    signal_origin: str | None = None
+    catalog_match: dict[str, Any] | None = None
+    is_residual: bool | None = None
+    display_priority: int | None = None
+    secondary_context: dict[str, Any] | None = None
     ml: dict[str, Any] | None = None
 
 

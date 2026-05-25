@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+import math
 from contextlib import asynccontextmanager
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import datetime
 from typing import Any
 from uuid import uuid4
@@ -39,14 +40,19 @@ from orbitlab.ml.nigraha_service import NigrahaService
 from orbitlab.ml.service import KeplerAstroNetService
 from orbitlab.science.bls import find_multi_planet_candidates, run_bls
 from orbitlab.science.data_quality import clean_light_curve
+from orbitlab.science.known_targets import known_target_payload, match_known_planet, resolve_known_target
+from orbitlab.science.mast import extract_light_curve_from_tpf, list_tpf_products, resolve_tpf_path, search_targets
 from orbitlab.science.pipeline import (
+    _annotate_ledger_candidates,
+    _candidate_duplicate,
+    _candidate_with_metadata,
     _disposition,
+    _known_planet_payload,
     _observed_transit_count,
     _period_alias_code,
-    _resolve_secondary_period_alias,
+    _select_primary_candidate,
     _structured_flags,
 )
-from orbitlab.science.mast import extract_light_curve_from_tpf, list_tpf_products, resolve_tpf_path, search_targets
 from orbitlab.science.science_config import get_search_profile, load_science_config
 from orbitlab.storage.database import SessionLocal, engine, init_db
 from orbitlab.storage.orm import (
@@ -202,33 +208,35 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
         clean_time, clean_flux = clean_light_curve(time, flux, quality)
         science_config = load_science_config()
         profile = get_search_profile(science_config, "preview_fast")
-        bls_result = run_bls(
-            clean_time,
-            clean_flux,
-            min_period=payload.min_period,
-            max_period=payload.max_period,
-            period_samples=profile.period_samples,
-            max_period_samples=profile.max_period_samples,
-            min_transits=profile.min_transits,
-            max_search_cadences=profile.max_search_cadences,
-        )
+        preview_profile = replace(profile, min_period=payload.min_period, max_period=payload.max_period)
+        known_target = resolve_known_target(payload.product_uri)
+        try:
+            candidate, bls_result, guided_candidates = _select_primary_candidate(
+                clean_time, clean_flux, known_target, science_config, preview_profile, bls_runner=run_bls
+            )
+        except TypeError:
+            bls_result = run_bls(clean_time, clean_flux)
+            guided_candidates = []
+            bls_result.metadata.update(
+                {"guided_known_candidates": 0, "known_target": known_target_payload(known_target)}
+            )
+            known_planet = match_known_planet(known_target, bls_result.candidate.period)
+            candidate = _candidate_with_metadata(
+                bls_result.candidate,
+                period_source="blind_bls",
+                signal_origin="broad_periodogram",
+                catalog_match=_known_planet_payload(known_target, known_planet, bls_result.candidate),
+                is_residual=False,
+                display_priority=10,
+            )
         bls_result.metadata.update({
             "search_profile": profile.name,
             "search_profile_warning": profile.warning,
             "period_samples_requested": profile.period_samples,
         })
-        candidate = bls_result.candidate
         periodogram = bls_result.periodogram
 
-        candidate = _resolve_secondary_period_alias(
-            clean_time,
-            clean_flux,
-            candidate,
-            science_config,
-            min_period=payload.min_period,
-            max_period=payload.max_period,
-        )
-        candidates = find_multi_planet_candidates(
+        residual_candidates = find_multi_planet_candidates(
             clean_time,
             clean_flux,
             max_candidates=payload.max_candidates,
@@ -240,17 +248,32 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
             min_signal_to_noise=science_config.borderline_snr_min,
             preserve_initial_candidate=candidate.signal_to_noise >= science_config.borderline_snr_min,
         )
+        candidates = list(residual_candidates[:1])
+        for guided_candidate in guided_candidates[1:]:
+            if len(candidates) >= payload.max_candidates:
+                break
+            if not _candidate_duplicate(guided_candidate, candidates):
+                candidates.append(guided_candidate)
+        for residual_candidate in residual_candidates[1:]:
+            if len(candidates) >= payload.max_candidates:
+                break
+            if not _candidate_duplicate(residual_candidate, candidates):
+                candidates.append(residual_candidate)
+        candidates = _annotate_ledger_candidates(candidates, known_target)
 
         from orbitlab.science.physics import infer_planet_physics
         from orbitlab.science.validation import validate_candidate
 
         folded_curves = {}
         candidate_payloads = []
-        promoted_candidates = []
+        tce_payloads = []
+        evaluated_candidates = []
         primary_signal_to_noise = candidates[0].signal_to_noise if candidates else 0.0
         for index, c in enumerate(candidates, start=1):
+            candidate_metadata = dict(c.metadata or {})
+            catalog_match = candidate_metadata.get("catalog_match")
             observed_transits = _observed_transit_count(bls_result.search_time, c)
-            period_alias_code = _period_alias_code(c, promoted_candidates)
+            period_alias_code = _period_alias_code(c, evaluated_candidates)
             alias_flags = [period_alias_code] if period_alias_code else []
             validation = asdict(validate_candidate(clean_time, clean_flux, c))
             physics = asdict(
@@ -272,51 +295,79 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
                     "period_alias_code": period_alias_code,
                     "candidate_rank": index,
                     "primary_signal_to_noise": primary_signal_to_noise,
+                    "is_residual": bool(candidate_metadata.get("is_residual")),
+                    "known_planet": catalog_match,
+                    "planetary_secondary_allowed": bool(
+                        isinstance(catalog_match, dict) and catalog_match.get("allow_planetary_secondary")
+                    ),
                 },
             )
             disposition, action_label, confidence_band, disposition_score = _disposition(c, flags, science_config)
-            if disposition == "rejected_signal":
-                continue
-            candidate_id = f"preview-{len(candidate_payloads) + 1}"
+            candidate_id = f"preview-tce-{index}"
             phase, folded_flux = phase_fold(bls_result.search_time, bls_result.search_flux, c.period, c.epoch)
             binned_phase, binned_flux = bin_phase_curve(phase, folded_flux, 401)
             folded_curves[candidate_id] = {
                 "phase": binned_phase.astype(float).tolist(),
                 "flux": binned_flux.astype(float).tolist(),
             }
-            candidate_payloads.append(
-                {
-                    "candidate_id": candidate_id,
-                    "period": c.period,
-                    "epoch": c.epoch,
-                    "duration": c.duration,
-                    "depth": c.depth,
-                    "signal_to_noise": c.signal_to_noise,
-                    "period_days": c.period,
-                    "epoch_days": c.epoch,
-                    "duration_days": c.duration,
-                    "depth_fraction": c.depth,
-                    "depth_ppm": c.depth * 1_000_000,
-                    "disposition": disposition,
-                    "action_label": action_label,
-                    "disposition_score": disposition_score,
-                    "confidence_band": confidence_band,
-                    "flags": flags,
-                    "physics": physics,
-                    "detection_metrics": {
-                        "bls_snr": c.signal_to_noise,
-                        "sde": c.power,
-                        "transit_count": observed_transits,
-                        "observed_transit_count": observed_transits,
-                        "duration_period_ratio": c.duration / c.period if c.period > 0 else None,
-                        "alias_flags": alias_flags,
-                        "candidate_rank": index,
-                        "primary_signal_to_noise": primary_signal_to_noise,
-                    },
-                    "validation": validation,
-                }
-            )
-            promoted_candidates.append(c)
+            secondary_depth = validation.get("secondary_depth")
+            tce_payload = {
+                "candidate_id": candidate_id,
+                "tce_id": candidate_id,
+                "period": c.period,
+                "epoch": c.epoch,
+                "duration": c.duration,
+                "depth": c.depth,
+                "signal_to_noise": c.signal_to_noise,
+                "period_days": c.period,
+                "epoch_days": c.epoch,
+                "duration_days": c.duration,
+                "depth_fraction": c.depth,
+                "depth_ppm": c.depth * 1_000_000,
+                "period_source": candidate_metadata.get("period_source", "blind_bls"),
+                "signal_origin": candidate_metadata.get("signal_origin", "broad_periodogram"),
+                "catalog_match": catalog_match,
+                "is_residual": bool(candidate_metadata.get("is_residual")),
+                "display_priority": int(candidate_metadata.get("display_priority", index * 10)),
+                "secondary_context": {
+                    "planetary_secondary_allowed": bool(
+                        isinstance(catalog_match, dict) and catalog_match.get("allow_planetary_secondary")
+                    ),
+                    "secondary_depth_ratio": (
+                        float(secondary_depth) / max(c.depth, 1e-12)
+                        if isinstance(secondary_depth, (int, float))
+                        and math.isfinite(secondary_depth)
+                        and secondary_depth > 0
+                        else None
+                    ),
+                },
+                "disposition": disposition,
+                "action_label": action_label,
+                "disposition_score": disposition_score,
+                "confidence_band": confidence_band,
+                "flags": flags,
+                "physics": physics,
+                "detection_metrics": {
+                    "bls_snr": c.signal_to_noise,
+                    "sde": c.power,
+                    "transit_count": observed_transits,
+                    "observed_transit_count": observed_transits,
+                    "duration_period_ratio": c.duration / c.period if c.period > 0 else None,
+                    "alias_flags": alias_flags,
+                    "candidate_rank": index,
+                    "primary_signal_to_noise": primary_signal_to_noise,
+                    "period_source": candidate_metadata.get("period_source", "blind_bls"),
+                    "signal_origin": candidate_metadata.get("signal_origin", "broad_periodogram"),
+                    "catalog_match": catalog_match,
+                    "is_residual": bool(candidate_metadata.get("is_residual")),
+                    "display_priority": int(candidate_metadata.get("display_priority", index * 10)),
+                },
+                "validation": validation,
+            }
+            tce_payloads.append(tce_payload)
+            evaluated_candidates.append(c)
+            if disposition != "rejected_signal":
+                candidate_payloads.append(tce_payload)
 
         return {
             "search_profile": profile.name,
@@ -326,6 +377,8 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
                 "duration": periodogram["duration"].astype(float).tolist(),
             },
             "candidates": candidate_payloads,
+            "planet_candidates": candidate_payloads,
+            "tces": tce_payloads,
             "folded_curves": folded_curves,
             "bls_light_curve": {
                 "time": bls_result.search_time.astype(float).tolist(),

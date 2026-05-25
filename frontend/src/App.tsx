@@ -944,6 +944,8 @@ export default function App() {
         mission: missionAtRequest,
         search_profile: payload.search_profile,
         candidates: payload.candidates,
+        planet_candidates: payload.planet_candidates ?? (payload.candidates as Tce[]),
+        tces: payload.tces ?? (payload.candidates as Tce[]),
         periodogram: payload.periodogram,
         folded_curves: payload.folded_curves,
         light_curve: payload.bls_light_curve,
@@ -951,7 +953,7 @@ export default function App() {
         preprocessing: payload.preprocessing,
       });
 
-      setSelectedId(payload.candidates[0]?.candidate_id);
+      setSelectedId(payload.candidates[0]?.candidate_id ?? payload.tces?.[0]?.candidate_id);
       setWorkflow('complete');
       setBlsPreviewStatus('complete');
       setActiveModal(null);
@@ -1399,7 +1401,7 @@ export default function App() {
               </>
             )}
           </div>
-          {result && result.result_id !== 'preview' && (
+          {result && (
             <div className="rail-section">
               <h2>TCE Ledger</h2>
               {reviewTces.length ? (

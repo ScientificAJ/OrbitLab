@@ -31,6 +31,12 @@ export type Candidate = {
     false_positive_flags?: string[];
     [key: string]: number | boolean | string[] | null | undefined;
   };
+  period_source?: string | null;
+  signal_origin?: string | null;
+  catalog_match?: Record<string, unknown> | null;
+  is_residual?: boolean | null;
+  display_priority?: number | null;
+  secondary_context?: Record<string, unknown> | null;
   period_days?: number | null;
   epoch_days?: number | null;
   duration_days?: number | null;
@@ -324,6 +330,8 @@ export type BlsPreviewResult = {
   search_profile?: string;
   periodogram: { period: number[]; power: number[]; duration?: number[] };
   candidates: Candidate[];
+  planet_candidates?: Tce[];
+  tces?: Tce[];
   folded_curves: Record<string, { phase: number[]; flux: number[] }>;
   bls_light_curve: FluxSeries;
   preprocessing: Record<string, unknown>;

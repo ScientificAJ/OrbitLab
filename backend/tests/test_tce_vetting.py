@@ -305,3 +305,156 @@ def test_solar_like_fallback_disables_habitability_claim(monkeypatch):
 
     assert payload["tces"][0]["physics"]["habitability"]["status"] == "insufficient_stellar_data"
     assert payload["tces"][0]["physics"]["is_in_habitable_zone"] is None
+
+
+def test_known_hot_jupiter_secondary_is_reviewable_not_rejected():
+    config = load_science_config()
+    candidate = TransitCandidate(2.204736, 0.1, 0.16, 0.006, 18.0, 8.2)
+
+    flags = _structured_flags(
+        candidate,
+        {
+            "duration_plausible": True,
+            "secondary_depth": 0.00045,
+            "secondary_snr": 6.1,
+            "odd_even_depth_delta": 0.0,
+            "false_positive_flags": ("secondary_eclipse",),
+        },
+        config,
+        {
+            "observed_transit_count": 10,
+            "known_planet": {"planet": "HAT-P-7 b", "allow_planetary_secondary": True},
+            "planetary_secondary_allowed": True,
+        },
+    )
+
+    assert any(flag["code"] == "planetary_secondary" and flag["severity"] == "warning" for flag in flags)
+    assert not any(flag["code"] == "secondary_eclipse" and flag["severity"] == "hard_fail" for flag in flags)
+    assert _disposition(candidate, flags, config)[0] != "rejected_signal"
+
+
+def test_weak_residual_signal_is_hard_rejected():
+    config = load_science_config()
+    candidate = TransitCandidate(1.775, 0.2, 0.03, 0.002, 9.0, 5.2)
+
+    flags = _structured_flags(
+        candidate,
+        {"duration_plausible": True, "secondary_depth": 0.0, "odd_even_depth_delta": 0.0},
+        config,
+        {
+            "observed_transit_count": 8,
+            "candidate_rank": 2,
+            "primary_signal_to_noise": 6.0,
+            "effective_snr": 5.2,
+            "is_residual": True,
+        },
+    )
+
+    assert any(flag["code"] == "weak_residual_signal" and flag["severity"] == "hard_fail" for flag in flags)
+    assert _disposition(candidate, flags, config)[0] == "rejected_signal"
+
+
+def test_guided_known_trappist_period_preempts_short_artifact(monkeypatch):
+    artifact = TransitCandidate(0.20217, 0.1, 0.16, 0.001, 30.0, 8.1)
+    trappist_b = TransitCandidate(1.51087, 0.25, 0.035, 0.002, 18.0, 5.5)
+
+    class _BlsResult:
+        def __init__(self, candidate):
+            self.candidate = candidate
+            self.periodogram = {
+                "period": np.array([candidate.period], dtype=np.float32),
+                "power": np.array([candidate.power], dtype=np.float32),
+                "duration": np.array([candidate.duration], dtype=np.float32),
+            }
+            self.search_time = np.linspace(0, 24, 1200, dtype=np.float32)
+            self.search_flux = 1.0 + 0.001 * np.sin(np.linspace(0, 18, 1200, dtype=np.float32))
+            self.clean_time = self.search_time
+            self.clean_flux = self.search_flux
+            self.metadata = {"min_period_days": 0.2, "max_period_days": 12.0}
+
+    def fake_run_bls(clean_time, clean_flux, **kwargs):
+        del clean_time, clean_flux
+        min_period = kwargs.get("min_period", 0.0)
+        max_period = kwargs.get("max_period", 99.0)
+        if min_period <= trappist_b.period <= max_period and max_period < 2.0:
+            return _BlsResult(trappist_b)
+        if min_period <= artifact.period <= max_period and max_period >= 10.0:
+            return _BlsResult(artifact)
+        raise ValueError("no guided signal in this window")
+
+    monkeypatch.setattr("orbitlab.science.pipeline.run_bls", fake_run_bls)
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.find_multi_planet_candidates",
+        lambda clean_time, clean_flux, max_candidates, initial_candidate, min_period, max_period, **kwargs: [
+            initial_candidate
+        ],
+    )
+
+    time, flux = _light_curve(period=trappist_b.period)
+    payload = analyze_light_curve_arrays(
+        target_id="TRAPPIST-1",
+        mission="TESS",
+        time=time,
+        flux=flux,
+        nigraha_service=_UnavailableModel(),
+    )
+
+    assert payload["tces"][0]["period_days"] == pytest.approx(trappist_b.period)
+    assert payload["tces"][0]["period_source"] == "known_ephemeris"
+    assert payload["tces"][0]["catalog_match"]["planet"] == "TRAPPIST-1 b"
+
+
+def test_bls_preview_returns_tce_ledger_without_promoting_weak_residual(monkeypatch):
+    from orbitlab.api.main import bls_preview
+    from orbitlab.api.schemas import BlsPreviewCreate
+
+    primary = TransitCandidate(1.51087, 0.2, 0.035, 0.002, 18.0, 5.8)
+    residual = TransitCandidate(1.77503, 0.3, 0.03, 0.0015, 9.0, 5.0)
+
+    class _BlsResult:
+        candidate = primary
+        periodogram = {
+            "period": np.array([primary.period, residual.period], dtype=np.float32),
+            "power": np.array([primary.power, residual.power], dtype=np.float32),
+            "duration": np.array([primary.duration, residual.duration], dtype=np.float32),
+        }
+        search_time = np.linspace(0, 24, 1200, dtype=np.float32)
+        search_flux = 1.0 + 0.001 * np.sin(np.linspace(0, 18, 1200, dtype=np.float32))
+        clean_time = search_time
+        clean_flux = search_flux
+        metadata = {"min_period_days": 0.5, "max_period_days": 12.0}
+
+    time, flux = _light_curve(period=primary.period)
+
+    monkeypatch.setattr(
+        "orbitlab.api.main.extract_light_curve_from_tpf",
+        lambda product_uri, aperture_mask="pipeline": (time, flux, None),
+    )
+    monkeypatch.setattr(
+        "orbitlab.api.main._select_primary_candidate",
+        lambda clean_time, clean_flux, known_target, config, profile, **kwargs: (primary, _BlsResult(), []),
+    )
+    monkeypatch.setattr(
+        "orbitlab.api.main.find_multi_planet_candidates",
+        lambda clean_time, clean_flux, max_candidates, initial_candidate, min_period, max_period, **kwargs: [
+            initial_candidate,
+            residual,
+        ],
+    )
+
+    payload = bls_preview(
+        BlsPreviewCreate(
+            product_uri="tess2023263165758-s0070-0000000278892590-0265-a_fast-tp.fits",
+            mission="TESS",
+            min_period=0.5,
+            max_period=12.0,
+            max_candidates=4,
+        ),
+        db=None,
+    )
+
+    assert len(payload["tces"]) == 2
+    assert len(payload["candidates"]) == 1
+    assert payload["candidates"][0]["period_days"] == pytest.approx(primary.period)
+    assert payload["tces"][1]["disposition"] == "rejected_signal"
+    assert any(flag["code"] == "weak_residual_signal" for flag in payload["tces"][1]["flags"])

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from typing import Any
 
 import numpy as np
@@ -17,6 +17,13 @@ from orbitlab.science.data_quality import clean_light_curve
 from orbitlab.science.evidence import build_candidate_evidence, estimate_red_noise_beta
 from orbitlab.science.folding import bin_phase_curve, phase_fold
 from orbitlab.science.injection_recovery import run_injection_recovery
+from orbitlab.science.known_targets import (
+    KnownPlanetPrior,
+    KnownTarget,
+    known_target_payload,
+    match_known_planet,
+    resolve_known_target,
+)
 from orbitlab.science.physics import infer_planet_physics
 from orbitlab.science.science_config import (
     config_usage_audit,
@@ -127,6 +134,176 @@ def _period_alias_code(candidate, accepted_candidates) -> str | None:
     return None
 
 
+def _candidate_with_metadata(candidate, **metadata):
+    next_metadata = dict(candidate.metadata or {})
+    next_metadata.update({key: value for key, value in metadata.items() if value is not None})
+    return replace(candidate, metadata=next_metadata)
+
+
+def _known_planet_payload(
+    target: KnownTarget | None, planet: KnownPlanetPrior | None, candidate
+) -> dict[str, Any] | None:
+    if target is None or planet is None:
+        return None
+    return {
+        "target": target.canonical_name,
+        "planet": planet.name,
+        "period_days": planet.period_days,
+        "period_delta_fraction": abs(candidate.period - planet.period_days) / planet.period_days,
+        "allow_planetary_secondary": planet.allow_planetary_secondary,
+    }
+
+
+def _cadence_days_from_time(time: np.ndarray) -> float:
+    ordered = np.sort(np.asarray(time, dtype=np.float64))
+    diffs = np.diff(ordered)
+    diffs = diffs[np.isfinite(diffs) & (diffs > 0)]
+    if diffs.size == 0:
+        return 0.020833333333333332
+    return float(np.nanmedian(diffs))
+
+
+def _duration_grid_for_prior(time: np.ndarray, planet: KnownPlanetPrior) -> np.ndarray | None:
+    if planet.expected_duration_days is None:
+        return None
+    cadence_days = _cadence_days_from_time(time)
+    center = max(planet.expected_duration_days, 2.0 * cadence_days, 0.005)
+    low = max(2.0 * cadence_days, center * 0.55, 0.005)
+    high = max(low * 1.2, center * 1.8)
+    return np.unique(np.geomspace(low, high, 8).astype(np.float64))
+
+
+def _guided_known_candidates(
+    clean_time: np.ndarray,
+    clean_flux: np.ndarray,
+    known_target: KnownTarget | None,
+    config,
+    profile,
+    bls_runner=None,
+):
+    if known_target is None:
+        return []
+    bls_runner = bls_runner or run_bls
+
+    candidates = []
+    for planet in known_target.planets:
+        tolerance = max(config.forced_period_tolerance_fraction, planet.period_tolerance_fraction)
+        window_min = max(profile.min_period, planet.period_days * (1.0 - tolerance))
+        window_max = min(profile.max_period, planet.period_days * (1.0 + tolerance))
+        if window_max <= window_min:
+            continue
+        try:
+            result = bls_runner(
+                clean_time,
+                clean_flux,
+                min_period=window_min,
+                max_period=window_max,
+                duration_grid=_duration_grid_for_prior(clean_time, planet),
+                period_samples=min(profile.period_samples, 4096),
+                max_period_samples=min(profile.max_period_samples, 4096),
+                min_transits=profile.min_transits,
+                max_search_cadences=profile.max_search_cadences,
+            )
+        except (RuntimeError, ValueError):
+            continue
+
+        candidate = result.candidate
+        if candidate.signal_to_noise < config.borderline_snr_min:
+            continue
+        matched_planet = match_known_planet(known_target, candidate.period) or planet
+        candidates.append(
+            _candidate_with_metadata(
+                candidate,
+                period_source="known_ephemeris",
+                signal_origin="guided_known_period",
+                catalog_match=_known_planet_payload(known_target, matched_planet, candidate),
+                is_residual=False,
+                display_priority=0,
+            )
+        )
+
+    return sorted(candidates, key=lambda item: item.signal_to_noise, reverse=True)
+
+
+def _candidate_duplicate(candidate, existing, *, tolerance_fraction: float = 0.015) -> bool:
+    if candidate.period <= 0:
+        return False
+    for other in existing:
+        if other.period <= 0:
+            continue
+        if abs(candidate.period - other.period) / other.period <= tolerance_fraction:
+            return True
+    return False
+
+
+def _annotate_ledger_candidates(candidates, known_target: KnownTarget | None):
+    annotated = []
+    for index, candidate in enumerate(candidates, start=1):
+        metadata = dict(candidate.metadata or {})
+        known_planet = match_known_planet(known_target, candidate.period)
+        if known_planet and not metadata.get("catalog_match"):
+            metadata["catalog_match"] = _known_planet_payload(known_target, known_planet, candidate)
+        if "is_residual" not in metadata:
+            metadata["is_residual"] = index > 1
+        if "period_source" not in metadata:
+            metadata["period_source"] = "residual_bls" if metadata["is_residual"] else "blind_bls"
+        if "signal_origin" not in metadata:
+            metadata["signal_origin"] = "residual_search" if metadata["is_residual"] else "broad_periodogram"
+        if "display_priority" not in metadata:
+            metadata["display_priority"] = 20 if metadata["is_residual"] else 10
+        annotated.append(replace(candidate, metadata=metadata))
+    return annotated
+
+
+def _select_primary_candidate(
+    clean_time: np.ndarray,
+    clean_flux: np.ndarray,
+    known_target: KnownTarget | None,
+    config,
+    profile,
+    bls_runner=None,
+):
+    bls_runner = bls_runner or run_bls
+    guided_candidates = _guided_known_candidates(
+        clean_time, clean_flux, known_target, config, profile, bls_runner=bls_runner
+    )
+    bls_result = bls_runner(
+        clean_time,
+        clean_flux,
+        min_period=profile.min_period,
+        max_period=profile.max_period,
+        period_samples=profile.period_samples,
+        max_period_samples=profile.max_period_samples,
+        min_transits=profile.min_transits,
+        max_search_cadences=profile.max_search_cadences,
+    )
+    bls_result.metadata.update(
+        {
+            "guided_known_candidates": len(guided_candidates),
+            "known_target": known_target_payload(known_target),
+        }
+    )
+    blind_candidate = _resolve_secondary_period_alias(
+        clean_time,
+        clean_flux,
+        bls_result.candidate,
+        config,
+        min_period=bls_result.metadata["min_period_days"],
+        max_period=bls_result.metadata["max_period_days"],
+    )
+    known_planet = match_known_planet(known_target, blind_candidate.period)
+    blind_candidate = _candidate_with_metadata(
+        blind_candidate,
+        period_source="blind_bls",
+        signal_origin="broad_periodogram",
+        catalog_match=_known_planet_payload(known_target, known_planet, blind_candidate),
+        is_residual=False,
+        display_priority=10,
+    )
+    primary = guided_candidates[0] if guided_candidates else blind_candidate
+    return primary, bls_result, guided_candidates
+
+
 def _stellar_context_for_physics(
     *,
     stellar_radius_solar: float | None,
@@ -185,32 +362,52 @@ def _structured_flags(candidate, validation: dict, config, support: dict | None 
         _add_flag(flags, "period_harmonic", "hard_fail", "Period is a simple harmonic of another detected signal.")
     candidate_rank = support.get("candidate_rank")
     primary_snr = support.get("primary_signal_to_noise")
-    if (
+    is_residual = bool(support.get("is_residual"))
+    known_planet = support.get("known_planet") if isinstance(support.get("known_planet"), dict) else None
+    if is_residual and not known_planet and effective_snr < config.promotion_snr * 1.1:
+        _add_flag(
+            flags,
+            "weak_residual_signal",
+            "hard_fail",
+            "Residual BLS peak is too weak to display as an independent planet candidate.",
+        )
+    elif (
         isinstance(candidate_rank, int)
         and candidate_rank > 1
         and isinstance(primary_snr, (int, float))
         and np.isfinite(primary_snr)
-        and effective_snr < max(config.promotion_snr * 1.25, primary_snr * 0.15)
+        and effective_snr < max(config.promotion_snr * 1.1, primary_snr * 0.75)
     ):
         _add_flag(flags, "weak_residual_signal", "warning", "Residual signal is weak relative to the primary transit.")
     if validation.get("harmonic_flag"):
         _add_flag(flags, "stellar_rotation_harmonic", "warning", "Period is close to a stellar rotation harmonic.")
     secondary_snr = validation.get("secondary_snr")
     secondary_depth = validation.get("secondary_depth")
-    if (
+    secondary_depth_ratio = (
+        float(secondary_depth) / max(candidate.depth, np.finfo(float).eps)
+        if isinstance(secondary_depth, (int, float)) and np.isfinite(secondary_depth) and secondary_depth > 0
+        else 0.0
+    )
+    secondary_snr_hard = (
         isinstance(secondary_snr, (int, float))
         and np.isfinite(secondary_snr)
         and secondary_snr >= config.secondary_eclipse_hard_fail_snr
-    ):
-        _add_flag(flags, "secondary_eclipse", "hard_fail", "Secondary eclipse SNR exceeds hard-fail threshold.")
-    elif (
-        isinstance(secondary_depth, (int, float))
-        and np.isfinite(secondary_depth)
-        and secondary_depth > 0
-        and secondary_depth / max(candidate.depth, np.finfo(float).eps) * candidate.signal_to_noise
-        >= config.secondary_eclipse_hard_fail_snr
-    ):
-        _add_flag(flags, "secondary_eclipse", "hard_fail", "Secondary eclipse evidence exceeds hard-fail threshold.")
+    )
+    secondary_depth_hard = secondary_depth_ratio * candidate.signal_to_noise >= config.secondary_eclipse_hard_fail_snr
+    planetary_secondary_allowed = bool(support.get("planetary_secondary_allowed"))
+    binary_like_secondary = secondary_depth_ratio >= 0.75
+    if secondary_snr_hard or secondary_depth_hard:
+        if planetary_secondary_allowed and not binary_like_secondary:
+            _add_flag(
+                flags,
+                "planetary_secondary",
+                "warning",
+                "Known hot-planet secondary signal is present; review occultation evidence before promotion.",
+            )
+        else:
+            _add_flag(
+                flags, "secondary_eclipse", "hard_fail", "Secondary eclipse evidence exceeds hard-fail threshold."
+            )
     odd_even_sigma = validation.get("odd_even_sigma")
     if (
         isinstance(odd_even_sigma, (int, float))
@@ -382,21 +579,26 @@ def analyze_light_curve_arrays(
     profile = get_search_profile(config, profile_name)
     clean_time, clean_flux = clean_light_curve(time, flux, quality)
     data_quality = _data_quality_payload(np.asarray(time), np.asarray(flux), quality, clean_time, clean_flux)
+    known_target = resolve_known_target(target_id)
 
     try:
-        bls_result = run_bls(
-            clean_time,
-            clean_flux,
-            min_period=profile.min_period,
-            max_period=profile.max_period,
-            period_samples=profile.period_samples,
-            max_period_samples=profile.max_period_samples,
-            min_transits=profile.min_transits,
-            max_search_cadences=profile.max_search_cadences,
+        primary, bls_result, guided_candidates = _select_primary_candidate(
+            clean_time, clean_flux, known_target, config, profile
         )
     except TypeError:
         # Some tests monkeypatch run_bls with the old narrow signature.
         bls_result = run_bls(clean_time, clean_flux)
+        guided_candidates = []
+        bls_result.metadata.update({"guided_known_candidates": 0, "known_target": known_target_payload(known_target)})
+        known_planet = match_known_planet(known_target, bls_result.candidate.period)
+        primary = _candidate_with_metadata(
+            bls_result.candidate,
+            period_source="blind_bls",
+            signal_origin="broad_periodogram",
+            catalog_match=_known_planet_payload(known_target, known_planet, bls_result.candidate),
+            is_residual=False,
+            display_priority=10,
+        )
     bls_result.metadata.update(
         {
             "search_profile": profile.name,
@@ -404,16 +606,8 @@ def analyze_light_curve_arrays(
             "period_samples_requested": profile.period_samples,
         }
     )
-    primary = _resolve_secondary_period_alias(
-        clean_time,
-        clean_flux,
-        bls_result.candidate,
-        config,
-        min_period=bls_result.metadata["min_period_days"],
-        max_period=bls_result.metadata["max_period_days"],
-    )
 
-    ledger_candidates = find_multi_planet_candidates(
+    residual_candidates = find_multi_planet_candidates(
         clean_time,
         clean_flux,
         max_candidates=max_candidates,
@@ -425,6 +619,18 @@ def analyze_light_curve_arrays(
         min_signal_to_noise=config.borderline_snr_min,
         preserve_initial_candidate=True,
     )
+    ledger_candidates = list(residual_candidates[:1])
+    for guided_candidate in guided_candidates[1:]:
+        if len(ledger_candidates) >= max_candidates:
+            break
+        if not _candidate_duplicate(guided_candidate, ledger_candidates):
+            ledger_candidates.append(guided_candidate)
+    for residual_candidate in residual_candidates[1:]:
+        if len(ledger_candidates) >= max_candidates:
+            break
+        if not _candidate_duplicate(residual_candidate, ledger_candidates):
+            ledger_candidates.append(residual_candidate)
+    ledger_candidates = _annotate_ledger_candidates(ledger_candidates, known_target)
 
     folded_curves: dict[str, dict[str, list[float]]] = {}
     tce_payloads = []
@@ -492,6 +698,8 @@ def analyze_light_curve_arrays(
             np.asarray(bls_result.search_flux) - np.nanmedian(bls_result.search_flux)
         )
         effective_snr = candidate.signal_to_noise / red_noise_beta if red_noise_beta else candidate.signal_to_noise
+        candidate_metadata = dict(candidate.metadata or {})
+        catalog_match = candidate_metadata.get("catalog_match")
         support = {
             "observed_transit_count": observed_transits,
             "period_alias_code": period_alias_code,
@@ -500,6 +708,11 @@ def analyze_light_curve_arrays(
             "effective_snr": effective_snr,
             "red_noise_beta": red_noise_beta,
             "quality_flag_fraction": data_quality["quality_flag_fraction"],
+            "is_residual": bool(candidate_metadata.get("is_residual")),
+            "known_planet": catalog_match,
+            "planetary_secondary_allowed": bool(
+                isinstance(catalog_match, dict) and catalog_match.get("allow_planetary_secondary")
+            ),
         }
         flags = _structured_flags(candidate, validation, config, support)
         ml, service, tess_service, k2_service = _ml_payload_for_candidate(
@@ -562,6 +775,21 @@ def analyze_light_curve_arrays(
             "transit_count": observed_transits,
             "phase_coverage_score": evidence["phase_coverage_score"],
             "alias_flags": alias_flags,
+            "period_source": candidate_metadata.get("period_source", "blind_bls"),
+            "signal_origin": candidate_metadata.get("signal_origin", "broad_periodogram"),
+            "catalog_match": catalog_match,
+            "is_residual": bool(candidate_metadata.get("is_residual")),
+            "display_priority": int(candidate_metadata.get("display_priority", index * 10)),
+            "secondary_context": {
+                "planetary_secondary_allowed": bool(support.get("planetary_secondary_allowed")),
+                "secondary_depth_ratio": (
+                    _finite_float(validation.get("secondary_depth") / max(candidate.depth, np.finfo(float).eps))
+                    if isinstance(validation.get("secondary_depth"), (int, float))
+                    and np.isfinite(validation.get("secondary_depth"))
+                    and validation.get("secondary_depth") > 0
+                    else None
+                ),
+            },
             "disposition": disposition,
             "action_label": action_label,
             "disposition_score": disposition_score,
@@ -592,6 +820,11 @@ def analyze_light_curve_arrays(
                 "alias_flags": alias_flags,
                 "candidate_rank": index,
                 "primary_signal_to_noise": primary_signal_to_noise,
+                "period_source": candidate_metadata.get("period_source", "blind_bls"),
+                "signal_origin": candidate_metadata.get("signal_origin", "broad_periodogram"),
+                "catalog_match": catalog_match,
+                "is_residual": bool(candidate_metadata.get("is_residual")),
+                "display_priority": int(candidate_metadata.get("display_priority", index * 10)),
             },
             "aperture_stability": aperture_stability_diagnostics(
                 time=clean_time,
@@ -629,6 +862,7 @@ def analyze_light_curve_arrays(
                 "gaia": {"status": "unavailable"},
                 "exofop_toi": {"status": "unavailable"},
                 "nasa_exoplanet_archive": {"status": "unavailable"},
+                "known_target": known_target_payload(known_target),
                 "eb_catalog": {"status": "unavailable"},
             },
             "fpp": {"status": "skipped" if vetting_mode == "fast" else "unavailable", "engine": "triceratops"},
