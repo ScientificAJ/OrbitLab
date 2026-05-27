@@ -43,6 +43,7 @@ export type Candidate = {
   depth_fraction?: number | null;
   depth_ppm?: number | null;
   detection_metrics?: Record<string, unknown>;
+  vetting?: Record<string, unknown>;
   flags?: Array<{ code: string; severity: 'info' | 'warning' | 'hard_fail'; message: string }>;
   ml?: {
     probability: number | null;
@@ -98,6 +99,8 @@ export type TpfPreview = {
   baseline?: number;
 };
 
+export type VettingMode = 'fast' | 'deep' | 'paper';
+
 export type AnalysisResult = {
   result_id: string;
   target_id: string;
@@ -111,7 +114,7 @@ export type AnalysisResult = {
   inactive_science_config_keys?: string[];
   missing_science_config_keys?: string[];
   injection_recovery?: Record<string, unknown>;
-  vetting_mode?: 'fast' | 'deep';
+  vetting_mode?: VettingMode;
   data_quality?: Record<string, unknown>;
   tces?: Tce[];
   planet_candidates?: Tce[];
@@ -178,7 +181,7 @@ export type AnalysisJobCreate = {
   product_uri: string;
   mission: 'TESS' | 'Kepler' | 'K2';
   max_candidates?: number;
-  vetting_mode?: 'fast' | 'deep';
+  vetting_mode?: VettingMode;
   stellar_radius_solar?: number;
   stellar_mass_solar?: number;
   stellar_teff?: number;

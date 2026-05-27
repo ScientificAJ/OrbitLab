@@ -80,6 +80,90 @@ def test_tic_like_borderline_signal_is_preserved_as_review_needed(monkeypatch):
     assert payload["tces"][0]["signal_to_noise"] < config.promotion_snr
 
 
+def test_paper_grade_mode_applies_strict_published_thresholds(monkeypatch):
+    candidate = TransitCandidate(
+        period=2.0,
+        epoch=0.1,
+        duration=0.08,
+        depth=0.002,
+        power=12.0,
+        signal_to_noise=6.9,
+    )
+
+    class _BlsResult:
+        periodogram = {
+            "period": np.array([candidate.period], dtype=np.float32),
+            "power": np.array([candidate.power], dtype=np.float32),
+            "duration": np.array([candidate.duration], dtype=np.float32),
+        }
+        search_time = np.linspace(0, 24, 900, dtype=np.float32)
+        search_flux = 1.0 + 0.001 * np.sin(np.linspace(0, 20, 900, dtype=np.float32))
+        clean_time = search_time
+        clean_flux = search_flux
+        metadata = {"min_period_days": 0.5, "max_period_days": 12.0}
+
+        def __init__(self):
+            self.candidate = candidate
+
+    class _PaperModel:
+        def predict(self, tensors, *, threshold=0.4):
+            assert threshold == pytest.approx(0.4)
+            return {
+                "probability": 0.8,
+                "threshold": threshold,
+                "label": "planet-candidate",
+                "model_version": "test",
+                "model_source": "test",
+                "input_tensor_checksum": "checksum",
+                "preprocessing_compatible": True,
+                "citation": "test",
+            }
+
+    monkeypatch.setattr("orbitlab.science.pipeline.run_bls", lambda *args, **kwargs: _BlsResult())
+    monkeypatch.setattr("orbitlab.science.pipeline.find_multi_planet_candidates", lambda *args, **kwargs: [candidate])
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.search_with_tls",
+        lambda *args, **kwargs: {
+            "status": "complete",
+            "sde": 8.0,
+            "transit_count": 6,
+            "distinct_transit_count": 6,
+        },
+    )
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.run_model_shift",
+        lambda *args, **kwargs: {"status": "pass", "engine": "dave_model_shift", "hard_fail": False, "flags": []},
+    )
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.run_sweet_test",
+        lambda *args, **kwargs: {"status": "pass", "engine": "sweet", "max_sigma": 0.0},
+    )
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.run_injection_recovery",
+        lambda *args, **kwargs: {"status": "complete", "engine": "box_injection_recovery"},
+    )
+
+    time, flux = _light_curve(period=2.0, depth=0.002, noise=0.0002)
+    payload = analyze_light_curve_arrays(
+        target_id="paper-grade-test",
+        mission="TESS",
+        time=time,
+        flux=flux,
+        vetting_mode="paper",
+        nigraha_service=_PaperModel(),
+    )
+
+    tce = payload["tces"][0]
+    assert payload["vetting_mode"] == "paper"
+    assert payload["search_profile"] == "paper_grade"
+    assert payload["planet_candidates"] == []
+    assert tce["disposition"] == "rejected_signal"
+    assert any(flag["code"] == "paper_low_snr" and flag["severity"] == "hard_fail" for flag in tce["flags"])
+    assert tce["ml"]["threshold"] == pytest.approx(0.4)
+    assert tce["evidence"]["tls"]["sde"] == 8.0
+    assert tce["vetting"]["paper_grade"]["status"] == "fail"
+
+
 def test_disposition_promotes_clean_snr_at_threshold():
     config = load_science_config()
     candidate = TransitCandidate(2.0, 0.1, 0.08, 0.002, 9.0, config.promotion_snr)

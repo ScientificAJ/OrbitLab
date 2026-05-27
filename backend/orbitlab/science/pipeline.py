@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, replace
+from dataclasses import asdict, is_dataclass, replace
 from typing import Any
 
 import numpy as np
@@ -14,6 +14,7 @@ from orbitlab.ml.nigraha_service import NigrahaService
 from orbitlab.ml.service import AstroNetService, KeplerAstroNetService
 from orbitlab.science.bls import find_multi_planet_candidates, run_bls
 from orbitlab.science.data_quality import clean_light_curve
+from orbitlab.science.dave_vetting import run_model_shift, run_sweet_test
 from orbitlab.science.evidence import build_candidate_evidence, estimate_red_noise_beta
 from orbitlab.science.folding import bin_phase_curve, phase_fold
 from orbitlab.science.injection_recovery import run_injection_recovery
@@ -31,7 +32,7 @@ from orbitlab.science.science_config import (
     load_science_config,
     science_config_hash,
 )
-from orbitlab.science.tls_refinement import refine_with_tls
+from orbitlab.science.tls_refinement import refine_with_tls, search_with_tls
 from orbitlab.science.tpf_diagnostics import aperture_stability_diagnostics, difference_image_diagnostics
 from orbitlab.science.validation import validate_candidate
 
@@ -459,6 +460,134 @@ def _disposition(
     return "rejected_signal", "none", "low", final_score
 
 
+def _payload_dict(value) -> dict:
+    if is_dataclass(value):
+        return asdict(value)
+    if isinstance(value, dict):
+        return dict(value)
+    return dict(value)
+
+
+def _paper_grade_status_from_flags(flags: list[dict]) -> str:
+    if any(flag["severity"] == "hard_fail" for flag in flags):
+        return "fail"
+    if any(flag["severity"] == "warning" for flag in flags):
+        return "review"
+    return "pass"
+
+
+def _apply_paper_grade_vetting(
+    *,
+    flags: list[dict],
+    candidate,
+    config,
+    support: dict,
+    tls: dict,
+    model_shift: dict,
+    sweet: dict,
+    ml: dict,
+    mission_upper: str,
+) -> dict[str, Any]:
+    thresholds = {
+        "effective_snr_min": config.paper_promotion_snr,
+        "tls_sde_min": config.paper_tls_sde_min,
+        "min_transits": config.paper_min_transits,
+        "sweet_sigma": config.paper_sweet_sigma,
+        "nigraha_probability_threshold": config.paper_ml_threshold,
+        "model_shift_objects": config.paper_model_shift_objects,
+    }
+    effective_snr = float(support.get("effective_snr", candidate.signal_to_noise))
+    observed_transits = support.get("observed_transit_count")
+    if effective_snr < config.paper_promotion_snr:
+        _add_flag(
+            flags,
+            "paper_low_snr",
+            "hard_fail",
+            "Paper-grade mode requires Nigraha-style SNR >= 7.1 before promotion.",
+        )
+    if isinstance(observed_transits, int) and observed_transits < config.paper_min_transits:
+        _add_flag(
+            flags,
+            "paper_min_transits",
+            "hard_fail",
+            "Paper-grade mode requires at least two observed transit events.",
+        )
+
+    tls_status = tls.get("status")
+    tls_sde = _finite_float(tls.get("sde"))
+    tls_count = tls.get("distinct_transit_count") or tls.get("transit_count")
+    if tls_status == "complete":
+        if tls_sde is None or tls_sde < config.paper_tls_sde_min:
+            _add_flag(
+                flags,
+                "paper_tls_sde",
+                "hard_fail",
+                "Full TLS search SDE is below the paper-grade threshold.",
+            )
+        if isinstance(tls_count, int) and tls_count < config.paper_min_transits:
+            _add_flag(
+                flags,
+                "paper_tls_transit_count",
+                "hard_fail",
+                "TLS reports fewer than two distinct transits.",
+            )
+    else:
+        _add_flag(
+            flags,
+            "paper_tls_unavailable",
+            "warning",
+            "Full TLS evidence is unavailable, so paper-grade promotion needs review.",
+        )
+
+    if model_shift.get("hard_fail"):
+        for code in model_shift.get("flags", []) or ["model_shift"]:
+            _add_flag(
+                flags,
+                f"dave_{code}",
+                "hard_fail",
+                "DAVE-style model-shift vetting marked this signal as false-positive-like.",
+            )
+
+    if sweet.get("status") == "warning":
+        _add_flag(
+            flags,
+            "sweet_sinusoid",
+            "warning",
+            "DAVE SWEET found significant sinusoidal variability at P/2, P, or 2P.",
+        )
+    elif sweet.get("status") not in {"pass", "warning"}:
+        _add_flag(
+            flags,
+            "sweet_unavailable",
+            "warning",
+            "DAVE SWEET sinusoid evidence is unavailable.",
+        )
+
+    probability = _finite_float(ml.get("probability"))
+    if mission_upper == "TESS":
+        if probability is None:
+            _add_flag(
+                flags,
+                "nigraha_unavailable",
+                "warning",
+                "Nigraha probability is unavailable for this TESS paper-grade run.",
+            )
+        elif probability < config.paper_ml_threshold:
+            _add_flag(
+                flags,
+                "nigraha_low_probability",
+                "warning",
+                "Nigraha probability is below the upstream 0.4 paper-grade threshold.",
+            )
+
+    return {
+        "status": _paper_grade_status_from_flags(flags),
+        "pass": _paper_grade_status_from_flags(flags) == "pass",
+        "thresholds": thresholds,
+        "methods": ["profiled_bls", "tls_full_search", "dave_model_shift", "dave_sweet", "mission_ml"],
+    }
+
+
 def _resolve_secondary_period_alias(
     time: np.ndarray, flux: np.ndarray, candidate, config, *, min_period: float, max_period: float
 ):
@@ -501,6 +630,7 @@ def _ml_payload_for_candidate(
     service: AstroNetService | None,
     tess_service: NigrahaService | None,
     k2_service: ExoMACService | None,
+    nigraha_threshold: float | None = None,
 ) -> tuple[dict, AstroNetService | None, NigrahaService | None, ExoMACService | None]:
     try:
         if mission_upper == "TESS":
@@ -517,7 +647,20 @@ def _ml_payload_for_candidate(
             )
             if tess_service is None:
                 tess_service = NigrahaService()
-            ml = asdict(tess_service.predict(tensors))
+            if nigraha_threshold is None:
+                verdict = tess_service.predict(tensors)
+            else:
+                try:
+                    verdict = tess_service.predict(tensors, threshold=nigraha_threshold)
+                except TypeError:
+                    verdict = tess_service.predict(tensors)
+            ml = _payload_dict(verdict)
+            if nigraha_threshold is not None:
+                probability = _finite_float(ml.get("probability"))
+                ml["threshold"] = nigraha_threshold
+                ml["threshold_source"] = "ExoplanetML/Nigraha gen_predict.sh"
+                if probability is not None:
+                    ml["label"] = "planet-candidate" if probability >= nigraha_threshold else "not-transit-like"
         elif mission_upper == "KEPLER":
             tensors = build_astronet_tensors(
                 clean_time,
@@ -528,7 +671,7 @@ def _ml_payload_for_candidate(
             )
             if service is None:
                 service = KeplerAstroNetService()
-            ml = asdict(service.predict(tensors))
+            ml = _payload_dict(service.predict(tensors))
         elif mission_upper == "K2":
             exomac_features = build_exomac_features(
                 candidate,
@@ -541,7 +684,7 @@ def _ml_payload_for_candidate(
             )
             if k2_service is None:
                 k2_service = ExoMACService()
-            ml = asdict(k2_service.predict(exomac_features))
+            ml = _payload_dict(k2_service.predict(exomac_features))
         else:
             raise AssertionError(f"unreachable mission branch: {mission_upper}")
         ml = attach_probability_calibration(ml, mission_upper)
@@ -575,7 +718,15 @@ def analyze_light_curve_arrays(
     pixel_scale_arcsec: float | None = None,
 ) -> dict:
     config = load_science_config()
-    profile_name = search_profile or ("science_deep" if vetting_mode == "deep" else "science_standard")
+    paper_grade_mode = vetting_mode == "paper"
+    if search_profile:
+        profile_name = search_profile
+    elif paper_grade_mode:
+        profile_name = "paper_grade"
+    elif vetting_mode == "deep":
+        profile_name = "science_deep"
+    else:
+        profile_name = "science_standard"
     profile = get_search_profile(config, profile_name)
     clean_time, clean_flux = clean_light_curve(time, flux, quality)
     data_quality = _data_quality_payload(np.asarray(time), np.asarray(flux), quality, clean_time, clean_flux)
@@ -730,7 +881,47 @@ def analyze_light_curve_arrays(
             service=service,
             tess_service=tess_service,
             k2_service=k2_service,
+            nigraha_threshold=config.paper_ml_threshold if paper_grade_mode and mission_upper == "TESS" else None,
         )
+        model_shift = {"status": "skipped", "engine": "dave_model_shift"}
+        sweet = {"status": "skipped", "engine": "sweet"}
+        paper_grade = None
+        if paper_grade_mode:
+            tls_results[candidate_id] = search_with_tls(
+                clean_time,
+                clean_flux,
+                min_period=profile.min_period,
+                max_period=profile.max_period,
+                stellar_radius_solar=stellar_radius_solar,
+                stellar_mass_solar=stellar_mass_solar,
+                transit_depth_min=10e-6,
+                n_transits_min=config.paper_min_transits,
+                oversampling_factor=3,
+                duration_grid_step=1.1,
+            )
+            model_shift = run_model_shift(
+                clean_time,
+                clean_flux,
+                candidate,
+                objects_evaluated=config.paper_model_shift_objects,
+            )
+            sweet = run_sweet_test(
+                clean_time,
+                clean_flux,
+                candidate,
+                threshold_sigma=config.paper_sweet_sigma,
+            )
+            paper_grade = _apply_paper_grade_vetting(
+                flags=flags,
+                candidate=candidate,
+                config=config,
+                support=support,
+                tls=tls_results[candidate_id],
+                model_shift=model_shift,
+                sweet=sweet,
+                ml=ml,
+                mission_upper=mission_upper,
+            )
         evidence_obj = build_candidate_evidence(
             candidate=candidate,
             search_time=bls_result.search_time,
@@ -747,6 +938,11 @@ def analyze_light_curve_arrays(
         if vetting_mode == "deep":
             tls_results[candidate_id] = refine_with_tls(clean_time, clean_flux, candidate)
             evidence["tls"] = tls_results[candidate_id]
+        elif paper_grade_mode:
+            evidence["tls"] = tls_results[candidate_id]
+            evidence["model_shift"] = model_shift
+            evidence["sweet"] = sweet
+            evidence["paper_grade"] = paper_grade
         disposition, action_label, confidence_band, disposition_score = _disposition(candidate, flags, config, evidence)
 
         duration_period_ratio = candidate.duration / candidate.period if candidate.period else None
@@ -820,6 +1016,9 @@ def analyze_light_curve_arrays(
                 "alias_flags": alias_flags,
                 "candidate_rank": index,
                 "primary_signal_to_noise": primary_signal_to_noise,
+                "tls_sde": _finite_float(tls_results.get(candidate_id, {}).get("sde")),
+                "paper_grade_pass": paper_grade.get("pass") if isinstance(paper_grade, dict) else None,
+                "paper_grade_status": paper_grade.get("status") if isinstance(paper_grade, dict) else None,
                 "period_source": candidate_metadata.get("period_source", "blind_bls"),
                 "signal_origin": candidate_metadata.get("signal_origin", "broad_periodogram"),
                 "catalog_match": catalog_match,
@@ -856,6 +1055,9 @@ def analyze_light_curve_arrays(
                     "quality_flag_fraction": data_quality["quality_flag_fraction"],
                     "threshold": config.quality_flag_dominance_fraction,
                 },
+                "model_shift": model_shift,
+                "sweet": sweet,
+                "paper_grade": paper_grade,
             },
             "catalog_context": {
                 "tic": target_id if mission_upper == "TESS" else None,
@@ -877,7 +1079,7 @@ def analyze_light_curve_arrays(
             promoted_candidates.append(candidate)
 
     injection_recovery = {"status": "skipped", "engine": "box_injection_recovery"}
-    if vetting_mode == "deep":
+    if vetting_mode in {"deep", "paper"}:
         injection_recovery = run_injection_recovery(
             clean_time,
             clean_flux,
@@ -885,14 +1087,36 @@ def analyze_light_curve_arrays(
         )
 
     config_audit = config_usage_audit()
+    if vetting_mode == "fast":
+        tls_status = "skipped"
+    elif any(result.get("status") == "complete" for result in tls_results.values()):
+        tls_status = "complete"
+    elif tls_results:
+        tls_status = "unavailable"
+    else:
+        tls_status = "unavailable"
     engine_status = {
         "bls": {"status": "complete", "search_profile": profile.name},
-        "tls": {"status": "skipped" if vetting_mode == "fast" else ("complete" if tls_results else "unavailable")},
+        "tls": {"status": tls_status},
         "injection_recovery": {"status": injection_recovery["status"]},
         "wotan": {"status": "skipped" if vetting_mode == "fast" else "unavailable"},
         "triceratops": {"status": "skipped" if vetting_mode == "fast" else "unavailable"},
+        "dave_model_shift": {"status": "complete" if paper_grade_mode and tce_payloads else "skipped"},
+        "sweet": {"status": "complete" if paper_grade_mode and tce_payloads else "skipped"},
+        "paper_grade": {"status": "complete" if paper_grade_mode else "skipped"},
         "ml": {"status": "complete" if tce_payloads else "skipped"},
     }
+    enrichment_steps = []
+    if vetting_mode == "deep":
+        enrichment_steps = ["tls_refinement", "injection_recovery"]
+    elif paper_grade_mode:
+        enrichment_steps = [
+            "tls_full_search",
+            "dave_model_shift",
+            "dave_sweet",
+            "paper_thresholds",
+            "injection_recovery",
+        ]
     return {
         "schema_version": "orbitlab.analysis_result.v2",
         "pipeline_version": "orbitlab-stormbreaker-0.2.0",
@@ -911,7 +1135,7 @@ def analyze_light_curve_arrays(
             "mode": vetting_mode,
             "complete": vetting_mode == "fast" or injection_recovery["status"] in {"complete", "skipped"},
             "steps": ["profiled_bls", "tce_ledger", "core_vetting", "evidence_scoring", "ml_calibration"]
-            + (["tls_refinement", "injection_recovery"] if vetting_mode == "deep" else []),
+            + enrichment_steps,
         },
         "injection_recovery": injection_recovery,
         "periodogram": {

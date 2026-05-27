@@ -5,10 +5,11 @@ import sys
 import types
 
 import numpy as np
+import pytest
 from orbitlab.ml.calibration import apply_probability_calibration
 from orbitlab.science.bls import TransitCandidate
 from orbitlab.science.injection_recovery import inject_box_transit, run_injection_recovery
-from orbitlab.science.tls_refinement import refine_with_tls
+from orbitlab.science.tls_refinement import refine_with_tls, search_with_tls
 
 
 def test_probability_calibration_uses_local_isotonic_bundle(tmp_path, monkeypatch):
@@ -101,6 +102,48 @@ def test_tls_refinement_maps_basic_result(monkeypatch):
     assert result["period_days"] == 2.002
     assert result["period_agreement_fraction"] < 0.01
     assert result["model_shape_score"] == "planet_like"
+
+
+def test_tls_full_search_maps_paper_grade_statistics(monkeypatch):
+    class FakeResults:
+        period = 2.002
+        duration = 0.12
+        T0 = 0.11
+        depth = 0.0012
+        snr = 9.5
+        SDE = 8.1
+        SDE_raw = 8.4
+        FAP = 0.001
+        transit_count = 5
+        distinct_transit_count = 5
+        period_uncertainty = 0.002
+        periods = np.linspace(1.0, 3.0, 12)
+
+    class FakeTls:
+        def __init__(self, time, flux):
+            self.time = time
+            self.flux = flux
+
+        def power(self, **kwargs):
+            assert kwargs["n_transits_min"] == 2
+            assert kwargs["transit_depth_min"] == pytest.approx(10e-6)
+            assert kwargs["oversampling_factor"] == 3
+            assert kwargs["duration_grid_step"] == pytest.approx(1.1)
+            return FakeResults()
+
+    module = types.SimpleNamespace(transitleastsquares=FakeTls)
+    monkeypatch.setitem(sys.modules, "transitleastsquares", module)
+
+    result = search_with_tls(
+        np.linspace(0, 10, 100),
+        1.0 + 0.001 * np.sin(np.linspace(0, 4, 100)),
+        min_period=0.1,
+        max_period=5.0,
+    )
+
+    assert result["status"] == "complete"
+    assert result["sde"] == 8.1
+    assert result["distinct_transit_count"] == 5
 
 
 def test_tpf_diagnostics_compute_difference_image_and_aperture_stability():

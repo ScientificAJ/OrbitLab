@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import json
+from dataclasses import dataclass
+
 import numpy as np
 
 from orbitlab.science.bls import TransitCandidate
 from orbitlab.science.data_quality import clean_light_curve
 from orbitlab.science.folding import bin_phase_curve, phase_fold
-
 
 GLOBAL_BINS = 2001
 LOCAL_BINS = 201
@@ -34,12 +34,13 @@ class AstroNetTensors:
 def _normalize_view(flux: np.ndarray) -> np.ndarray:
     arr = np.asarray(flux, dtype=np.float32)
     median = np.nanmedian(arr)
-    scale = np.nanpercentile(np.abs(arr - median), 95)
+    centered = arr - median
+    scale = abs(float(np.nanmin(centered)))
     if not np.isfinite(scale) or scale == 0:
-        scale = np.nanstd(arr)
+        scale = np.nanstd(centered)
     if not np.isfinite(scale) or scale == 0:
         raise ValueError("cannot normalize a flat or invalid folded view")
-    return ((arr - median) / scale).astype(np.float32)
+    return (centered / scale).astype(np.float32)
 
 
 def _checksum(global_view: np.ndarray, local_view: np.ndarray, metadata: np.ndarray) -> str:
@@ -61,7 +62,7 @@ def build_astronet_tensors(
     phase, folded_flux = phase_fold(t, f, candidate.period, candidate.epoch)
     _, global_flux = bin_phase_curve(phase, folded_flux, GLOBAL_BINS)
 
-    local_half_width = max(2.5 * candidate.duration / candidate.period, 0.015)
+    local_half_width = max(4.0 * candidate.duration / candidate.period, 0.015)
     local_mask = np.abs(phase) <= local_half_width
     if local_mask.sum() < 16:
         raise ValueError("candidate has insufficient local transit samples for AstroNet adapter")
@@ -102,4 +103,3 @@ def tensor_schema() -> dict:
 
 def tensor_schema_json() -> str:
     return json.dumps(tensor_schema(), sort_keys=True)
-

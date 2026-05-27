@@ -1,9 +1,9 @@
 import math
 
 import numpy as np
-
-from orbitlab.science.physics import infer_planet_physics
+import pytest
 from orbitlab.science.bls import TransitCandidate
+from orbitlab.science.physics import infer_planet_physics
 from orbitlab.science.validation import validate_candidate
 
 
@@ -24,6 +24,24 @@ def test_physics_inference_for_earth_sun_like_case():
     assert math.isclose(physics.semi_major_axis_au, 1.0, rel_tol=0.01)
     assert physics.planet_radius_uncertainty_earth is not None
     assert physics.semi_major_axis_uncertainty_au is not None
+
+
+def test_kopparapu_habitable_zone_uses_paper_coefficients_for_solar_case():
+    earth_sun_depth = (0.0091577) ** 2
+    physics = infer_planet_physics(
+        depth=earth_sun_depth,
+        period_days=365.25,
+        stellar_radius_solar=1.0,
+        stellar_mass_solar=1.0,
+        stellar_teff=5778.0,
+    )
+
+    hz = physics.kopparapu_hz
+    assert hz is not None
+    assert hz["within_calibrated_teff_range"] is True
+    assert hz["conservative_inner_au"] == pytest.approx(0.950, rel=0.01)
+    assert hz["conservative_outer_au"] == pytest.approx(1.676, rel=0.01)
+    assert physics.is_in_habitable_zone is True
 
 
 def test_validation_flags_common_false_positive_risks():

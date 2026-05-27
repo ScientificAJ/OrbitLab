@@ -37,6 +37,7 @@ import {
   fetchProducts,
   fetchResult,
   ModelStatuses,
+  VettingMode,
   searchTargets,
   saveSession,
   fetchReport,
@@ -100,6 +101,15 @@ function evidenceNumber(evidence: Record<string, unknown> | undefined, key: stri
 function evidenceText(evidence: Record<string, unknown> | undefined, key: string) {
   const value = evidence?.[key];
   return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
+function nestedRecord(record: Record<string, unknown> | undefined, key: string) {
+  const value = record?.[key];
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+}
+
+function normalizeVettingMode(value: unknown): VettingMode {
+  return value === 'deep' || value === 'paper' ? value : 'fast';
 }
 
 function CandidateCard({
@@ -284,7 +294,7 @@ export default function App() {
   const [minPeriod, setMinPeriod] = useState(0.5);
   const [maxPeriod, setMaxPeriod] = useState(30.0);
   const [maxCandidates, setMaxCandidates] = useState(4);
-  const [vettingMode, setVettingMode] = useState<'fast' | 'deep'>('fast');
+  const [vettingMode, setVettingMode] = useState<VettingMode>('fast');
   const [stellarRadius, setStellarRadius] = useState('');
   const [stellarMass, setStellarMass] = useState('');
   const [stellarTeff, setStellarTeff] = useState('');
@@ -802,7 +812,7 @@ export default function App() {
     setMaxCandidates(
       Number.isFinite(payload.maxCandidates) ? Math.min(8, Math.max(1, Number(payload.maxCandidates))) : 4,
     );
-    setVettingMode(payload.vettingMode === 'deep' ? 'deep' : 'fast');
+    setVettingMode(normalizeVettingMode(payload.vettingMode));
     setStellarRadius(typeof payload.stellarRadius === 'string' ? payload.stellarRadius : '');
     setStellarMass(typeof payload.stellarMass === 'string' ? payload.stellarMass : '');
     setStellarTeff(typeof payload.stellarTeff === 'string' ? payload.stellarTeff : '');
@@ -1265,15 +1275,16 @@ export default function App() {
                   />
                   <label htmlFor="vetting-mode">
                     Vetting Mode{' '}
-                    <HelpTip label="Fast runs the required ledger and core checks; deep records optional enrichment progress." />
+                    <HelpTip label="Fast runs the ledger and core checks; deep adds enrichment; paper-grade applies stricter published-method gates." />
                   </label>
                   <select
                     id="vetting-mode"
                     value={vettingMode}
-                    onChange={(event) => setVettingMode(event.target.value === 'deep' ? 'deep' : 'fast')}
+                    onChange={(event) => setVettingMode(normalizeVettingMode(event.target.value))}
                   >
                     <option value="fast">Fast</option>
                     <option value="deep">Deep</option>
+                    <option value="paper">Paper-grade</option>
                   </select>
                   <label htmlFor="stellar-radius">
                     Stellar Radius (solar) <HelpTip label="Optional star radius used to estimate planet size." />
@@ -1544,6 +1555,16 @@ export default function App() {
               <dd>{formatNumber(metricNumber(selected?.detection_metrics, 'duration_period_ratio'), 4)}</dd>
               <dt>Coverage</dt>
               <dd>{formatNumber(metricNumber(selected?.detection_metrics, 'phase_coverage_score'), 3)}</dd>
+              <dt>TLS SDE</dt>
+              <dd>{formatNumber(metricNumber(selected?.detection_metrics, 'tls_sde'), 2)}</dd>
+              <dt>Paper Grade</dt>
+              <dd>
+                {String(
+                  metricNumber(selected?.detection_metrics, 'paper_grade_pass') === 1
+                    ? 'pass'
+                    : (selected?.detection_metrics?.paper_grade_status ?? 'n/a'),
+                )}
+              </dd>
               <dt>Aliases</dt>
               <dd>{metricList(selected?.detection_metrics, 'alias_flags')}</dd>
             </dl>
@@ -1580,6 +1601,10 @@ export default function App() {
               <dd>{String(selected?.validation?.duration_plausible ?? 'n/a')}</dd>
               <dt>Flags</dt>
               <dd>{selected?.validation?.false_positive_flags?.join(', ') || 'none'}</dd>
+              <dt>Model Shift</dt>
+              <dd>{evidenceText(nestedRecord(selected?.vetting, 'model_shift'), 'status') ?? 'n/a'}</dd>
+              <dt>SWEET</dt>
+              <dd>{evidenceText(nestedRecord(selected?.vetting, 'sweet'), 'status') ?? 'n/a'}</dd>
               {'disposition' in (selected ?? {}) && (
                 <>
                   <dt>Disposition</dt>
@@ -1607,6 +1632,28 @@ export default function App() {
               <dt>HZ Zone</dt>
               <dd className={selected?.physics?.is_in_habitable_zone ? 'status-ready' : ''}>
                 {formatTriState(selected?.physics?.is_in_habitable_zone, 'Inside', 'Outside')}
+              </dd>
+              <dt>HZ Inner</dt>
+              <dd>
+                {formatNumber(
+                  metricNumber(
+                    selected?.physics?.kopparapu_hz as Record<string, unknown> | undefined,
+                    'conservative_inner_au',
+                  ),
+                  3,
+                )}{' '}
+                AU
+              </dd>
+              <dt>HZ Outer</dt>
+              <dd>
+                {formatNumber(
+                  metricNumber(
+                    selected?.physics?.kopparapu_hz as Record<string, unknown> | undefined,
+                    'conservative_outer_au',
+                  ),
+                  3,
+                )}{' '}
+                AU
               </dd>
               <dt>Habitable</dt>
               <dd className={selected?.physics?.is_temperature_habitable ? 'status-ready' : ''}>
@@ -1640,6 +1687,8 @@ export default function App() {
               <dd>{formatNumber(selected?.ml?.raw_ml_probability, 4)}</dd>
               <dt>Calibrated</dt>
               <dd>{formatNumber(selected?.ml?.calibrated_ml_probability, 4)}</dd>
+              <dt>Threshold</dt>
+              <dd>{formatNumber(selected?.ml?.threshold, 2)}</dd>
               <dt>Calibration</dt>
               <dd>{selected?.ml?.calibration_source ?? 'n/a'}</dd>
               {selected?.ml?.class_probabilities &&
@@ -1671,6 +1720,15 @@ export default function App() {
               <dd>{formatNumber(evidenceNumber(selected?.evidence_scores, 'physics_plausibility'), 3)}</dd>
               <dt>TLS</dt>
               <dd>{evidenceText(selected?.evidence?.tls as Record<string, unknown> | undefined, 'status') ?? 'n/a'}</dd>
+              <dt>Model Shift</dt>
+              <dd>
+                {evidenceText(selected?.evidence?.model_shift as Record<string, unknown> | undefined, 'status') ??
+                  'n/a'}
+              </dd>
+              <dt>SWEET</dt>
+              <dd>
+                {evidenceText(selected?.evidence?.sweet as Record<string, unknown> | undefined, 'status') ?? 'n/a'}
+              </dd>
               <dt>Why</dt>
               <dd>{selected?.explanation?.join('; ') || 'n/a'}</dd>
             </dl>

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 G = 6.67430e-11
 DAY = 86400.0
@@ -23,6 +23,44 @@ class PlanetPhysics:
     habitable_zone_outer_au: float | None
     is_in_habitable_zone: bool | None
     is_temperature_habitable: bool | None
+    kopparapu_hz: dict[str, float | str | bool | None] | None
+
+
+KOPPARAPU_2014_1ME_COEFFICIENTS = {
+    "recent_venus": (1.776, 2.136e-4, 2.533e-8, -1.332e-11, -3.097e-15),
+    "runaway_greenhouse": (1.107, 1.332e-4, 1.580e-8, -8.308e-12, -1.931e-15),
+    "maximum_greenhouse": (0.356, 6.171e-5, 1.698e-9, -3.198e-12, -5.575e-16),
+    "early_mars": (0.320, 5.547e-5, 1.526e-9, -2.874e-12, -5.011e-16),
+}
+
+
+def _kopparapu_effective_flux(stellar_teff: float, coefficients: tuple[float, float, float, float, float]) -> float:
+    teff_offset = stellar_teff - 5780.0
+    seff_sun, a, b, c, d = coefficients
+    return seff_sun + a * teff_offset + b * teff_offset**2 + c * teff_offset**3 + d * teff_offset**4
+
+
+def kopparapu_habitable_zone(stellar_teff: float, luminosity_solar: float) -> dict[str, float | str | bool | None]:
+    if stellar_teff <= 0 or luminosity_solar <= 0:
+        raise ValueError("stellar_teff and luminosity_solar must be positive")
+    distances = {}
+    fluxes = {}
+    for name, coefficients in KOPPARAPU_2014_1ME_COEFFICIENTS.items():
+        seff = _kopparapu_effective_flux(stellar_teff, coefficients)
+        fluxes[f"{name}_seff"] = seff
+        distances[f"{name}_au"] = math.sqrt(luminosity_solar / seff) if seff > 0 else None
+    return {
+        "model": "Kopparapu et al. 2014 1ME polynomial",
+        "calibrated_teff_min_k": 2600.0,
+        "calibrated_teff_max_k": 7200.0,
+        "within_calibrated_teff_range": 2600.0 <= stellar_teff <= 7200.0,
+        "conservative_inner_au": distances["runaway_greenhouse_au"],
+        "conservative_outer_au": distances["maximum_greenhouse_au"],
+        "optimistic_inner_au": distances["recent_venus_au"],
+        "optimistic_outer_au": distances["early_mars_au"],
+        **distances,
+        **fluxes,
+    }
 
 
 def infer_planet_physics(
@@ -60,6 +98,7 @@ def infer_planet_physics(
     hz_outer = None
     in_hz = None
     temp_habitable = None
+    kopparapu_hz = None
 
     if stellar_teff and stellar_radius_solar:
         # Stefan-Boltzmann for luminosity L = 4pi R^2 sigma T^4
@@ -71,9 +110,9 @@ def infer_planet_physics(
         rs_au = (stellar_radius_solar * SOLAR_RADIUS) / AU
         teq = stellar_teff * math.sqrt(rs_au / (2.0 * semi_major_axis_au)) * (0.7**0.25)
         
-        # Simple HZ boundaries (Kopparapu et al. 2013 simplified)
-        hz_inner = math.sqrt(luminosity_solar / 1.1)
-        hz_outer = math.sqrt(luminosity_solar / 0.53)
+        kopparapu_hz = kopparapu_habitable_zone(stellar_teff, luminosity_solar)
+        hz_inner = kopparapu_hz["conservative_inner_au"]
+        hz_outer = kopparapu_hz["conservative_outer_au"]
         in_hz = hz_inner <= semi_major_axis_au <= hz_outer
         temp_habitable = 200.0 <= teq <= 340.0
 
@@ -88,5 +127,5 @@ def infer_planet_physics(
         habitable_zone_outer_au=hz_outer,
         is_in_habitable_zone=in_hz,
         is_temperature_habitable=temp_habitable,
+        kopparapu_hz=kopparapu_hz,
     )
-

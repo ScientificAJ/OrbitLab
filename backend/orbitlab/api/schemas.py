@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     queued = "queued"
     running = "running"
     complete = "complete"
@@ -38,7 +38,7 @@ class AnalysisJobCreate(BaseModel):
     aperture_mask_id: str | None = None
     artifact_mask_id: str | None = None
     max_candidates: int = Field(default=4, ge=1, le=8)
-    vetting_mode: Literal["fast", "deep"] = "fast"
+    vetting_mode: Literal["fast", "deep", "paper"] = "fast"
     stellar_radius_solar: float | None = Field(default=None, gt=0)
     stellar_mass_solar: float | None = Field(default=None, gt=0)
     stellar_teff: float | None = Field(default=None, gt=0)
@@ -138,7 +138,7 @@ class AnalysisResult(BaseModel):
     schema_version: str | None = None
     pipeline_version: str | None = None
     science_config_hash: str | None = None
-    vetting_mode: Literal["fast", "deep"] | None = None
+    vetting_mode: Literal["fast", "deep", "paper"] | None = None
     data_quality: dict[str, Any] | None = None
     tces: list[TcePayload] = Field(default_factory=list)
     planet_candidates: list[TcePayload] = Field(default_factory=list)

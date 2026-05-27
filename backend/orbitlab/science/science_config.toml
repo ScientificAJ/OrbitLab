@@ -8,6 +8,12 @@ centroid_hard_fail_pixels = 1.0
 quality_flag_dominance_fraction = 0.5
 red_noise_warning_beta = 1.5
 forced_period_tolerance_fraction = 0.01
+paper_promotion_snr = 7.1
+paper_tls_sde_min = 7.0
+paper_min_transits = 2
+paper_ml_threshold = 0.4
+paper_sweet_sigma = 3.0
+paper_model_shift_objects = 20000
 
 [search_profiles.preview_fast]
 min_period = 0.5
@@ -35,6 +41,15 @@ max_period_samples = 50000
 min_transits = 2.0
 max_search_cadences = 9000
 warning = "Deep mode is slower and adds refinement evidence."
+
+[search_profiles.paper_grade]
+min_period = 0.1
+max_period = 60.0
+period_samples = 50000
+max_period_samples = 50000
+min_transits = 2.0
+max_search_cadences = 9000
+warning = "Paper-grade mode is slower and applies published vetting thresholds before promotion."
 
 [search_profiles.long_period]
 min_period = 10.0

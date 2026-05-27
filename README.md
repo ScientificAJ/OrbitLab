@@ -30,6 +30,7 @@ OrbitLab is the opposite tradeoff: a usable full-stack workbench that keeps the 
 - Extracts light curves from target pixel files with optional aperture and artifact masks.
 - Runs BLS candidate detection and multi-candidate previews.
 - Produces folded light curves, periodograms, candidate metadata, and validation context.
+- Offers `fast`, `deep`, and opt-in `paper` vetting modes; paper-grade mode applies stricter Nigraha/TLS/DAVE/Kopparapu-style evidence gates before promotion.
 - Reports model availability at `GET /api/v1/models` using local artifact checksums.
 - Keeps model downloads reproducible through pinned fetch scripts.
 - Starts the local stack with `scripts/start_all.sh`.

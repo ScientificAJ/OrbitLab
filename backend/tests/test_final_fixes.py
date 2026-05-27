@@ -195,3 +195,14 @@ def test_analysis_job_schema_accepts_richer_stellar_context():
     assert payload.stellar_teff == 5778
     assert payload.stellar_rotation_period == 25.0
     assert payload.vetting_mode == "deep"
+
+
+def test_analysis_job_schema_accepts_paper_grade_vetting_mode():
+    payload = AnalysisJobCreate(
+        target_id="test",
+        product_uri="test",
+        mission="TESS",
+        vetting_mode="paper",
+    )
+
+    assert payload.vetting_mode == "paper"

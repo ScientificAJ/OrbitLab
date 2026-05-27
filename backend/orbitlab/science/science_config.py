@@ -17,6 +17,12 @@ CORE_CONFIG_KEYS = {
     "quality_flag_dominance_fraction",
     "red_noise_warning_beta",
     "forced_period_tolerance_fraction",
+    "paper_promotion_snr",
+    "paper_tls_sde_min",
+    "paper_min_transits",
+    "paper_ml_threshold",
+    "paper_sweet_sigma",
+    "paper_model_shift_objects",
 }
 
 
@@ -44,6 +50,12 @@ class ScienceConfig:
     quality_flag_dominance_fraction: float
     red_noise_warning_beta: float
     forced_period_tolerance_fraction: float
+    paper_promotion_snr: float
+    paper_tls_sde_min: float
+    paper_min_transits: int
+    paper_ml_threshold: float
+    paper_sweet_sigma: float
+    paper_model_shift_objects: int
     search_profiles: dict[str, SearchProfile]
 
 
@@ -73,6 +85,12 @@ def load_science_config(path: Path = CONFIG_PATH) -> ScienceConfig:
         quality_flag_dominance_fraction=float(data["quality_flag_dominance_fraction"]),
         red_noise_warning_beta=float(data["red_noise_warning_beta"]),
         forced_period_tolerance_fraction=float(data["forced_period_tolerance_fraction"]),
+        paper_promotion_snr=float(data["paper_promotion_snr"]),
+        paper_tls_sde_min=float(data["paper_tls_sde_min"]),
+        paper_min_transits=int(data["paper_min_transits"]),
+        paper_ml_threshold=float(data["paper_ml_threshold"]),
+        paper_sweet_sigma=float(data["paper_sweet_sigma"]),
+        paper_model_shift_objects=int(data["paper_model_shift_objects"]),
         search_profiles=profiles,
     )
 
