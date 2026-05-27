@@ -34,7 +34,7 @@ science = [
   "xarray-einstats<0.8",
 ]
 ml = [
-  "h5py>=3.11",
+  "h5py>=3.16.0",
   "joblib>=1.4",
   "onnxruntime>=1.18",
   "pandas>=2.2",
