@@ -23,6 +23,10 @@ CORE_CONFIG_KEYS = {
     "paper_ml_threshold",
     "paper_sweet_sigma",
     "paper_model_shift_objects",
+    "paper_triceratops_fpp_max",
+    "paper_triceratops_nfpp_max",
+    "paper_triceratops_samples",
+    "paper_catalog_radius_arcsec",
 }
 
 
@@ -56,6 +60,10 @@ class ScienceConfig:
     paper_ml_threshold: float
     paper_sweet_sigma: float
     paper_model_shift_objects: int
+    paper_triceratops_fpp_max: float
+    paper_triceratops_nfpp_max: float
+    paper_triceratops_samples: int
+    paper_catalog_radius_arcsec: float
     search_profiles: dict[str, SearchProfile]
 
 
@@ -91,6 +99,10 @@ def load_science_config(path: Path = CONFIG_PATH) -> ScienceConfig:
         paper_ml_threshold=float(data["paper_ml_threshold"]),
         paper_sweet_sigma=float(data["paper_sweet_sigma"]),
         paper_model_shift_objects=int(data["paper_model_shift_objects"]),
+        paper_triceratops_fpp_max=float(data["paper_triceratops_fpp_max"]),
+        paper_triceratops_nfpp_max=float(data["paper_triceratops_nfpp_max"]),
+        paper_triceratops_samples=int(data["paper_triceratops_samples"]),
+        paper_catalog_radius_arcsec=float(data["paper_catalog_radius_arcsec"]),
         search_profiles=profiles,
     )
 

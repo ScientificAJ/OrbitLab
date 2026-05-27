@@ -14,6 +14,10 @@ paper_min_transits = 2
 paper_ml_threshold = 0.4
 paper_sweet_sigma = 3.0
 paper_model_shift_objects = 20000
+paper_triceratops_fpp_max = 0.015
+paper_triceratops_nfpp_max = 0.001
+paper_triceratops_samples = 1000000
+paper_catalog_radius_arcsec = 120.0
 
 [search_profiles.preview_fast]
 min_period = 0.5

@@ -126,6 +126,11 @@ def test_paper_grade_mode_applies_strict_published_thresholds(monkeypatch):
         "orbitlab.science.pipeline.search_with_tls",
         lambda *args, **kwargs: {
             "status": "complete",
+            "period_days": 2.0,
+            "epoch_days": 0.1,
+            "duration_days": 0.08,
+            "depth_fraction": 0.002,
+            "snr": 6.9,
             "sde": 8.0,
             "transit_count": 6,
             "distinct_transit_count": 6,
@@ -143,11 +148,28 @@ def test_paper_grade_mode_applies_strict_published_thresholds(monkeypatch):
         "orbitlab.science.pipeline.run_injection_recovery",
         lambda *args, **kwargs: {"status": "complete", "engine": "box_injection_recovery"},
     )
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.query_tic_catalog_context",
+        lambda *args, **kwargs: {
+            "status": "complete",
+            "contamination": {"status": "pass", "capable_neighbor_count": 0},
+        },
+    )
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.run_triceratops_fpp",
+        lambda *args, **kwargs: {
+            "status": "complete",
+            "engine": "triceratops",
+            "fpp": 0.001,
+            "nfpp": 0.0001,
+        },
+    )
 
     time, flux = _light_curve(period=2.0, depth=0.002, noise=0.0002)
     payload = analyze_light_curve_arrays(
-        target_id="paper-grade-test",
+        target_id="TIC 123456789",
         mission="TESS",
+        product_uri="tess2020000000000-s0001-0000000123456789-tp.fits",
         time=time,
         flux=flux,
         vetting_mode="paper",

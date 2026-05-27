@@ -12,9 +12,11 @@ from orbitlab.ml.exomac_service import ExoMACService, build_exomac_features
 from orbitlab.ml.nigraha_adapter import build_nigraha_tensors
 from orbitlab.ml.nigraha_service import NigrahaService
 from orbitlab.ml.service import AstroNetService, KeplerAstroNetService
-from orbitlab.science.bls import find_multi_planet_candidates, run_bls
+from orbitlab.science.bls import TransitCandidate, find_multi_planet_candidates, run_bls
+from orbitlab.science.catalog_context import query_tic_catalog_context
 from orbitlab.science.data_quality import clean_light_curve
 from orbitlab.science.dave_vetting import run_model_shift, run_sweet_test
+from orbitlab.science.detrending import detrend_with_wotan
 from orbitlab.science.evidence import build_candidate_evidence, estimate_red_noise_beta
 from orbitlab.science.folding import bin_phase_curve, phase_fold
 from orbitlab.science.injection_recovery import run_injection_recovery
@@ -34,6 +36,7 @@ from orbitlab.science.science_config import (
 )
 from orbitlab.science.tls_refinement import refine_with_tls, search_with_tls
 from orbitlab.science.tpf_diagnostics import aperture_stability_diagnostics, difference_image_diagnostics
+from orbitlab.science.triceratops_fpp import run_triceratops_fpp
 from orbitlab.science.validation import validate_candidate
 
 
@@ -139,6 +142,32 @@ def _candidate_with_metadata(candidate, **metadata):
     next_metadata = dict(candidate.metadata or {})
     next_metadata.update({key: value for key, value in metadata.items() if value is not None})
     return replace(candidate, metadata=next_metadata)
+
+
+def _tls_primary_candidate(tls: dict[str, Any]) -> TransitCandidate:
+    if tls.get("status") != "complete":
+        raise RuntimeError(f"TLS-primary paper-grade search did not complete: {tls.get('detail') or tls.get('status')}")
+    period = _finite_float(tls.get("period_days"))
+    epoch = _finite_float(tls.get("epoch_days"))
+    duration = _finite_float(tls.get("duration_days"))
+    depth = _finite_float(tls.get("depth_fraction"))
+    snr = _finite_float(tls.get("snr"))
+    if period is None or epoch is None or duration is None or depth is None:
+        raise RuntimeError("TLS-primary paper-grade search did not return period, epoch, duration, and depth")
+    return TransitCandidate(
+        period=period,
+        epoch=epoch,
+        duration=duration,
+        depth=max(depth, 0.0),
+        power=float(tls.get("sde") or tls.get("sde_raw") or snr or 0.0),
+        signal_to_noise=float(snr or tls.get("sde") or 0.0),
+        metadata={
+            "period_source": "tls_full_search",
+            "signal_origin": "tls_primary_search",
+            "is_residual": False,
+            "display_priority": 0,
+        },
+    )
 
 
 def _known_planet_payload(
@@ -486,6 +515,8 @@ def _apply_paper_grade_vetting(
     model_shift: dict,
     sweet: dict,
     ml: dict,
+    catalog_context: dict,
+    fpp: dict,
     mission_upper: str,
 ) -> dict[str, Any]:
     thresholds = {
@@ -495,6 +526,8 @@ def _apply_paper_grade_vetting(
         "sweet_sigma": config.paper_sweet_sigma,
         "nigraha_probability_threshold": config.paper_ml_threshold,
         "model_shift_objects": config.paper_model_shift_objects,
+        "triceratops_fpp_max": config.paper_triceratops_fpp_max,
+        "triceratops_nfpp_max": config.paper_triceratops_nfpp_max,
     }
     effective_snr = float(support.get("effective_snr", candidate.signal_to_noise))
     observed_transits = support.get("observed_transit_count")
@@ -534,18 +567,25 @@ def _apply_paper_grade_vetting(
     else:
         _add_flag(
             flags,
-            "paper_tls_unavailable",
-            "warning",
-            "Full TLS evidence is unavailable, so paper-grade promotion needs review.",
+            "paper_tls_required",
+            "hard_fail",
+            "Full TLS evidence did not complete, so paper-grade promotion is blocked.",
         )
 
-    if model_shift.get("hard_fail"):
+    if model_shift.get("status") not in {"pass", "fail"}:
+        _add_flag(
+            flags,
+            "dave_model_shift_required",
+            "hard_fail",
+            "Official DAVE model-shift evidence did not complete, so paper-grade promotion is blocked.",
+        )
+    elif model_shift.get("hard_fail"):
         for code in model_shift.get("flags", []) or ["model_shift"]:
             _add_flag(
                 flags,
                 f"dave_{code}",
                 "hard_fail",
-                "DAVE-style model-shift vetting marked this signal as false-positive-like.",
+                "Official DAVE model-shift vetting marked this signal as false-positive-like.",
             )
 
     if sweet.get("status") == "warning":
@@ -558,9 +598,9 @@ def _apply_paper_grade_vetting(
     elif sweet.get("status") not in {"pass", "warning"}:
         _add_flag(
             flags,
-            "sweet_unavailable",
-            "warning",
-            "DAVE SWEET sinusoid evidence is unavailable.",
+            "sweet_required",
+            "hard_fail",
+            "DAVE SWEET sinusoid evidence did not complete, so paper-grade promotion is blocked.",
         )
 
     probability = _finite_float(ml.get("probability"))
@@ -568,9 +608,9 @@ def _apply_paper_grade_vetting(
         if probability is None:
             _add_flag(
                 flags,
-                "nigraha_unavailable",
-                "warning",
-                "Nigraha probability is unavailable for this TESS paper-grade run.",
+                "nigraha_required",
+                "hard_fail",
+                "Nigraha probability did not complete for this TESS paper-grade run.",
             )
         elif probability < config.paper_ml_threshold:
             _add_flag(
@@ -580,11 +620,47 @@ def _apply_paper_grade_vetting(
                 "Nigraha probability is below the upstream 0.4 paper-grade threshold.",
             )
 
+        fpp_value = _finite_float(fpp.get("fpp"))
+        nfpp_value = _finite_float(fpp.get("nfpp"))
+        if fpp_value is None or fpp_value > config.paper_triceratops_fpp_max:
+            _add_flag(
+                flags,
+                "triceratops_fpp",
+                "hard_fail",
+                "TRICERATOPS FPP is above the paper-grade statistical-validation threshold.",
+            )
+        if nfpp_value is None or nfpp_value > config.paper_triceratops_nfpp_max:
+            _add_flag(
+                flags,
+                "triceratops_nfpp",
+                "hard_fail",
+                "TRICERATOPS nearby FPP is above the paper-grade validation threshold.",
+            )
+
+    contamination = catalog_context.get("contamination") if isinstance(catalog_context, dict) else None
+    if isinstance(contamination, dict) and contamination.get("capable_neighbor_count", 0):
+        _add_flag(
+            flags,
+            "catalog_contamination",
+            "warning",
+            "TIC/Gaia catalog context found nearby sources bright enough to mimic the observed depth.",
+        )
+
     return {
         "status": _paper_grade_status_from_flags(flags),
         "pass": _paper_grade_status_from_flags(flags) == "pass",
         "thresholds": thresholds,
-        "methods": ["profiled_bls", "tls_full_search", "dave_model_shift", "dave_sweet", "mission_ml"],
+        "methods": [
+            "wotan_biweight",
+            "tls_primary_search",
+            "profiled_bls",
+            "tls_full_search",
+            "dave_model_shift",
+            "dave_sweet",
+            "tic_gaia_contamination",
+            "triceratops_fpp",
+            "mission_ml",
+        ],
     }
 
 
@@ -697,6 +773,7 @@ def analyze_light_curve_arrays(
     *,
     target_id: str,
     mission: str,
+    product_uri: str | None = None,
     time: np.ndarray,
     flux: np.ndarray,
     quality: np.ndarray | None = None,
@@ -729,6 +806,9 @@ def analyze_light_curve_arrays(
         profile_name = "science_standard"
     profile = get_search_profile(config, profile_name)
     clean_time, clean_flux = clean_light_curve(time, flux, quality)
+    detrending = {"status": "skipped", "engine": "wotan"}
+    if paper_grade_mode:
+        clean_flux, detrending = detrend_with_wotan(clean_time, clean_flux, method="biweight")
     data_quality = _data_quality_payload(np.asarray(time), np.asarray(flux), quality, clean_time, clean_flux)
     known_target = resolve_known_target(target_id)
 
@@ -755,8 +835,25 @@ def analyze_light_curve_arrays(
             "search_profile": profile.name,
             "search_profile_warning": profile.warning,
             "period_samples_requested": profile.period_samples,
+            "detrending": detrending,
         }
     )
+    paper_tls_primary: dict[str, Any] | None = None
+    if paper_grade_mode:
+        paper_tls_primary = search_with_tls(
+            clean_time,
+            clean_flux,
+            min_period=profile.min_period,
+            max_period=profile.max_period,
+            stellar_radius_solar=stellar_radius_solar,
+            stellar_mass_solar=stellar_mass_solar,
+            transit_depth_min=10e-6,
+            n_transits_min=config.paper_min_transits,
+            oversampling_factor=3,
+            duration_grid_step=1.1,
+        )
+        primary = _tls_primary_candidate(paper_tls_primary)
+        bls_result.metadata["paper_tls_primary"] = paper_tls_primary
 
     residual_candidates = find_multi_planet_candidates(
         clean_time,
@@ -885,19 +982,29 @@ def analyze_light_curve_arrays(
         )
         model_shift = {"status": "skipped", "engine": "dave_model_shift"}
         sweet = {"status": "skipped", "engine": "sweet"}
+        catalog_context = {
+            "status": "skipped",
+            "tic": target_id if mission_upper == "TESS" else None,
+            "known_target": known_target_payload(known_target),
+        }
+        fpp = {"status": "skipped", "engine": "triceratops"}
         paper_grade = None
         if paper_grade_mode:
-            tls_results[candidate_id] = search_with_tls(
-                clean_time,
-                clean_flux,
-                min_period=profile.min_period,
-                max_period=profile.max_period,
-                stellar_radius_solar=stellar_radius_solar,
-                stellar_mass_solar=stellar_mass_solar,
-                transit_depth_min=10e-6,
-                n_transits_min=config.paper_min_transits,
-                oversampling_factor=3,
-                duration_grid_step=1.1,
+            tls_results[candidate_id] = (
+                paper_tls_primary
+                if index == 1 and paper_tls_primary is not None
+                else search_with_tls(
+                    clean_time,
+                    clean_flux,
+                    min_period=profile.min_period,
+                    max_period=profile.max_period,
+                    stellar_radius_solar=stellar_radius_solar,
+                    stellar_mass_solar=stellar_mass_solar,
+                    transit_depth_min=10e-6,
+                    n_transits_min=config.paper_min_transits,
+                    oversampling_factor=3,
+                    duration_grid_step=1.1,
+                )
             )
             model_shift = run_model_shift(
                 clean_time,
@@ -911,6 +1018,21 @@ def analyze_light_curve_arrays(
                 candidate,
                 threshold_sigma=config.paper_sweet_sigma,
             )
+            if mission_upper == "TESS":
+                catalog_context = query_tic_catalog_context(
+                    target_id,
+                    observed_depth=candidate.depth,
+                    search_radius_arcsec=config.paper_catalog_radius_arcsec,
+                )
+                fpp = run_triceratops_fpp(
+                    target_id=target_id,
+                    product_uri=product_uri,
+                    time=clean_time,
+                    flux=clean_flux,
+                    candidate=candidate,
+                    samples=config.paper_triceratops_samples,
+                    parallel=False,
+                )
             paper_grade = _apply_paper_grade_vetting(
                 flags=flags,
                 candidate=candidate,
@@ -920,6 +1042,8 @@ def analyze_light_curve_arrays(
                 model_shift=model_shift,
                 sweet=sweet,
                 ml=ml,
+                catalog_context=catalog_context,
+                fpp=fpp,
                 mission_upper=mission_upper,
             )
         evidence_obj = build_candidate_evidence(
@@ -1059,15 +1183,8 @@ def analyze_light_curve_arrays(
                 "sweet": sweet,
                 "paper_grade": paper_grade,
             },
-            "catalog_context": {
-                "tic": target_id if mission_upper == "TESS" else None,
-                "gaia": {"status": "unavailable"},
-                "exofop_toi": {"status": "unavailable"},
-                "nasa_exoplanet_archive": {"status": "unavailable"},
-                "known_target": known_target_payload(known_target),
-                "eb_catalog": {"status": "unavailable"},
-            },
-            "fpp": {"status": "skipped" if vetting_mode == "fast" else "unavailable", "engine": "triceratops"},
+            "catalog_context": catalog_context | {"known_target": known_target_payload(known_target)},
+            "fpp": fpp,
             "physics": physics,
             "validation": validation,
             "ml": ml,
@@ -1092,15 +1209,24 @@ def analyze_light_curve_arrays(
     elif any(result.get("status") == "complete" for result in tls_results.values()):
         tls_status = "complete"
     elif tls_results:
-        tls_status = "unavailable"
+        tls_status = "failed"
     else:
-        tls_status = "unavailable"
+        tls_status = "skipped"
+    triceratops_status = "skipped"
+    if paper_grade_mode and mission_upper == "TESS":
+        triceratops_status = (
+            "complete"
+            if tce_payloads and all(tce.get("fpp", {}).get("status") == "complete" for tce in tce_payloads)
+            else "failed"
+        )
+    elif paper_grade_mode:
+        triceratops_status = "not_applicable"
     engine_status = {
         "bls": {"status": "complete", "search_profile": profile.name},
         "tls": {"status": tls_status},
         "injection_recovery": {"status": injection_recovery["status"]},
-        "wotan": {"status": "skipped" if vetting_mode == "fast" else "unavailable"},
-        "triceratops": {"status": "skipped" if vetting_mode == "fast" else "unavailable"},
+        "wotan": detrending,
+        "triceratops": {"status": triceratops_status},
         "dave_model_shift": {"status": "complete" if paper_grade_mode and tce_payloads else "skipped"},
         "sweet": {"status": "complete" if paper_grade_mode and tce_payloads else "skipped"},
         "paper_grade": {"status": "complete" if paper_grade_mode else "skipped"},

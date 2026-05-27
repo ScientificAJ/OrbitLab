@@ -57,6 +57,10 @@ For TIC 100100827:
     - `paper_ml_threshold = 0.4`
     - `paper_sweet_sigma = 3.0`
     - `paper_model_shift_objects = 20000`
+    - `paper_triceratops_fpp_max = 0.015`
+    - `paper_triceratops_nfpp_max = 0.001`
+    - `paper_triceratops_samples = 1000000`
+    - `paper_catalog_radius_arcsec = 120.0`
 - Include the TOML content hash in every new analysis result as `science_config_hash`.
 
 ## Implementation Changes
@@ -72,12 +76,12 @@ For TIC 100100827:
     - `aperture_stability`: pipeline mask plus configured percentiles.
     - `vetting`: odd/even, secondary eclipse, centroid, difference image, quality-cadence dominance.
     - `catalog_context`: TIC, Gaia, ExoFOP/TOI, NASA Exoplanet Archive, EB catalog status.
-    - `fpp`: TRICERATOPS-style result or structured unavailable/skipped state.
+    - `fpp`: TRICERATOPS FPP/NFPP result for TESS paper-grade runs.
     - `ml`: supporting evidence only, never sole promotion authority.
 - Add Fast and Deep modes:
     - Fast: BLS, TCE ledger, aperture ensemble, core vetting, data quality, ML diagnostic where available.
     - Deep: Fast plus optional TLS, Wotan detrending, forced-period recovery, multi-sector checks, catalog enrichment, TRICERATOPS, injection-recovery summary.
-    - Paper: default mode using the deep search profile plus full TLS evidence, DAVE-style model-shift and SWEET checks, Nigraha's 0.4 TESS probability threshold, SNR >= 7.1, and Kopparapu 2014 habitable-zone boundaries before promotion.
+    - Paper: default accuracy mode using Wotan biweight detrending, TLS primary search, official DAVE model-shift/RoboVet and SWEET checks, TIC/Gaia contamination context, TRICERATOPS FPP/NFPP, Nigraha's 0.4 TESS probability threshold, SNR >= 7.1, and Kopparapu 2014 habitable-zone boundaries before promotion.
     - Deep mode must produce partial results with `deep_mode_progress` on timeout/failure.
 - Update frontend:
     - Add TCE Ledger panel.
@@ -92,7 +96,7 @@ For TIC 100100827:
     - TIC-like SNR `5.77754` signal becomes `borderline_tce` with `action_label: "review_needed"`.
     - SNR `>= 6.0` plus clean vetting becomes `planet_candidate`.
     - SNR `>= 6.0` plus hard-fail secondary becomes `rejected_signal`.
-    - Missing optional engines report unavailable, not failed analysis.
+    - Paper-grade required engines block promotion when they do not complete.
     - All metrics use explicit unit-suffixed keys.
     - Science config thresholds drive disposition behavior.
 - API/schema:
@@ -112,6 +116,6 @@ For TIC 100100827:
 
 - `AnalysisResultRecord.payload_json` remains storage for v1 of this upgrade.
 - A normalized TCE table is deferred until batch search/filtering is needed.
-- New science dependencies remain optional.
-- Fast mode remains default.
+- Paper-grade science dependencies are installed in the Python environment; the official DAVE modshift binary is expected at `.orbitlab/external/DAVE/vetting/modshift` or `ORBITLAB_DAVE_MODSHIFT`.
+- Accuracy/paper mode remains default.
 - Deep mode is allowed to be slower and partially complete.

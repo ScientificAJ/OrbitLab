@@ -409,6 +409,10 @@ export default function App() {
       result?.candidates[0]
     );
   }, [result, selectedId, tces]);
+  const selectedTce = selected && 'fpp' in selected ? selected : undefined;
+  const selectedFpp = selectedTce?.fpp;
+  const selectedCatalogContext = selectedTce?.catalog_context;
+  const selectedContamination = nestedRecord(selectedCatalogContext, 'contamination');
   const isAdvanced = mode === 'advanced';
 
   const renderedOrbitCandidates = useMemo<Candidate[]>(() => {
@@ -1274,15 +1278,15 @@ export default function App() {
                     onChange={(event) => updateMaxCandidates(Number(event.target.value))}
                   />
                   <label htmlFor="vetting-mode">
-                    Vetting Mode{' '}
-                    <HelpTip label="Fast runs the ledger and core checks; deep adds enrichment; paper-grade applies stricter published-method gates." />
+                    Accuracy Mode{' '}
+                    <HelpTip label="Accuracy is the default paper-grade path with published-method gates; deep and fast are shorter expert runs." />
                   </label>
                   <select
                     id="vetting-mode"
                     value={vettingMode}
                     onChange={(event) => setVettingMode(normalizeVettingMode(event.target.value))}
                   >
-                    <option value="paper">Paper-grade</option>
+                    <option value="paper">Accuracy (paper-grade)</option>
                     <option value="deep">Deep</option>
                     <option value="fast">Fast</option>
                   </select>
@@ -1605,6 +1609,10 @@ export default function App() {
               <dd>{evidenceText(nestedRecord(selected?.vetting, 'model_shift'), 'status') ?? 'n/a'}</dd>
               <dt>SWEET</dt>
               <dd>{evidenceText(nestedRecord(selected?.vetting, 'sweet'), 'status') ?? 'n/a'}</dd>
+              <dt>DAVE RoboVet</dt>
+              <dd>
+                {evidenceText(nestedRecord(nestedRecord(selected?.vetting, 'model_shift'), 'robovet'), 'disp') ?? 'n/a'}
+              </dd>
               {'disposition' in (selected ?? {}) && (
                 <>
                   <dt>Disposition</dt>
@@ -1729,6 +1737,30 @@ export default function App() {
               <dd>
                 {evidenceText(selected?.evidence?.sweet as Record<string, unknown> | undefined, 'status') ?? 'n/a'}
               </dd>
+              <dt>TRICERATOPS</dt>
+              <dd>{evidenceText(selectedFpp, 'status') ?? 'n/a'}</dd>
+              <dt>FPP</dt>
+              <dd>{formatScientific(evidenceNumber(selectedFpp, 'fpp'), 3)}</dd>
+              <dt>NFPP</dt>
+              <dd>{formatScientific(evidenceNumber(selectedFpp, 'nfpp'), 3)}</dd>
+              <dt>Catalog</dt>
+              <dd>{evidenceText(selectedCatalogContext, 'status') ?? 'n/a'}</dd>
+              <dt>TOI Matches</dt>
+              <dd>
+                {formatNumber(evidenceNumber(nestedRecord(selectedCatalogContext, 'exofop_toi'), 'match_count'), 0)}
+              </dd>
+              <dt>Known Planets</dt>
+              <dd>
+                {formatNumber(
+                  evidenceNumber(
+                    nestedRecord(selectedCatalogContext, 'nasa_exoplanet_archive'),
+                    'confirmed_planet_count',
+                  ),
+                  0,
+                )}
+              </dd>
+              <dt>Nearby Sources</dt>
+              <dd>{formatNumber(evidenceNumber(selectedContamination, 'capable_neighbor_count'), 0)}</dd>
               <dt>Why</dt>
               <dd>{selected?.explanation?.join('; ') || 'n/a'}</dd>
             </dl>

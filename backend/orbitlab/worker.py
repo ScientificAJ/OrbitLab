@@ -74,6 +74,7 @@ def run_analysis_job(self, job_id: str) -> str:
             payload = analyze_light_curve_arrays(
                 target_id=job.target_id,
                 mission=job.mission,
+                product_uri=job.product_uri,
                 time=time,
                 flux=flux,
                 quality=quality,

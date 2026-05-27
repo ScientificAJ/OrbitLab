@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import math
+import os
+import subprocess
+import tempfile
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -44,6 +48,146 @@ def _safe_float(value: Any) -> float | None:
     if not np.isfinite(number):
         return None
     return number
+
+
+def _default_modshift_binary() -> Path:
+    env_path = os.environ.get("ORBITLAB_DAVE_MODSHIFT")
+    if env_path:
+        return Path(env_path)
+    return Path(__file__).resolve().parents[3] / ".orbitlab" / "external" / "DAVE" / "vetting" / "modshift"
+
+
+def _box_model_for_modshift(time: np.ndarray, flux: np.ndarray, candidate: TransitCandidate) -> np.ndarray:
+    primary = _window_mask(time, candidate, 0.0, candidate.duration)
+    baseline_mask = ~primary
+    baseline = (
+        float(np.nanmedian(flux[baseline_mask]))
+        if np.count_nonzero(baseline_mask)
+        else float(np.nanmedian(flux))
+    )
+    depth = _safe_float(candidate.depth)
+    if depth is None or depth <= 0:
+        depth = max(0.0, baseline - float(np.nanmedian(flux[primary]))) if np.count_nonzero(primary) else 0.0
+    model = np.full_like(flux, baseline, dtype=float)
+    model[primary] = baseline - float(depth)
+    return model
+
+
+def _run_official_modshift(
+    time: np.ndarray,
+    flux: np.ndarray,
+    candidate: TransitCandidate,
+    *,
+    modshift_binary: str | Path | None = None,
+    timeout_seconds: int = 15,
+) -> dict[str, float]:
+    binary = Path(modshift_binary) if modshift_binary is not None else _default_modshift_binary()
+    if not binary.exists():
+        raise RuntimeError(f"Official DAVE modshift binary is missing at {binary}")
+    if not os.access(binary, os.X_OK):
+        raise RuntimeError(f"Official DAVE modshift binary is not executable at {binary}")
+
+    model = _box_model_for_modshift(time, flux, candidate)
+    with tempfile.NamedTemporaryFile(prefix="orbitlab-dave-modshift-", suffix=".dat", mode="w", delete=False) as handle:
+        input_path = Path(handle.name)
+        np.savetxt(handle, np.column_stack((time, flux, model)))
+    try:
+        completed = subprocess.run(
+            [
+                str(binary),
+                str(input_path),
+                "orbitlab-modshift",
+                "OrbitLab",
+                str(float(candidate.period)),
+                str(float(candidate.epoch)),
+                "0",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+    finally:
+        input_path.unlink(missing_ok=True)
+
+    fields = completed.stdout.split()
+    if len(fields) < 17:
+        raise RuntimeError(f"Official DAVE modshift returned an incomplete result: {completed.stdout.strip()}")
+    return {
+        "mod_sig_pri": float(fields[1]),
+        "mod_sig_sec": float(fields[2]),
+        "mod_sig_ter": float(fields[3]),
+        "mod_sig_pos": float(fields[4]),
+        "mod_sig_oe": float(fields[5]),
+        "mod_dmm": float(fields[6]),
+        "mod_shape": float(fields[7]),
+        "mod_sig_fa1": float(fields[8]),
+        "mod_sig_fa2": float(fields[9]),
+        "mod_Fred": float(fields[10]),
+        "mod_ph_pri": float(fields[11]),
+        "mod_ph_sec": float(fields[12]),
+        "mod_ph_ter": float(fields[13]),
+        "mod_ph_pos": float(fields[14]),
+        "mod_secdepth": float(fields[15]),
+        "mod_secdeptherr": float(fields[16]),
+    }
+
+
+def _official_robovet_flags(modshift: dict[str, float]) -> tuple[list[str], dict[str, Any]]:
+    flags: list[str] = []
+    comments: list[str] = []
+    sig_pri = modshift["mod_sig_pri"]
+    sig_sec = modshift["mod_sig_sec"]
+    sig_ter = modshift["mod_sig_ter"]
+    sig_pos = modshift["mod_sig_pos"]
+    sig_oe = modshift["mod_sig_oe"]
+    sig_fa1 = modshift["mod_sig_fa1"]
+    sig_fa2 = modshift["mod_sig_fa2"]
+    fred = modshift["mod_Fred"]
+
+    not_trans_like = 0
+    if sig_pri / fred < sig_fa1 and sig_pri > 0:
+        flags.append("sig_pri_over_fred_too_low")
+        comments.append("SIG_PRI_OVER_FRED_TOO_LOW")
+        not_trans_like = 1
+    if sig_pri - sig_ter < sig_fa2 and sig_pri > 0 and sig_ter > 0:
+        flags.append("sig_pri_minus_sig_ter_too_low")
+        comments.append("SIG_PRI_MINUS_SIG_TER_TOO_LOW")
+        not_trans_like = 1
+    if sig_pri - sig_pos < sig_fa2 and sig_pri > 0 and sig_pos > 0:
+        flags.append("sig_pri_minus_sig_pos_too_low")
+        comments.append("SIG_PRI_MINUS_SIG_POS_TOO_LOW")
+        not_trans_like = 1
+    if modshift["mod_dmm"] > 1.5:
+        flags.append("indiv_depths_not_consistent")
+        comments.append("INDIV_DEPTHS_NOT_CONSISTENT")
+        not_trans_like = 1
+    if modshift["mod_shape"] > 0.3:
+        flags.append("sinusoidal_via_modshift")
+        comments.append("SINUSOIDAL_VIA_MODSHIFT")
+        not_trans_like = 1
+
+    sig_sec_flag = 0
+    if (
+        sig_sec / fred > sig_fa1
+        and sig_sec > 0
+        and (sig_sec - sig_ter > sig_fa2 or sig_ter > 0)
+        and (sig_sec - sig_pri > sig_fa2 or sig_pri > 0)
+    ):
+        flags.append("sig_sec_in_model_shift")
+        comments.append("SIG_SEC_IN_MODEL_SHIFT")
+        sig_sec_flag = 1
+    if sig_oe > sig_fa1:
+        flags.append("odd_even_diff")
+        comments.append("ODD_EVEN_DIFF")
+        sig_sec_flag = 1
+
+    return flags, {
+        "disp": "false positive" if not_trans_like > 0 or sig_sec_flag > 0 else "candidate",
+        "not_trans_like": not_trans_like,
+        "sig_sec": sig_sec_flag,
+        "comments": "---".join(comments),
+    }
 
 
 def _erfcinv(value: float) -> float:
@@ -212,119 +356,43 @@ def run_model_shift(
     candidate: TransitCandidate,
     *,
     objects_evaluated: int = 20000,
+    modshift_binary: str | Path | None = None,
 ) -> dict[str, Any]:
     t, f = _finite_arrays(time, flux)
     if t.size < 16 or candidate.period <= 0 or candidate.duration <= 0:
         return {"status": "insufficient_data", "engine": "dave_model_shift"}
-    out_of_transit = np.abs(_phase_time(t, candidate)) > candidate.duration
-    baseline = float(np.nanmedian(f[out_of_transit])) if np.count_nonzero(out_of_transit) else float(np.nanmedian(f))
-    scatter = (
-        _robust_scatter(f[out_of_transit] - baseline)
-        if np.count_nonzero(out_of_transit)
-        else _robust_scatter(f - baseline)
-    )
-    if not np.isfinite(scatter) or scatter <= 0:
-        return {"status": "insufficient_data", "engine": "dave_model_shift"}
-
-    primary_depth, primary_sigma, primary_count = _depth_significance(
-        t, f, candidate, center_days=0.0, baseline=baseline, scatter=scatter
-    )
-    centers = np.linspace(-0.5 * candidate.period, 0.5 * candidate.period, 161, endpoint=False)
-    candidates = []
-    positives = []
-    for center in centers:
-        if abs(center) <= candidate.duration:
-            continue
-        depth, depth_sigma, count = _depth_significance(
-            t,
-            f,
-            candidate,
-            center_days=float(center),
-            baseline=baseline,
-            scatter=scatter,
-        )
-        height, height_sigma, _ = _brightening_significance(
-            t, f, candidate, center_days=float(center), baseline=baseline, scatter=scatter
-        )
-        candidates.append({"center_days": float(center), "depth": depth, "sigma": depth_sigma, "count": count})
-        positives.append({"center_days": float(center), "height": height, "sigma": height_sigma, "count": count})
-    candidates.sort(key=lambda row: row["sigma"], reverse=True)
-    positives.sort(key=lambda row: row["sigma"], reverse=True)
-    secondary = candidates[0] if candidates else {"center_days": None, "depth": 0.0, "sigma": 0.0, "count": 0}
-    tertiary = next(
-        (
-            row
-            for row in candidates[1:]
-            if secondary["center_days"] is None
-            or abs(float(row["center_days"]) - float(secondary["center_days"])) > candidate.duration
-        ),
-        {"center_days": None, "depth": 0.0, "sigma": 0.0, "count": 0},
-    )
-    positive = positives[0] if positives else {"center_days": None, "height": 0.0, "sigma": 0.0, "count": 0}
-    thresholds = _dave_sigma_thresholds(t, candidate, objects_evaluated)
-    fred = _red_noise_factor(t, f, candidate, scatter)
-    sigfa1 = thresholds["sigfa1"]
-    sigfa2 = thresholds["sigfa2"]
-    normalized_primary = primary_sigma / fred if fred else primary_sigma
-    normalized_secondary = float(secondary["sigma"]) / fred if fred else float(secondary["sigma"])
-    normalized_tertiary = float(tertiary["sigma"]) / fred if fred else float(tertiary["sigma"])
-    normalized_positive = float(positive["sigma"]) / fred if fred else float(positive["sigma"])
-
-    transit_depths = _transit_depth_series(t, f, candidate, baseline=baseline)
-    if transit_depths:
-        median_depth = float(np.nanmedian(transit_depths))
-        mean_depth = float(np.nanmean(transit_depths))
-        dmm = mean_depth / median_depth if median_depth > 0 else float("inf")
-    else:
-        dmm = float("inf")
-    shape_metric = (
-        max(normalized_secondary, normalized_positive) / max(normalized_primary, np.finfo(float).eps)
-        if normalized_primary > 0
-        else float("inf")
-    )
-
-    odd_even_sigma = 0.0
-    if len(transit_depths) >= 3:
-        even = np.asarray(transit_depths[::2], dtype=float)
-        odd = np.asarray(transit_depths[1::2], dtype=float)
-        if even.size and odd.size:
-            err = math.sqrt(max(np.nanvar(even), 0.0) / even.size + max(np.nanvar(odd), 0.0) / odd.size)
-            odd_even_sigma = abs(float(np.nanmean(even) - np.nanmean(odd))) / err if err > 0 else 0.0
-
-    flags = []
-    if normalized_primary < sigfa1:
-        flags.append("not_transit_like")
-    if normalized_primary - normalized_tertiary < sigfa2:
-        flags.append("primary_tertiary_margin")
-    if normalized_primary - normalized_positive < sigfa2:
-        flags.append("primary_positive_margin")
-    if dmm > 1.5:
-        flags.append("depth_mean_median_ratio")
-    if shape_metric > 0.3:
-        flags.append("shape_metric")
-    if normalized_secondary > sigfa1:
-        flags.append("significant_secondary")
-    if odd_even_sigma > sigfa1:
-        flags.append("odd_even_depth_mismatch")
+    modshift = _run_official_modshift(t, f, candidate, modshift_binary=modshift_binary)
+    flags, robovet = _official_robovet_flags(modshift)
 
     return {
         "status": "fail" if flags else "pass",
         "engine": "dave_model_shift",
         "hard_fail": bool(flags),
         "flags": flags,
+        "robovet": robovet,
         "primary": {
-            "depth": primary_depth,
-            "sigma": primary_sigma,
-            "normalized_sigma": normalized_primary,
-            "count": primary_count,
+            "sigma": modshift["mod_sig_pri"],
+            "normalized_sigma": modshift["mod_sig_pri"] / modshift["mod_Fred"],
+            "phase": modshift["mod_ph_pri"],
         },
-        "secondary": secondary,
-        "tertiary": tertiary,
-        "positive": positive,
-        "thresholds": thresholds,
-        "fred": fred,
-        "dmm": _safe_float(dmm),
-        "shape_metric": _safe_float(shape_metric),
-        "odd_even_sigma": _safe_float(odd_even_sigma),
-        "source": "DAVE RoboVet model-shift threshold structure",
+        "secondary": {
+            "sigma": modshift["mod_sig_sec"],
+            "normalized_sigma": modshift["mod_sig_sec"] / modshift["mod_Fred"],
+            "phase": modshift["mod_ph_sec"],
+            "depth": modshift["mod_secdepth"],
+            "depth_error": modshift["mod_secdeptherr"],
+        },
+        "tertiary": {"sigma": modshift["mod_sig_ter"], "phase": modshift["mod_ph_ter"]},
+        "positive": {"sigma": modshift["mod_sig_pos"], "phase": modshift["mod_ph_pos"]},
+        "thresholds": {
+            "sigfa1": modshift["mod_sig_fa1"],
+            "sigfa2": modshift["mod_sig_fa2"],
+            "objects_evaluated": float(objects_evaluated),
+        },
+        "fred": modshift["mod_Fred"],
+        "dmm": _safe_float(modshift["mod_dmm"]),
+        "shape_metric": _safe_float(modshift["mod_shape"]),
+        "odd_even_sigma": _safe_float(modshift["mod_sig_oe"]),
+        "modshift": modshift,
+        "source": "Official DAVE ModShift binary with DAVE RoboVet thresholds",
     }

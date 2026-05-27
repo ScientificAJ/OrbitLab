@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Real-data exoplanet analysis workbench with TPF-first pipelines and pretrained AstroNet inference."
 requires-python = ">=3.11"
 dependencies = [
-  "numpy>=1.26",
+  "numpy>=1.26,<2.0",
   "pydantic>=2.13.4",
 ]
 
@@ -28,6 +28,10 @@ science = [
   "scipy>=1.13",
   "batman-package>=2.4",
   "transitleastsquares>=1.32",
+  "wotan>=1.10",
+  "triceratops>=1.0.20",
+  "arviz>=0.17,<0.18",
+  "xarray-einstats<0.8",
 ]
 ml = [
   "h5py>=3.11",

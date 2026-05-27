@@ -30,3 +30,15 @@ K2 inference is tabular candidate-vetting ML through the registered ExoMAC-KKT r
 - K2/ExoMAC-KKT: catalog features preserve ExoMAC units: period in days, duration in hours, fractional depth, SNR, optional stellar context, and derived log/duty-cycle features. Missing optional values are encoded as NaN for the sklearn pipeline.
 
 The API refuses to report model readiness when the artifact is absent, empty, or checksum-mismatched.
+
+## Paper-Grade Science Engines
+
+The default accuracy path also requires the installed science packages from `pyproject.toml`: `transitleastsquares`, `wotan`, `triceratops`, `astroquery`, and their numeric dependencies. Official DAVE model-shift vetting is not a pip package, so OrbitLab expects the compiled DAVE binary at `.orbitlab/external/DAVE/vetting/modshift` or the path in `ORBITLAB_DAVE_MODSHIFT`.
+
+Build the DAVE executable:
+
+```bash
+scripts/build_dave_modshift.sh
+```
+
+Paper-grade TESS promotion uses TLS, Wotan biweight detrending, DAVE ModShift/RoboVet, DAVE SWEET, TIC/Gaia contamination context, TRICERATOPS FPP/NFPP thresholds, and the Nigraha 0.4 probability threshold. Required paper-grade engines block promotion when they do not complete.

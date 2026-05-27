@@ -96,7 +96,7 @@ If the center simulation only shows the star, no candidates are currently loaded
 
 ## 7. Run Full Analysis
 
-Click `Run Analysis` after selecting a product. A full analysis stores a result and adds validation, physics, habitability, and model context where available.
+Click `Run Analysis` after selecting a product. The default run is Accuracy/Paper-grade mode: it stores a result and adds validation, physics, habitability, TLS, Wotan, DAVE, catalog-contamination, TRICERATOPS, and model context where the selected mission supports them.
 
 The ML panel is intentionally honest about missing artifacts. Use `ML Status` to see whether each mission-specific model is ready, unavailable, or missing setup.
 
