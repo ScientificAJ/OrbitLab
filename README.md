@@ -43,7 +43,7 @@ OrbitLab is the opposite tradeoff: a usable full-stack workbench that keeps the 
 | Kepler/K1   | AstroNet-family CNN/BiLSTM/attention checkpoint | `bibinthomas123/Astronet` at pinned commit `9809ce92306f11fbdc96f9830b522026710a3883`        | Ready only when the TensorFlow checkpoint is fetched, registered, and checksum-valid.         |
 | K2          | ExoMAC-KKT RandomForest catalog classifier      | `ZapatoProgramming/ExoMAC-KKT` at pinned revision `5cda5310d5a163679c6915f9463a4d6afc312483` | Ready only when the sklearn bundle, feature schema, labels, metadata, and checksums validate. |
 
-See [docs/MODEL_CARDS.md](docs/MODEL_CARDS.md) and [docs/model_artifacts.md](docs/model_artifacts.md) for provenance and limitations.
+See [docs/SCIENTIFIC_METHODOLOGY.md](docs/SCIENTIFIC_METHODOLOGY.md), [docs/MODEL_CARDS.md](docs/MODEL_CARDS.md), and [docs/model_artifacts.md](docs/model_artifacts.md) for methodology, provenance, and limitations.
 
 ## Screenshots
 
