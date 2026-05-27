@@ -2,16 +2,14 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-
 from orbitlab.config import Settings
 from orbitlab.exceptions import ModelArtifactError
 from orbitlab.ml.artifact_registry import K2_EXOMAC_MODEL_ID, register_artifact
 from orbitlab.ml.astronet_adapter import GLOBAL_BINS, LOCAL_BINS, AstroNetTensors
 from orbitlab.ml.checksum import sha256_path
-from orbitlab.ml.exomac_service import ExoMACService, build_exomac_features
-from orbitlab.ml.exomac_service import ExoMACVerdict
-from orbitlab.science import pipeline
+from orbitlab.ml.exomac_service import ExoMACService, ExoMACVerdict, build_exomac_features
 from orbitlab.ml.service import AstroNetService
+from orbitlab.science import pipeline
 from orbitlab.science.bls import BlsResult, TransitCandidate
 
 
@@ -212,6 +210,7 @@ def test_k2_pipeline_uses_exomac_service(monkeypatch: pytest.MonkeyPatch):
         stellar_luminosity_solar=1.0,
         stellar_density_solar=1.0,
         stellar_rotation_period=10.0,
+        vetting_mode="fast",
         k2_service=TinyK2Service(),
     )
 

@@ -99,7 +99,7 @@ export type TpfPreview = {
   baseline?: number;
 };
 
-export type VettingMode = 'fast' | 'deep' | 'paper';
+export type VettingMode = 'paper' | 'deep' | 'fast';
 
 export type AnalysisResult = {
   result_id: string;

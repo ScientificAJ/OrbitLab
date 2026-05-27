@@ -15,7 +15,7 @@ For TIC 100100827:
 ## Public Interfaces
 
 - Extend `AnalysisJobCreate`:
-    - `vetting_mode: "fast" | "deep" | "paper" = "fast"`
+    - `vetting_mode: "paper" | "deep" | "fast" = "paper"`
 - Store analysis payload with:
     - `schema_version: "orbitlab.analysis_result.v2"`
     - `pipeline_version: "orbitlab-tce-vetting-0.1.0"`
@@ -77,7 +77,7 @@ For TIC 100100827:
 - Add Fast and Deep modes:
     - Fast: BLS, TCE ledger, aperture ensemble, core vetting, data quality, ML diagnostic where available.
     - Deep: Fast plus optional TLS, Wotan detrending, forced-period recovery, multi-sector checks, catalog enrichment, TRICERATOPS, injection-recovery summary.
-    - Paper: opt-in mode using the deep search profile plus full TLS evidence, DAVE-style model-shift and SWEET checks, Nigraha's 0.4 TESS probability threshold, SNR >= 7.1, and Kopparapu 2014 habitable-zone boundaries before promotion.
+    - Paper: default mode using the deep search profile plus full TLS evidence, DAVE-style model-shift and SWEET checks, Nigraha's 0.4 TESS probability threshold, SNR >= 7.1, and Kopparapu 2014 habitable-zone boundaries before promotion.
     - Deep mode must produce partial results with `deep_mode_progress` on timeout/failure.
 - Update frontend:
     - Add TCE Ledger panel.

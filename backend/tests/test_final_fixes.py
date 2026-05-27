@@ -206,3 +206,13 @@ def test_analysis_job_schema_accepts_paper_grade_vetting_mode():
     )
 
     assert payload.vetting_mode == "paper"
+
+
+def test_analysis_job_schema_defaults_to_paper_grade_vetting_mode():
+    payload = AnalysisJobCreate(
+        target_id="test",
+        product_uri="test",
+        mission="TESS",
+    )
+
+    assert payload.vetting_mode == "paper"

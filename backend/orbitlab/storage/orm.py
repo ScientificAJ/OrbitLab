@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import typing
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 try:
-    from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Float, JSON, Index
+    from sqlalchemy import JSON, DateTime, Float, ForeignKey, Index, Integer, String, Text
     from sqlalchemy.orm import Mapped, mapped_column, relationship
 except ImportError as exc:  # pragma: no cover
     raise RuntimeError("Install orbitlab[api] to use SQLAlchemy storage models") from exc
@@ -26,7 +26,7 @@ class AnalysisJobRecord(Base):
     aperture_mask_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     artifact_mask_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     max_candidates: Mapped[int] = mapped_column(Integer, default=4)
-    vetting_mode: Mapped[str] = mapped_column(String(16), default="fast")
+    vetting_mode: Mapped[str] = mapped_column(String(16), default="paper")
     stellar_radius_solar: Mapped[float | None] = mapped_column(Float, nullable=True)
     stellar_mass_solar: Mapped[float | None] = mapped_column(Float, nullable=True)
     stellar_teff: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -36,8 +36,8 @@ class AnalysisJobRecord(Base):
     stellar_rotation_period: Mapped[float | None] = mapped_column(Float, nullable=True)
     status: Mapped[str] = mapped_column(String(24), index=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
-    result: Mapped["AnalysisResultRecord | None"] = relationship(back_populates="job")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
+    result: Mapped[AnalysisResultRecord | None] = relationship(back_populates="job")
 
 
 class AnalysisResultRecord(Base):
@@ -46,7 +46,7 @@ class AnalysisResultRecord(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     job_id: Mapped[str] = mapped_column(ForeignKey("analysis_jobs.id"), unique=True)
     payload_json: Mapped[typing.Any] = mapped_column(JSON)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
     job: Mapped[AnalysisJobRecord] = relationship(back_populates="result")
 
 
@@ -56,7 +56,7 @@ class SavedSessionRecord(Base):
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     name: Mapped[str] = mapped_column(String(200))
     payload_json: Mapped[typing.Any] = mapped_column(JSON)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
 class ArtifactMaskRecord(Base):
@@ -66,7 +66,7 @@ class ArtifactMaskRecord(Base):
     target_id: Mapped[str] = mapped_column(String(128), index=True)
     indices_json: Mapped[typing.Any] = mapped_column(JSON)
     reason: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
 
 class ApertureMaskRecord(Base):
@@ -77,4 +77,4 @@ class ApertureMaskRecord(Base):
     product_uri: Mapped[str] = mapped_column(Text)
     mask_json: Mapped[typing.Any] = mapped_column(JSON)
     reason: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))

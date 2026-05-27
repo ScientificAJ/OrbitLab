@@ -66,6 +66,7 @@ def test_tic_like_borderline_signal_is_preserved_as_review_needed(monkeypatch):
         mission="TESS",
         time=time,
         flux=flux,
+        vetting_mode="fast",
         nigraha_service=_UnavailableModel(),
     )
 
@@ -294,6 +295,7 @@ def test_analysis_uses_solar_like_physics_fallback_when_stellar_context_is_missi
         mission="TESS",
         time=time,
         flux=flux,
+        vetting_mode="fast",
         nigraha_service=_UnavailableModel(),
     )
 
@@ -335,6 +337,7 @@ def test_harmonic_residual_signal_stays_in_tce_ledger_but_is_not_promoted(monkey
         mission="TESS",
         time=time,
         flux=flux,
+        vetting_mode="fast",
         nigraha_service=_UnavailableModel(),
     )
 
@@ -384,6 +387,7 @@ def test_solar_like_fallback_disables_habitability_claim(monkeypatch):
         mission="TESS",
         time=time,
         flux=flux,
+        vetting_mode="fast",
         nigraha_service=_UnavailableModel(),
     )
 
@@ -480,6 +484,7 @@ def test_guided_known_trappist_period_preempts_short_artifact(monkeypatch):
         mission="TESS",
         time=time,
         flux=flux,
+        vetting_mode="fast",
         nigraha_service=_UnavailableModel(),
     )
 

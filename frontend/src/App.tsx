@@ -109,7 +109,7 @@ function nestedRecord(record: Record<string, unknown> | undefined, key: string) 
 }
 
 function normalizeVettingMode(value: unknown): VettingMode {
-  return value === 'deep' || value === 'paper' ? value : 'fast';
+  return value === 'deep' || value === 'fast' ? value : 'paper';
 }
 
 function CandidateCard({
@@ -294,7 +294,7 @@ export default function App() {
   const [minPeriod, setMinPeriod] = useState(0.5);
   const [maxPeriod, setMaxPeriod] = useState(30.0);
   const [maxCandidates, setMaxCandidates] = useState(4);
-  const [vettingMode, setVettingMode] = useState<VettingMode>('fast');
+  const [vettingMode, setVettingMode] = useState<VettingMode>('paper');
   const [stellarRadius, setStellarRadius] = useState('');
   const [stellarMass, setStellarMass] = useState('');
   const [stellarTeff, setStellarTeff] = useState('');
@@ -1282,9 +1282,9 @@ export default function App() {
                     value={vettingMode}
                     onChange={(event) => setVettingMode(normalizeVettingMode(event.target.value))}
                   >
-                    <option value="fast">Fast</option>
-                    <option value="deep">Deep</option>
                     <option value="paper">Paper-grade</option>
+                    <option value="deep">Deep</option>
+                    <option value="fast">Fast</option>
                   </select>
                   <label htmlFor="stellar-radius">
                     Stellar Radius (solar) <HelpTip label="Optional star radius used to estimate planet size." />

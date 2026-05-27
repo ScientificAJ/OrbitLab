@@ -222,6 +222,7 @@ def test_pipeline_uses_tpf_pixel_diagnostics(monkeypatch):
         mission="TESS",
         time=time,
         flux=flux,
+        vetting_mode="fast",
         nigraha_service=Unavailable(),
         pixel_flux=cube,
         aperture_mask=np.array([[False, False, False], [False, True, False], [False, False, False]]),

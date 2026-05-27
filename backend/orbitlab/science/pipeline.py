@@ -708,7 +708,7 @@ def analyze_light_curve_arrays(
     stellar_density_solar: float | None = None,
     stellar_rotation_period: float | None = None,
     max_candidates: int = 4,
-    vetting_mode: str = "fast",
+    vetting_mode: str = "paper",
     search_profile: str | None = None,
     ml_service: AstroNetService | None = None,
     nigraha_service: NigrahaService | None = None,
