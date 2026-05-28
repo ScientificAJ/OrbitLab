@@ -113,6 +113,7 @@ class TcePayload(CandidatePayload):
     aperture_stability: dict[str, Any] | None = None
     vetting: dict[str, Any] | None = None
     detrending_sensitivity: dict[str, Any] | None = None
+    sector_consistency: dict[str, Any] | None = None
     catalog_context: dict[str, Any] | None = None
     fpp: dict[str, Any] | None = None
 

@@ -35,6 +35,7 @@ from orbitlab.science.science_config import (
     load_science_config,
     science_config_hash,
 )
+from orbitlab.science.sector_consistency import SectorObservation, infer_sector_id, summarize_sector_consistency
 from orbitlab.science.tls_refinement import refine_with_tls, search_with_tls
 from orbitlab.science.tpf_diagnostics import aperture_stability_diagnostics, difference_image_diagnostics
 from orbitlab.science.triceratops_fpp import run_triceratops_fpp
@@ -853,6 +854,7 @@ def analyze_light_curve_arrays(
     pixel_flux: np.ndarray | None = None,
     aperture_mask: np.ndarray | None = None,
     pixel_scale_arcsec: float | None = None,
+    sector_observations: list[SectorObservation] | None = None,
 ) -> dict:
     config = load_science_config()
     paper_grade_mode = vetting_mode == "paper"
@@ -946,6 +948,17 @@ def analyze_light_curve_arrays(
     mission_upper = mission.upper()
     if mission_upper not in {"TESS", "KEPLER", "K2"}:
         raise ValueError(f"unsupported mission: {mission}")
+    consistency_observations = sector_observations or [
+        SectorObservation(
+            sector_id=infer_sector_id(product_uri),
+            time=clean_time,
+            flux=clean_flux,
+            quality=None,
+            pixel_flux=pixel_flux,
+            aperture_mask=aperture_mask,
+            pixel_scale_arcsec=pixel_scale_arcsec,
+        )
+    ]
 
     service = ml_service
     tess_service = nigraha_service
@@ -1049,6 +1062,7 @@ def analyze_light_curve_arrays(
         }
         fpp = {"status": "skipped", "engine": "triceratops"}
         detrending_sensitivity = {"status": "not_assessed", "engine": "detrending_sensitivity"}
+        sector_consistency = summarize_sector_consistency(candidate, consistency_observations)
         paper_grade = None
         if paper_grade_mode:
             tls_results[candidate_id] = (
@@ -1254,8 +1268,10 @@ def analyze_light_curve_arrays(
                 "sweet": sweet,
                 "paper_grade": paper_grade,
                 "detrending_sensitivity": detrending_sensitivity,
+                "sector_consistency": sector_consistency,
             },
             "detrending_sensitivity": detrending_sensitivity,
+            "sector_consistency": sector_consistency,
             "catalog_context": catalog_context | {"known_target": known_target_payload(known_target)},
             "fpp": fpp,
             "physics": physics,
@@ -1310,12 +1326,28 @@ def analyze_light_curve_arrays(
             detrending_sensitivity_status = "unstable_result"
         elif sensitivity_statuses:
             detrending_sensitivity_status = "inconclusive"
+    sector_statuses = [
+        tce.get("sector_consistency", {}).get("multi_sector_status")
+        for tce in tce_payloads
+        if isinstance(tce.get("sector_consistency"), dict)
+    ]
+    if any(status == "inconsistent" for status in sector_statuses):
+        sector_consistency_status = "inconsistent"
+    elif any(status == "consistent" for status in sector_statuses):
+        sector_consistency_status = "consistent"
+    elif any(status == "single_sector_only" for status in sector_statuses):
+        sector_consistency_status = "single_sector_only"
+    elif sector_statuses:
+        sector_consistency_status = "insufficient_data"
+    else:
+        sector_consistency_status = "skipped"
     engine_status = {
         "bls": {"status": "complete", "search_profile": profile.name},
         "tls": {"status": tls_status},
         "injection_recovery": {"status": injection_recovery["status"]},
         "wotan": detrending,
         "detrending_sensitivity": {"status": detrending_sensitivity_status},
+        "sector_consistency": {"status": sector_consistency_status},
         "triceratops": {"status": triceratops_status},
         "dave_model_shift": {"status": "complete" if paper_grade_mode and tce_payloads else "skipped"},
         "sweet": {"status": "complete" if paper_grade_mode and tce_payloads else "skipped"},
@@ -1324,7 +1356,7 @@ def analyze_light_curve_arrays(
     }
     enrichment_steps = []
     if vetting_mode == "deep":
-        enrichment_steps = ["tls_refinement", "detrending_sensitivity", "injection_recovery"]
+        enrichment_steps = ["tls_refinement", "detrending_sensitivity", "sector_consistency", "injection_recovery"]
     elif paper_grade_mode:
         enrichment_steps = [
             "tls_full_search",
@@ -1332,6 +1364,7 @@ def analyze_light_curve_arrays(
             "dave_sweet",
             "paper_thresholds",
             "detrending_sensitivity",
+            "sector_consistency",
             "injection_recovery",
         ]
     return {

@@ -82,6 +82,7 @@ export type Tce = Candidate & {
   aperture_stability?: Record<string, unknown>;
   vetting?: Record<string, unknown>;
   detrending_sensitivity?: Record<string, unknown>;
+  sector_consistency?: Record<string, unknown>;
   catalog_context?: Record<string, unknown>;
   fpp?: Record<string, unknown>;
   evidence?: Record<string, unknown>;

@@ -415,6 +415,8 @@ export default function App() {
   const selectedContamination = nestedRecord(selectedCatalogContext, 'contamination');
   const selectedDetrendingSensitivity =
     selectedTce?.detrending_sensitivity ?? nestedRecord(selected?.vetting, 'detrending_sensitivity');
+  const selectedSectorConsistency =
+    selectedTce?.sector_consistency ?? nestedRecord(selected?.vetting, 'sector_consistency');
   const selectedMlDomain = nestedRecord(selected?.ml as Record<string, unknown> | undefined, 'domain_awareness');
   const selectedMlConflicts = nestedRecord(selected?.ml as Record<string, unknown> | undefined, 'evidence_conflicts');
   const isAdvanced = mode === 'advanced';
@@ -1615,6 +1617,8 @@ export default function App() {
               <dd>{evidenceText(nestedRecord(selected?.vetting, 'sweet'), 'status') ?? 'n/a'}</dd>
               <dt>Detrending</dt>
               <dd>{evidenceText(selectedDetrendingSensitivity, 'status') ?? 'n/a'}</dd>
+              <dt>Sector Check</dt>
+              <dd>{evidenceText(selectedSectorConsistency, 'multi_sector_status') ?? 'n/a'}</dd>
               <dt>DAVE RoboVet</dt>
               <dd>
                 {evidenceText(nestedRecord(nestedRecord(selected?.vetting, 'model_shift'), 'robovet'), 'disp') ?? 'n/a'}
@@ -1753,6 +1757,8 @@ export default function App() {
               <dd>{evidenceText(selectedDetrendingSensitivity, 'status') ?? 'n/a'}</dd>
               <dt>ML Conflict</dt>
               <dd>{evidenceText(selectedMlConflicts, 'status') ?? 'n/a'}</dd>
+              <dt>Sector Check</dt>
+              <dd>{evidenceText(selectedSectorConsistency, 'multi_sector_status') ?? 'n/a'}</dd>
               <dt>TRICERATOPS</dt>
               <dd>{evidenceText(selectedFpp, 'status') ?? 'n/a'}</dd>
               <dt>FPP</dt>

@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
+import pytest
 from orbitlab.benchmarks.science_benchmark import (
     BenchmarkCase,
     benchmark_report_markdown,
@@ -17,6 +18,11 @@ from orbitlab.science.injection_recovery import (
     summarize_recovery,
 )
 from orbitlab.science.pipeline import _attach_ml_domain_evidence
+from orbitlab.science.sector_consistency import (
+    SectorObservation,
+    infer_sector_id,
+    summarize_sector_consistency,
+)
 
 
 def test_recovery_grid_reports_tls_like_sensitivity():
@@ -179,3 +185,54 @@ def test_science_benchmark_summary_uses_truth_sets(monkeypatch):
     assert report["false_positive_rejection_rate"] == 1.0
     assert report["false_alarm_escape_list"] == []
     assert "| planet |" in markdown
+
+
+def test_sector_consistency_reports_single_sector_only(monkeypatch):
+    candidate = TransitCandidate(period=2.0, epoch=0.1, duration=0.1, depth=0.002, power=9.0, signal_to_noise=10.0)
+    observation = SectorObservation(
+        sector_id=infer_sector_id("mast:TESS/product/tess2020000000000-s0031-target.fits.gz"),
+        time=np.linspace(0, 8, 400),
+        flux=np.ones(400),
+    )
+
+    class _BlsResult:
+        def __init__(self, found: TransitCandidate):
+            self.candidate = found
+
+    monkeypatch.setattr("orbitlab.science.sector_consistency.run_bls", lambda *args, **kwargs: _BlsResult(candidate))
+
+    report = summarize_sector_consistency(candidate, [observation])
+
+    assert observation.sector_id == "31"
+    assert report["multi_sector_status"] == "single_sector_only"
+    assert report["sector_evidence"][0]["period_support"] == 1.0
+
+
+def test_sector_consistency_flags_period_drift(monkeypatch):
+    candidate = TransitCandidate(period=2.0, epoch=0.1, duration=0.1, depth=0.002, power=9.0, signal_to_noise=10.0)
+    observations = [
+        SectorObservation(sector_id="1", time=np.linspace(0, 8, 400), flux=np.ones(400)),
+        SectorObservation(sector_id="2", time=np.linspace(0, 8, 400), flux=np.ones(400)),
+    ]
+    found_periods = iter((2.0, 2.2))
+
+    class _BlsResult:
+        def __init__(self, period: float):
+            self.candidate = TransitCandidate(
+                period=period,
+                epoch=0.1,
+                duration=0.1,
+                depth=0.002,
+                power=9.0,
+                signal_to_noise=10.0,
+            )
+
+    monkeypatch.setattr(
+        "orbitlab.science.sector_consistency.run_bls",
+        lambda *args, **kwargs: _BlsResult(next(found_periods)),
+    )
+
+    report = summarize_sector_consistency(candidate, observations)
+
+    assert report["multi_sector_status"] == "inconsistent"
+    assert report["period_spread_fraction"] == pytest.approx(0.1)
