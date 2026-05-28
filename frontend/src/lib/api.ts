@@ -60,6 +60,8 @@ export type Candidate = {
     preprocessing_compatible: boolean;
     citation: string;
     class_probabilities?: Record<string, number>;
+    domain_awareness?: Record<string, unknown>;
+    evidence_conflicts?: Record<string, unknown>;
   };
 };
 
@@ -79,6 +81,7 @@ export type Tce = Candidate & {
   detection_metrics?: Record<string, unknown>;
   aperture_stability?: Record<string, unknown>;
   vetting?: Record<string, unknown>;
+  detrending_sensitivity?: Record<string, unknown>;
   catalog_context?: Record<string, unknown>;
   fpp?: Record<string, unknown>;
   evidence?: Record<string, unknown>;

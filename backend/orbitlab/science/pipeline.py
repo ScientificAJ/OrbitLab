@@ -17,6 +17,7 @@ from orbitlab.science.catalog_context import query_tic_catalog_context
 from orbitlab.science.data_quality import clean_light_curve
 from orbitlab.science.dave_vetting import run_model_shift, run_sweet_test
 from orbitlab.science.detrending import detrend_with_wotan
+from orbitlab.science.detrending_sensitivity import run_detrending_sensitivity
 from orbitlab.science.evidence import build_candidate_evidence, estimate_red_noise_beta
 from orbitlab.science.folding import bin_phase_curve, phase_fold
 from orbitlab.science.injection_recovery import run_injection_recovery
@@ -769,6 +770,65 @@ def _ml_payload_for_candidate(
     return ml, service, tess_service, k2_service
 
 
+def _attach_ml_domain_evidence(
+    ml: dict,
+    *,
+    mission_upper: str,
+    flags: list[dict],
+    physics: dict[str, Any],
+) -> dict:
+    next_ml = dict(ml)
+    training_domain = {
+        "TESS": "Nigraha TESS CNN ensemble over global, local, odd/even views and stellar scalar features",
+        "KEPLER": "AstroNet-style Kepler global and local folded light-curve views",
+        "K2": "ExoMAC-KKT tabular candidate and stellar-context feature domain",
+    }.get(mission_upper, "unknown")
+    probability = _finite_float(next_ml.get("probability"))
+    calibrated = _finite_float(next_ml.get("calibrated_ml_probability"))
+    ood_reasons: list[str] = []
+    if next_ml.get("preprocessing_compatible") is False:
+        ood_reasons.append("preprocessing_incompatible")
+    imputed = next_ml.get("imputed_features")
+    if isinstance(imputed, (list, tuple)) and len(imputed) >= 4:
+        ood_reasons.append("many_imputed_stellar_features")
+    if probability is None:
+        ood_reasons.append("no_model_score")
+    if physics.get("stellar_context_source") == "solar_like_fallback":
+        ood_reasons.append("fallback_stellar_context")
+
+    hard_flags = [flag.get("code") for flag in flags if flag.get("severity") == "hard_fail"]
+    warning_flags = [flag.get("code") for flag in flags if flag.get("severity") == "warning"]
+    label = str(next_ml.get("label") or "")
+    conflicts: list[str] = []
+    if probability is not None and probability >= float(next_ml.get("threshold") or 0.5) and hard_flags:
+        conflicts.append("ml_support_conflicts_with_hard_vetting_flags")
+    if probability is not None and probability >= 0.5 and physics.get("planet_radius_earth"):
+        radius = _finite_float(physics.get("planet_radius_earth"))
+        if radius is not None and radius > 30.0:
+            conflicts.append("ml_support_conflicts_with_implausible_planet_radius")
+    if "not-transit-like" in label and not hard_flags and probability is not None and probability < 0.5:
+        conflicts.append("ml_low_score_without_hard_vetting_failure")
+
+    ood_score = min(1.0, len(ood_reasons) / 4.0)
+    next_ml["domain_awareness"] = {
+        "status": "inconclusive" if ood_reasons else "passed",
+        "model_training_domain": training_domain,
+        "model_score": probability,
+        "calibrated_score": calibrated,
+        "out_of_distribution_score": ood_score,
+        "out_of_distribution_reasons": ood_reasons,
+        "tensor_checksum": next_ml.get("input_tensor_checksum"),
+        "artifact_checksum": next_ml.get("checksum"),
+    }
+    next_ml["evidence_conflicts"] = {
+        "status": "inconclusive" if conflicts else "passed",
+        "conflicts": conflicts,
+        "hard_vetting_flags": hard_flags,
+        "warning_vetting_flags": warning_flags,
+    }
+    return next_ml
+
+
 def analyze_light_curve_arrays(
     *,
     target_id: str,
@@ -988,6 +1048,7 @@ def analyze_light_curve_arrays(
             "known_target": known_target_payload(known_target),
         }
         fpp = {"status": "skipped", "engine": "triceratops"}
+        detrending_sensitivity = {"status": "not_assessed", "engine": "detrending_sensitivity"}
         paper_grade = None
         if paper_grade_mode:
             tls_results[candidate_id] = (
@@ -1046,6 +1107,16 @@ def analyze_light_curve_arrays(
                 fpp=fpp,
                 mission_upper=mission_upper,
             )
+        if vetting_mode in {"deep", "paper"}:
+            try:
+                detrending_sensitivity = run_detrending_sensitivity(clean_time, clean_flux, candidate)
+            except (RuntimeError, ValueError, ImportError) as exc:
+                detrending_sensitivity = {
+                    "status": "failed",
+                    "engine": "detrending_sensitivity",
+                    "detail": str(exc),
+                }
+        ml = _attach_ml_domain_evidence(ml, mission_upper=mission_upper, flags=flags, physics=physics)
         evidence_obj = build_candidate_evidence(
             candidate=candidate,
             search_time=bls_result.search_time,
@@ -1182,7 +1253,9 @@ def analyze_light_curve_arrays(
                 "model_shift": model_shift,
                 "sweet": sweet,
                 "paper_grade": paper_grade,
+                "detrending_sensitivity": detrending_sensitivity,
             },
+            "detrending_sensitivity": detrending_sensitivity,
             "catalog_context": catalog_context | {"known_target": known_target_payload(known_target)},
             "fpp": fpp,
             "physics": physics,
@@ -1195,11 +1268,12 @@ def analyze_light_curve_arrays(
             planet_candidate_payloads.append(tce_payload)
             promoted_candidates.append(candidate)
 
-    injection_recovery = {"status": "skipped", "engine": "box_injection_recovery"}
+    injection_recovery = {"status": "skipped", "engine": "injection_recovery"}
     if vetting_mode in {"deep", "paper"}:
         injection_recovery = run_injection_recovery(
             clean_time,
             clean_flux,
+            injection_models=("box", "tls_like"),
             tolerance_fraction=config.forced_period_tolerance_fraction,
         )
 
@@ -1221,11 +1295,27 @@ def analyze_light_curve_arrays(
         )
     elif paper_grade_mode:
         triceratops_status = "not_applicable"
+    detrending_sensitivity_status = "skipped"
+    if vetting_mode in {"deep", "paper"}:
+        sensitivity_statuses = [
+            tce.get("detrending_sensitivity", {}).get("status")
+            for tce in tce_payloads
+            if isinstance(tce.get("detrending_sensitivity"), dict)
+        ]
+        if sensitivity_statuses and all(status == "passed" for status in sensitivity_statuses):
+            detrending_sensitivity_status = "passed"
+        elif any(status == "failed" for status in sensitivity_statuses):
+            detrending_sensitivity_status = "failed"
+        elif any(status == "unstable_result" for status in sensitivity_statuses):
+            detrending_sensitivity_status = "unstable_result"
+        elif sensitivity_statuses:
+            detrending_sensitivity_status = "inconclusive"
     engine_status = {
         "bls": {"status": "complete", "search_profile": profile.name},
         "tls": {"status": tls_status},
         "injection_recovery": {"status": injection_recovery["status"]},
         "wotan": detrending,
+        "detrending_sensitivity": {"status": detrending_sensitivity_status},
         "triceratops": {"status": triceratops_status},
         "dave_model_shift": {"status": "complete" if paper_grade_mode and tce_payloads else "skipped"},
         "sweet": {"status": "complete" if paper_grade_mode and tce_payloads else "skipped"},
@@ -1234,13 +1324,14 @@ def analyze_light_curve_arrays(
     }
     enrichment_steps = []
     if vetting_mode == "deep":
-        enrichment_steps = ["tls_refinement", "injection_recovery"]
+        enrichment_steps = ["tls_refinement", "detrending_sensitivity", "injection_recovery"]
     elif paper_grade_mode:
         enrichment_steps = [
             "tls_full_search",
             "dave_model_shift",
             "dave_sweet",
             "paper_thresholds",
+            "detrending_sensitivity",
             "injection_recovery",
         ]
     return {

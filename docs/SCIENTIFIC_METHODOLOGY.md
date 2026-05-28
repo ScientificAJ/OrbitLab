@@ -873,8 +873,10 @@ Relevant implementation:
 | `mast.py` | Searches/downloads mission products and extracts TPF light curves. | SPOC/MAST mission products and DV products. | MAST, Lightkurve/Astroquery ecosystem. | Uses real archive products. | SPOC DV is stronger for calibrated mission-scale TCE products. |
 | `data_quality.py` | Removes invalid/quality cadences and supports manual artifact masks. | Mission quality masks and calibrated data conditioning. | Lightkurve/Astroquery mission products. | Partial. | Mission pipelines model systematics more deeply. |
 | `detrending.py` | Runs `wotan.flatten(..., method="biweight")`. | Wotan biweight recommended for shallow-transit recovery. | `hippke/wotan`. | Strong for biweight detrending. | Wotan paper's method selection is better for special variability classes. |
+| `detrending_sensitivity.py` | Re-runs local candidate recovery across raw cleaned flux, Wotan windows, and transit-masked detrending. | Robust transit validation should not depend on one flattening choice. | Wotan plus OrbitLab BLS recovery checks. | Local stress test attached to deep/paper results. | Full injection-calibrated detrending model selection remains stronger. |
 | `bls.py` | Runs Astropy BLS with adaptive period/duration grid, binning, robust SNR. | Kovacs et al. BLS box model. | `astropy.timeseries.BoxLeastSquares`. | Uses reference BLS implementation. | Survey-calibrated BLS false-alarm behavior is stronger than local thresholding. |
 | `tls_refinement.py` | Runs `transitleastsquares` for paper primary and deep refinement. | Hippke and Heller TLS. | `hippke/tls`. | Strong. Uses real package. | Runtime does not recalibrate SDE for every target population. |
+| `injection_recovery.py` | Injects box and smooth TLS-like transits into light curves, reruns recovery, and reports sensitivity summaries. | Kepler/TLS injection-retrieval methodology. | Local injection plus Astropy BLS recovery. | Attached for deep/paper analyses and benchmark grids. | Pixel-level mission injection campaigns remain stronger. |
 | `pipeline.py` | Builds TCE ledger, applies gates, emits evidence. | Kepler/TESS candidate triage separates TCEs from planet candidates. | Local OrbitLab orchestration. | Local synthesis. | Full mission DV/Robovetter pipelines are more exhaustive. |
 | `validation.py` | Odd/even, secondary, duration, harmonic, centroid checks. | DV and vetting diagnostics. | Local implementation. | Partial. | Formal DV diagnostics are stronger. |
 | `tpf_diagnostics.py` | Difference-image and aperture stability evidence from pixel cube. | DV centroid and PRF diagnostics. | Local implementation. | Partial. | PRF centroiding is better for source localization. |
@@ -885,6 +887,8 @@ Relevant implementation:
 | `triceratops_fpp.py` | Calls real `target.calc_probs`, emits FPP/NFPP. | TRICERATOPS Bayesian FPP/NFPP. | `stevengiacalone/triceratops`. | Strong for `calc_probs` and thresholds. | Aperture/follow-up-aware TRICERATOPS is stronger than current wrapper. |
 | `nigraha_adapter.py` | Builds global/local/odd-even tensors and scalar features. | Nigraha TESS CNN input representation. | `ExoplanetML/Nigraha`. | Partial. | Full upstream TFRecord/training/catalog workflow is stronger. |
 | `nigraha_service.py` | Runs checksum-validated 10-HDF5 ensemble in NumPy. | Nigraha supervised ML ensemble. | `ExoplanetML/Nigraha`. | Strong for inference from released weights. | Upstream TensorFlow pipeline is stronger for exact training reproduction. |
+| `benchmarks/science_benchmark.py` | Runs a truth-set harness over known-planet, injected, false-positive, scrambled, and stellar-variability cases. | Kepler DR25 completeness/reliability benchmark discipline. | Local benchmark runner. | Attached as a repeatable project check. | NASA archive-scale benchmark products are broader and calibrated on mission populations. |
+| `evidence_packet.py` | Exports manifests, light curves, periodograms, folded curves, vetting, catalog, TRICERATOPS, ML, and final disposition files. | Follow-up review depends on reproducible evidence packets. | Local exporter. | Strong for OrbitLab payload reproducibility. | Formal mission DV reports include many more specialized diagnostics. |
 | `physics.py` | Calculates radius, semi-major axis, Teq, Kopparapu HZ. | Kepler's law, transit depth, Kopparapu HZ. | Local implementation from published equations. | Strong for equations, weak when stellar inputs absent. | Stellar characterization with uncertainties is better. |
 | `App.tsx` | Shows Accuracy/paper mode by default and evidence panels. | Scientific review workflow requires visible evidence. | Local UI. | Product implementation. | Expert vetting tools may expose deeper plots and raw products. |
 
@@ -1061,8 +1065,8 @@ This section is intentionally blunt.
 1. SPOC/TESS DV is stronger for production mission catalogs.
 OrbitLab starts from selected products and exposes candidate evidence. It does not reproduce the whole SPOC TPS/DV system.
 
-2. TLS is attached through the real package, but OrbitLab does not run target-population-specific injection calibration for every analysis.
-The paper's SDE discussion is used as a threshold anchor, not as a live false-positive calibration for every dataset.
+2. TLS is attached through the real package, and OrbitLab now runs local box/TLS-like injection-recovery checks.
+The paper's SDE discussion is still used as a threshold anchor; OrbitLab does not yet replace mission-population false-positive calibration for every sector, cadence, aperture, and stellar-noise regime.
 
 3. Wotan is attached through the real package, but paper-grade mode uses fixed biweight detrending.
 The Wotan paper's broader method comparison is stronger for young stars, high-variability stars, or cases where a spline/Huber method is better.

@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 
 const chromeExecutablePath = process.env.PLAYWRIGHT_CHROME_EXECUTABLE_PATH ?? '/opt/google/chrome/chrome';
 const launchOptions = existsSync(chromeExecutablePath) ? { executablePath: chromeExecutablePath } : undefined;
+const shouldStartWebServer = process.env.LIVE_ORBITLAB !== '1';
 
 export default defineConfig({
   testDir: './e2e',
@@ -30,13 +31,15 @@ export default defineConfig({
       use: { ...devices['Pixel 5'] },
     },
   ],
-  webServer: {
-    command: 'npm run dev -- --host 127.0.0.1',
-    url: 'http://127.0.0.1:5173',
-    reuseExistingServer: !process.env.CI,
-    env: {
-      VITE_ANALYSIS_POLL_LIMIT: '2',
-      VITE_ANALYSIS_POLL_INTERVAL_MS: '25',
-    },
-  },
+  webServer: shouldStartWebServer
+    ? {
+        command: 'npm run dev -- --host 127.0.0.1',
+        url: 'http://127.0.0.1:5173',
+        reuseExistingServer: !process.env.CI,
+        env: {
+          VITE_ANALYSIS_POLL_LIMIT: '2',
+          VITE_ANALYSIS_POLL_INTERVAL_MS: '25',
+        },
+      }
+    : undefined,
 });

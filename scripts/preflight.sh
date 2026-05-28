@@ -23,6 +23,13 @@ if [[ ! -x "$PYTEST" ]]; then
   exit 1
 fi
 
+if [[ "${1:-}" == "live-smoke" ]]; then
+  log "frontend live smoke"
+  npm run test:e2e:live --prefix frontend
+  log "ok"
+  exit 0
+fi
+
 log "backend tests"
 "$PYTEST" --cov=orbitlab --cov-report=term-missing
 
@@ -46,6 +53,7 @@ log "python compile checks"
 "$PYTHON" -m py_compile \
   scripts/convert_kepler_astronet_npz.py \
   scripts/dump_repo.py \
+  scripts/export_evidence_packet.py \
   scripts/fetch_calibration_sources.py \
   scripts/fetch_k2_exomac_kkt.py \
   scripts/fetch_kepler_astronet.py \
@@ -53,6 +61,7 @@ log "python compile checks"
   scripts/generate_nigraha_golden.py \
   scripts/predict_kepler_astronet_tf.py \
   scripts/register_astronet_artifact.py \
+  scripts/run_orbitlab_science_benchmark.py \
   scripts/train_probability_calibration.py
 
 log "ok"

@@ -31,6 +31,9 @@ OrbitLab is the opposite tradeoff: a usable full-stack workbench that keeps the 
 - Runs BLS candidate detection and multi-candidate previews.
 - Produces folded light curves, periodograms, candidate metadata, and validation context.
 - Defaults to paper-grade vetting for accuracy, with explicit `deep` and `fast` modes available when speed is more important; paper-grade mode applies stricter Nigraha/TLS/DAVE/Kopparapu-style evidence gates before promotion.
+- Stress-tests candidates across detrending variants and box/TLS-like injection-recovery grids.
+- Provides a science benchmark harness for known-planet, injected-transit, false-positive, scrambled-control, and variability cases.
+- Exports reproducible evidence packets with light curves, periodograms, folded curves, vetting JSON, catalog context, ML evidence, and final disposition notes.
 - Reports model availability at `GET /api/v1/models` using local artifact checksums.
 - Keeps model downloads reproducible through pinned fetch scripts.
 - Starts the local stack with `scripts/start_all.sh`.
@@ -159,6 +162,8 @@ Run the same core checks used by contributors:
 
 ```bash
 scripts/preflight.sh
+scripts/run_orbitlab_science_benchmark.py --output-dir .orbitlab/benchmarks/latest
+scripts/export_evidence_packet.py path/to/analysis_result.json .orbitlab/evidence-packets/example
 ```
 
 Frontend checks are split so fast regressions and live smoke are explicit:

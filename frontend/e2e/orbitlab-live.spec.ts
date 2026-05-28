@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('live OrbitLab smoke', () => {
   test.skip(process.env.LIVE_ORBITLAB !== '1', 'Set LIVE_ORBITLAB=1 and start the backend/frontend stack to run.');
 
-  test('loads the real UI and reaches backend model status', async ({ page, request, baseURL }) => {
+  test('loads the real UI and reaches backend model API', async ({ page, request, baseURL }) => {
     const apiBase = process.env.VITE_API_BASE_URL ?? '/api/v1';
     const modelsUrl = apiBase.startsWith('http')
       ? `${apiBase.replace(/\/$/, '')}/models`
@@ -16,6 +16,7 @@ test.describe('live OrbitLab smoke', () => {
 
     await page.goto('/');
     await expect(page.getByText('OrbitLab')).toBeVisible();
-    await expect(page.getByRole('button', { name: /ML Status/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Search/ })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: /Mission/ })).toBeVisible();
   });
 });

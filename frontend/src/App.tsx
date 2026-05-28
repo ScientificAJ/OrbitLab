@@ -413,6 +413,10 @@ export default function App() {
   const selectedFpp = selectedTce?.fpp;
   const selectedCatalogContext = selectedTce?.catalog_context;
   const selectedContamination = nestedRecord(selectedCatalogContext, 'contamination');
+  const selectedDetrendingSensitivity =
+    selectedTce?.detrending_sensitivity ?? nestedRecord(selected?.vetting, 'detrending_sensitivity');
+  const selectedMlDomain = nestedRecord(selected?.ml as Record<string, unknown> | undefined, 'domain_awareness');
+  const selectedMlConflicts = nestedRecord(selected?.ml as Record<string, unknown> | undefined, 'evidence_conflicts');
   const isAdvanced = mode === 'advanced';
 
   const renderedOrbitCandidates = useMemo<Candidate[]>(() => {
@@ -1609,6 +1613,8 @@ export default function App() {
               <dd>{evidenceText(nestedRecord(selected?.vetting, 'model_shift'), 'status') ?? 'n/a'}</dd>
               <dt>SWEET</dt>
               <dd>{evidenceText(nestedRecord(selected?.vetting, 'sweet'), 'status') ?? 'n/a'}</dd>
+              <dt>Detrending</dt>
+              <dd>{evidenceText(selectedDetrendingSensitivity, 'status') ?? 'n/a'}</dd>
               <dt>DAVE RoboVet</dt>
               <dd>
                 {evidenceText(nestedRecord(nestedRecord(selected?.vetting, 'model_shift'), 'robovet'), 'disp') ?? 'n/a'}
@@ -1699,6 +1705,12 @@ export default function App() {
               <dd>{formatNumber(selected?.ml?.threshold, 2)}</dd>
               <dt>Calibration</dt>
               <dd>{selected?.ml?.calibration_source ?? 'n/a'}</dd>
+              <dt>Domain</dt>
+              <dd>{evidenceText(selectedMlDomain, 'status') ?? 'n/a'}</dd>
+              <dt>OOD Score</dt>
+              <dd>{formatNumber(evidenceNumber(selectedMlDomain, 'out_of_distribution_score'), 2)}</dd>
+              <dt>Conflicts</dt>
+              <dd>{metricList(selectedMlConflicts, 'conflicts')}</dd>
               {selected?.ml?.class_probabilities &&
                 Object.entries(selected.ml.class_probabilities).map(([label, probability]) => (
                   <Fragment key={label}>
@@ -1737,6 +1749,10 @@ export default function App() {
               <dd>
                 {evidenceText(selected?.evidence?.sweet as Record<string, unknown> | undefined, 'status') ?? 'n/a'}
               </dd>
+              <dt>Detrending</dt>
+              <dd>{evidenceText(selectedDetrendingSensitivity, 'status') ?? 'n/a'}</dd>
+              <dt>ML Conflict</dt>
+              <dd>{evidenceText(selectedMlConflicts, 'status') ?? 'n/a'}</dd>
               <dt>TRICERATOPS</dt>
               <dd>{evidenceText(selectedFpp, 'status') ?? 'n/a'}</dd>
               <dt>FPP</dt>
