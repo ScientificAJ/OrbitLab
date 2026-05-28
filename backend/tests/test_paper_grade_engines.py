@@ -93,6 +93,12 @@ def test_triceratops_wrapper_runs_installed_api_shape_with_legacy_shims(monkeypa
             self.FPP = 1.0
             self.NFPP = 1.0
             self.probs = _FakeProbs()
+            self.depth_pixels = None
+
+        def calc_depths(self, *, tdepth, all_ap_pixels):
+            self.depth_pixels = all_ap_pixels
+            assert tdepth == 0.002
+            assert all_ap_pixels.shape == (2, 2)
 
         def calc_probs(self, **kwargs):
             assert kwargs["P_orb"] == 2.0
@@ -114,6 +120,7 @@ def test_triceratops_wrapper_runs_installed_api_shape_with_legacy_shims(monkeypa
         time=time,
         flux=flux + np.random.default_rng(1).normal(0, 1e-4, size=time.size),
         candidate=candidate,
+        aperture_mask=np.array([[True, False], [False, True]]),
         samples=1000,
     )
 
@@ -123,3 +130,7 @@ def test_triceratops_wrapper_runs_installed_api_shape_with_legacy_shims(monkeypa
     assert result["sector"] == 7
     assert result["fpp"] == 0.002
     assert result["nfpp"] == 0.0002
+    assert result["aperture_used"] is True
+    assert result["aperture_pixel_count"] == 2
+    assert result["calc_depths_used"] is True
+    assert result["scenario_probabilities"] == [{"scenario": "TP", "prob": 0.99}]

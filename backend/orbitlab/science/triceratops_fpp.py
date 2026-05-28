@@ -63,6 +63,15 @@ def _bin_for_triceratops(
     return np.asarray(binned_time), np.asarray(binned_flux), flux_err
 
 
+def _aperture_pixels(aperture_mask: np.ndarray | None) -> np.ndarray | None:
+    if aperture_mask is None:
+        return None
+    mask = np.asarray(aperture_mask, dtype=bool)
+    if mask.ndim != 2 or not mask.any():
+        return None
+    return np.argwhere(mask).astype(int)
+
+
 def run_triceratops_fpp(
     *,
     target_id: str,
@@ -70,6 +79,7 @@ def run_triceratops_fpp(
     time: np.ndarray,
     flux: np.ndarray,
     candidate: TransitCandidate,
+    aperture_mask: np.ndarray | None = None,
     samples: int = 1_000_000,
     parallel: bool = False,
 ) -> dict[str, Any]:
@@ -86,6 +96,15 @@ def run_triceratops_fpp(
     folded_time = _phase_time(np.asarray(time, dtype=np.float64), candidate)
     binned_time, binned_flux, flux_err = _bin_for_triceratops(folded_time, np.asarray(flux, dtype=np.float64))
     target = tr.target(ID=tic_id, sectors=np.asarray([sector], dtype=int))
+    aperture_pixels = _aperture_pixels(aperture_mask)
+    calc_depths_used = False
+    calc_depths_detail = None
+    if aperture_pixels is not None and hasattr(target, "calc_depths"):
+        try:
+            target.calc_depths(tdepth=float(candidate.depth), all_ap_pixels=aperture_pixels)
+            calc_depths_used = True
+        except (TypeError, ValueError, RuntimeError, AttributeError) as exc:
+            calc_depths_detail = str(exc)
     target.calc_probs(
         time=binned_time,
         flux_0=binned_flux,
@@ -106,8 +125,16 @@ def run_triceratops_fpp(
         "nfpp": float(target.NFPP),
         "samples": int(samples),
         "parallel": parallel,
+        "fpp_uncertainty": None,
+        "nfpp_uncertainty": None,
+        "aperture_used": aperture_pixels is not None,
+        "aperture_pixel_count": int(aperture_pixels.shape[0]) if aperture_pixels is not None else 0,
+        "calc_depths_used": calc_depths_used,
+        "calc_depths_detail": calc_depths_detail,
+        "contrast_curve_used": False,
         "flux_err": flux_err,
         "probabilities": probabilities,
+        "scenario_probabilities": probabilities,
         "validation_thresholds": {"fpp_max": 0.015, "nfpp_max": 0.001},
-        "source": "TRICERATOPS calc_probs",
+        "source": "TRICERATOPS calc_depths + calc_probs" if calc_depths_used else "TRICERATOPS calc_probs",
     }

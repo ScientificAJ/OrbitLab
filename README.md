@@ -33,6 +33,7 @@ OrbitLab is the opposite tradeoff: a usable full-stack workbench that keeps the 
 - Defaults to paper-grade vetting for accuracy, with explicit `deep` and `fast` modes available when speed is more important; paper-grade mode applies stricter Nigraha/TLS/DAVE/Kopparapu-style evidence gates before promotion.
 - Stress-tests candidates across detrending variants and box/TLS-like injection-recovery grids.
 - Emits sector-consistency evidence so single-sector analyses fail loudly as `single_sector_only` and multi-sector inputs can be compared by period, depth, SNR, centroid, and aperture stability.
+- Passes selected aperture pixels into TRICERATOPS depth calculations when the installed API supports it, and records whether aperture depth context, scenario probabilities, and contrast-curve constraints were used.
 - Provides a science benchmark harness for known-planet, injected-transit, false-positive, scrambled-control, and variability cases.
 - Exports reproducible evidence packets with light curves, periodograms, folded curves, vetting JSON, catalog context, ML evidence, and final disposition notes.
 - Reports model availability at `GET /api/v1/models` using local artifact checksums.

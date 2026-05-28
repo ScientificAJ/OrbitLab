@@ -1105,6 +1105,7 @@ def analyze_light_curve_arrays(
                     time=clean_time,
                     flux=clean_flux,
                     candidate=candidate,
+                    aperture_mask=aperture_mask,
                     samples=config.paper_triceratops_samples,
                     parallel=False,
                 )
