@@ -11,6 +11,7 @@ Student_Hackathon_Project
 - Explain every change with file path and reason.
 - Prefer robust fixes over quick patches.
 - Do not remove functionality silently.
+- Push every change you make unless explicitly told not to.
 
 ## Output Format
 When reporting fixes:

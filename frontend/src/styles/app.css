@@ -30,7 +30,11 @@
   --error-border: #8d4a42;
   --backdrop: url('/theme-backdrops/space.svg');
   --decoration: url('/theme-decorations/space.webp');
-  --decoration-wash: linear-gradient(rgba(7, 16, 22, 0.74), rgba(7, 16, 22, 0.9));
+  --decoration-wash: linear-gradient(rgba(7, 16, 22, 0.46), rgba(7, 16, 22, 0.72));
+  --stage-wash: linear-gradient(
+    color-mix(in srgb, var(--bg) 58%, transparent),
+    color-mix(in srgb, var(--bg) 82%, transparent)
+  );
   --decoration-position: center;
   color: var(--text);
   background: var(--bg);
@@ -60,7 +64,11 @@
   --error-border: #934b5d;
   --backdrop: url('/theme-backdrops/sakura.svg');
   --decoration: url('/theme-decorations/sakura.webp');
-  --decoration-wash: linear-gradient(rgba(24, 15, 23, 0.74), rgba(24, 15, 23, 0.9));
+  --decoration-wash: linear-gradient(rgba(24, 15, 23, 0.44), rgba(24, 15, 23, 0.72));
+  --stage-wash: linear-gradient(
+    color-mix(in srgb, var(--bg) 56%, transparent),
+    color-mix(in srgb, var(--bg) 80%, transparent)
+  );
   --decoration-position: center top;
 }
 
@@ -88,7 +96,11 @@
   --error-border: #d69a92;
   --backdrop: url('/theme-backdrops/light.svg');
   --decoration: url('/theme-decorations/light.webp');
-  --decoration-wash: linear-gradient(rgba(245, 248, 251, 0.8), rgba(245, 248, 251, 0.92));
+  --decoration-wash: linear-gradient(rgba(245, 248, 251, 0.48), rgba(245, 248, 251, 0.74));
+  --stage-wash: linear-gradient(
+    color-mix(in srgb, var(--bg) 62%, transparent),
+    color-mix(in srgb, var(--bg) 84%, transparent)
+  );
   --decoration-position: center;
 }
 
@@ -107,7 +119,11 @@
   --accent-soft: #1f3444;
   --backdrop: url('/theme-backdrops/dark.svg');
   --decoration: url('/theme-decorations/dark.webp');
-  --decoration-wash: linear-gradient(rgba(12, 14, 18, 0.78), rgba(12, 14, 18, 0.91));
+  --decoration-wash: linear-gradient(rgba(12, 14, 18, 0.48), rgba(12, 14, 18, 0.74));
+  --stage-wash: linear-gradient(
+    color-mix(in srgb, var(--bg) 58%, transparent),
+    color-mix(in srgb, var(--bg) 82%, transparent)
+  );
   --decoration-position: center;
 }
 
@@ -126,7 +142,11 @@
   --accent-soft: #1f3d2c;
   --backdrop: url('/theme-backdrops/nature.svg');
   --decoration: url('/theme-decorations/nature.webp');
-  --decoration-wash: linear-gradient(rgba(13, 23, 18, 0.74), rgba(13, 23, 18, 0.9));
+  --decoration-wash: linear-gradient(rgba(13, 23, 18, 0.44), rgba(13, 23, 18, 0.72));
+  --stage-wash: linear-gradient(
+    color-mix(in srgb, var(--bg) 56%, transparent),
+    color-mix(in srgb, var(--bg) 80%, transparent)
+  );
   --decoration-position: center bottom;
 }
 
@@ -216,7 +236,8 @@ button:disabled {
   align-items: center;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  backdrop-filter: blur(14px);
 }
 
 .brand {
@@ -475,9 +496,7 @@ label,
   min-height: 0;
   display: grid;
   grid-template-rows: 56px minmax(320px, min(52vh, 560px)) minmax(220px, 1fr);
-  background:
-    linear-gradient(color-mix(in srgb, var(--bg) 89%, transparent), color-mix(in srgb, var(--bg) 96%, transparent)),
-    var(--decoration), var(--backdrop), var(--bg);
+  background: var(--stage-wash), var(--decoration), var(--backdrop), var(--bg);
   background-position: center, var(--decoration-position), center;
   background-size: cover, cover, cover;
 }
