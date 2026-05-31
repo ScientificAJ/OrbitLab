@@ -1,12 +1,14 @@
 :root {
-  font-family:
-    Inter,
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  --font-ui: Inter, 'Noto Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display:
+    'Noto Sans', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-ui);
+  line-height: 1.35;
+  font-feature-settings:
+    'cv02' 1,
+    'cv03' 1,
+    'cv04' 1,
+    'tnum' 1;
   --text: #d9edf2;
   --text-strong: #f0fbfd;
   --muted: #88a7af;
@@ -36,6 +38,12 @@
     color-mix(in srgb, var(--bg) 82%, transparent)
   );
   --decoration-position: center;
+  --control-surface: color-mix(in srgb, var(--surface-strong) 86%, var(--accent) 14%);
+  --control-surface-hover: color-mix(in srgb, var(--surface-strong) 72%, var(--accent) 28%);
+  --control-border: color-mix(in srgb, var(--border-strong) 78%, var(--accent) 22%);
+  --control-shadow: 0 9px 22px color-mix(in srgb, var(--bg) 58%, transparent);
+  --panel-shadow: 0 16px 36px color-mix(in srgb, var(--bg) 52%, transparent);
+  --accent-glow: color-mix(in srgb, var(--accent) 26%, transparent);
   color: var(--text);
   background: var(--bg);
 }
@@ -154,10 +162,21 @@
   box-sizing: border-box;
 }
 
+html {
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -167,20 +186,58 @@ select {
 }
 
 button {
-  border: 1px solid var(--border-strong);
-  background: var(--surface-strong);
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--control-border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--control-surface) 88%, #ffffff 8%), var(--control-surface)),
+    var(--surface-strong);
   color: var(--text);
-  border-radius: 6px;
+  border-radius: 7px;
   min-height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   cursor: pointer;
+  font-weight: 700;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--text-strong) 16%, transparent),
+    var(--control-shadow);
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
 }
 
-button:hover {
+button svg {
+  flex: 0 0 auto;
+}
+
+button:hover:not(:disabled) {
   border-color: var(--accent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--control-surface-hover) 88%, #ffffff 10%),
+      var(--control-surface-hover)
+    ),
+    var(--surface-strong);
+  color: var(--text-strong);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--text-strong) 20%, transparent),
+    0 12px 26px color-mix(in srgb, var(--bg) 48%, transparent),
+    0 0 0 3px var(--accent-glow);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--text-strong) 10%, transparent),
+    0 5px 14px color-mix(in srgb, var(--bg) 58%, transparent);
 }
 
 button:focus-visible,
@@ -193,6 +250,7 @@ select:focus-visible {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+  box-shadow: none;
 }
 
 .shell {
@@ -236,8 +294,13 @@ button:disabled {
   align-items: center;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
-  backdrop-filter: blur(14px);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface) 88%, transparent),
+    color-mix(in srgb, var(--surface) 70%, transparent)
+  );
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--bg) 38%, transparent);
+  backdrop-filter: blur(18px) saturate(130%);
 }
 
 .brand {
@@ -250,6 +313,13 @@ button:disabled {
 .brand strong,
 .brand span {
   display: block;
+}
+
+.brand strong {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0;
 }
 
 .brand > div {
@@ -286,10 +356,31 @@ label,
   grid-template-columns: 18px 1fr 86px;
   align-items: center;
   gap: 8px;
-  background: var(--bg);
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface) 68%, transparent),
+      color-mix(in srgb, var(--bg) 84%, transparent)
+    ),
+    var(--bg);
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
   padding: 6px 8px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--text-strong) 8%, transparent),
+    var(--control-shadow);
+  backdrop-filter: blur(14px);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.search-strip:focus-within {
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--text-strong) 12%, transparent),
+    0 0 0 3px var(--accent-glow),
+    var(--control-shadow);
 }
 
 .search-strip .inline-helper {
@@ -304,6 +395,18 @@ select {
   background: transparent;
   border: 0;
   outline: none;
+}
+
+.search-strip button {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 34%, var(--surface-strong)),
+      color-mix(in srgb, var(--accent) 20%, var(--surface-strong))
+    ),
+    var(--surface-strong);
+  border-color: color-mix(in srgb, var(--accent) 72%, var(--border-strong));
+  color: var(--text-strong);
 }
 
 .command-actions {
@@ -347,9 +450,12 @@ select {
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: var(--surface-soft);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 90%, var(--accent) 10%), var(--surface-soft)),
+    var(--surface-soft);
   color: var(--muted-strong);
   font-size: 12px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-strong) 10%, transparent);
 }
 
 .pipeline-progress progress {
@@ -361,8 +467,13 @@ select {
 .right-rail {
   min-height: 0;
   overflow: auto;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface) 88%, transparent),
+    color-mix(in srgb, var(--surface) 76%, transparent)
+  );
   border-right: 1px solid var(--border);
+  backdrop-filter: blur(18px) saturate(120%);
 }
 
 .right-rail {
@@ -378,7 +489,9 @@ select {
 
 h2 {
   margin: 0 0 10px;
+  font-family: var(--font-display);
   font-size: 13px;
+  font-weight: 800;
   color: var(--text-strong);
 }
 
@@ -408,10 +521,13 @@ label,
 
 .rail-section select {
   height: 34px;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border: 1px solid var(--control-border);
+  border-radius: 7px;
   padding: 0 10px;
-  background: var(--surface-strong);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 90%, #ffffff 7%), var(--surface-strong)),
+    var(--surface-strong);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-strong) 10%, transparent);
 }
 
 .candidate-card {
@@ -422,6 +538,26 @@ label,
   min-height: 68px;
   padding: 10px;
   margin-bottom: 8px;
+  text-align: left;
+}
+
+.candidate-card,
+.selection-list button,
+.theme-choice,
+.segmented-control button,
+.active-pill {
+  overflow: hidden;
+}
+
+.candidate-card:hover:not(:disabled),
+.selection-list button:hover:not(:disabled),
+.theme-choice:hover:not(:disabled),
+.segmented-control button:hover:not(:disabled) {
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--text-strong) 14%, transparent),
+    0 12px 24px color-mix(in srgb, var(--bg) 44%, transparent),
+    0 0 0 3px var(--accent-glow);
 }
 
 .tce-card strong {
@@ -452,7 +588,14 @@ label,
 .candidate-card.active,
 .selection-list button.active {
   border-color: var(--accent);
-  background: var(--accent-soft);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 84%, var(--accent) 16%), var(--accent-soft)),
+    var(--accent-soft);
+  color: var(--text-strong);
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 36%, transparent),
+    0 12px 24px color-mix(in srgb, var(--bg) 42%, transparent);
 }
 
 .selection-list {
@@ -477,6 +620,13 @@ label,
   gap: 2px;
   padding: 8px 10px;
   text-align: left;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-strong) 84%, transparent),
+      color-mix(in srgb, var(--surface-soft) 92%, transparent)
+    ),
+    var(--surface-strong);
 }
 
 .selection-list span,
@@ -507,6 +657,8 @@ label,
   justify-content: space-between;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 48%, transparent);
+  backdrop-filter: blur(14px);
 }
 
 .stage-header strong,
@@ -583,6 +735,14 @@ label,
   padding: 6px 10px;
   color: var(--muted-strong);
   font-size: 12px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-strong) 76%, transparent),
+      color-mix(in srgb, var(--surface-soft) 86%, transparent)
+    ),
+    var(--surface-soft);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-strong) 10%, transparent);
 }
 
 .orbit-scene {
@@ -927,11 +1087,14 @@ label,
 .expert-options input {
   min-width: 0;
   height: 34px;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border: 1px solid var(--control-border);
+  border-radius: 7px;
   padding: 0 8px;
   color: var(--text);
-  background: var(--surface-strong);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 90%, #ffffff 7%), var(--surface-strong)),
+    var(--surface-strong);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-strong) 10%, transparent);
 }
 
 .modal-overlay {
@@ -953,8 +1116,11 @@ label,
   overflow: hidden;
   border: 1px solid var(--border-strong);
   border-radius: 8px;
-  background: var(--surface);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, #ffffff 4%), var(--surface)), var(--surface);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.48),
+    0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .modal header,
@@ -1169,7 +1335,12 @@ label,
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  background: color-mix(in srgb, var(--surface-soft) 86%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-soft) 86%, transparent),
+    color-mix(in srgb, var(--surface) 76%, transparent)
+  );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-strong) 8%, transparent);
 }
 
 .expert-options h3,
@@ -1246,7 +1417,13 @@ label,
 .segmented-control button.active,
 .theme-choice.active {
   border-color: var(--accent);
-  background: var(--accent-soft);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 82%, var(--accent) 18%), var(--accent-soft)),
+    var(--accent-soft);
+  color: var(--text-strong);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 36%, transparent),
+    0 12px 24px color-mix(in srgb, var(--bg) 42%, transparent);
 }
 
 .theme-grid {
@@ -1257,14 +1434,30 @@ label,
 
 .theme-choice {
   justify-content: flex-start;
+  min-height: 42px;
 }
 
 .theme-choice span {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   flex: 0 0 auto;
   border: 1px solid var(--border-strong);
   border-radius: 50%;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0 0 2px color-mix(in srgb, var(--bg) 64%, transparent);
+}
+
+.active-pill {
+  border-color: var(--accent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 84%, var(--accent) 16%), var(--accent-soft)),
+    var(--accent-soft);
+  color: var(--text-strong);
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 36%, transparent),
+    0 12px 24px color-mix(in srgb, var(--bg) 42%, transparent);
 }
 
 .theme-space span {
@@ -1295,6 +1488,17 @@ label,
   background:
     linear-gradient(135deg, rgba(13, 23, 18, 0.2), rgba(130, 212, 156, 0.32)),
     url('/theme-decorations/nature.webp') center / cover;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
+  }
+
+  button:hover:not(:disabled),
+  button:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 @media (max-width: 980px) {
