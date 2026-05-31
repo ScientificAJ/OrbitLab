@@ -41,6 +41,18 @@ KNOWN_TARGETS: tuple[KnownTarget, ...] = (
         ),
     ),
     KnownTarget(
+        canonical_name="Kepler-10",
+        aliases=("Kepler-10", "Kepler 10", "KOI-72", "KOI 72", "KIC 11904151", "11904151"),
+        stellar_radius_solar=1.056,
+        stellar_mass_solar=0.895,
+        stellar_teff=5627.0,
+        planets=(
+            KnownPlanetPrior("Kepler-10 b", 0.837491331, period_tolerance_fraction=0.02),
+            KnownPlanetPrior("Kepler-10 c", 45.29422297, period_tolerance_fraction=0.02),
+            KnownPlanetPrior("Kepler-10 d", 151.04, period_tolerance_fraction=0.02),
+        ),
+    ),
+    KnownTarget(
         canonical_name="HAT-P-7",
         aliases=("HAT-P-7", "HAT P 7", "Kepler-2", "Kepler 2", "KIC 10666592", "10666592"),
         stellar_radius_solar=1.84,

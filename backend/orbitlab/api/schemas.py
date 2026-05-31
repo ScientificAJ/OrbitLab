@@ -51,6 +51,7 @@ class AnalysisJobCreate(BaseModel):
 class BlsPreviewCreate(BaseModel):
     product_uri: str
     mission: str = Field(pattern="^(TESS|Kepler|K2)$")
+    target_id: str | None = None
     aperture_mask_id: str | None = None
     min_period: float = Field(default=0.5, gt=0)
     max_period: float = Field(default=30.0, gt=0)

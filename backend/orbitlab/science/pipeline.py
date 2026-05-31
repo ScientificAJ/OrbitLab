@@ -240,8 +240,6 @@ def _guided_known_candidates(
             continue
 
         candidate = result.candidate
-        if candidate.signal_to_noise < config.borderline_snr_min:
-            continue
         matched_planet = match_known_planet(known_target, candidate.period) or planet
         candidates.append(
             _candidate_with_metadata(
@@ -249,6 +247,7 @@ def _guided_known_candidates(
                 period_source="known_ephemeris",
                 signal_origin="guided_known_period",
                 catalog_match=_known_planet_payload(known_target, matched_planet, candidate),
+                known_period_low_snr=candidate.signal_to_noise < config.borderline_snr_min,
                 is_residual=False,
                 display_priority=0,
             )
@@ -396,6 +395,13 @@ def _structured_flags(candidate, validation: dict, config, support: dict | None 
     primary_snr = support.get("primary_signal_to_noise")
     is_residual = bool(support.get("is_residual"))
     known_planet = support.get("known_planet") if isinstance(support.get("known_planet"), dict) else None
+    if known_planet and effective_snr < config.borderline_snr_min:
+        _add_flag(
+            flags,
+            "known_period_low_snr",
+            "warning",
+            "Known planet period was searched, but this product does not show enough signal for promotion.",
+        )
     if is_residual and not known_planet and effective_snr < config.promotion_snr * 1.1:
         _add_flag(
             flags,

@@ -515,6 +515,63 @@ def test_guided_known_trappist_period_preempts_short_artifact(monkeypatch):
     assert payload["tces"][0]["catalog_match"]["planet"] == "TRAPPIST-1 b"
 
 
+def test_bls_preview_uses_target_id_for_known_kepler_period_and_preserves_low_snr(monkeypatch):
+    from orbitlab.api.main import bls_preview
+    from orbitlab.api.schemas import BlsPreviewCreate
+
+    kepler_b = TransitCandidate(0.837491331, 0.2, 0.04, 0.00015, 7.0, 3.2)
+    artifact = TransitCandidate(0.61, 0.1, 0.08, 0.001, 30.0, 8.1)
+
+    class _BlsResult:
+        def __init__(self, candidate):
+            self.candidate = candidate
+            self.periodogram = {
+                "period": np.array([candidate.period], dtype=np.float32),
+                "power": np.array([candidate.power], dtype=np.float32),
+                "duration": np.array([candidate.duration], dtype=np.float32),
+            }
+            self.search_time = np.linspace(0, 12, 900, dtype=np.float32)
+            self.search_flux = 1.0 + 0.001 * np.sin(np.linspace(0, 18, 900, dtype=np.float32))
+            self.clean_time = self.search_time
+            self.clean_flux = self.search_flux
+            self.metadata = {"min_period_days": 0.5, "max_period_days": 2.0}
+
+    def fake_run_bls(clean_time, clean_flux, **kwargs):
+        del clean_time, clean_flux
+        min_period = kwargs.get("min_period", 0.0)
+        max_period = kwargs.get("max_period", 99.0)
+        if min_period <= kepler_b.period <= max_period and max_period < 1.0:
+            return _BlsResult(kepler_b)
+        if min_period <= artifact.period <= max_period:
+            return _BlsResult(artifact)
+        raise ValueError("no signal in this window")
+
+    time, flux = _light_curve(period=kepler_b.period, depth=0.00015, noise=0.0002)
+    monkeypatch.setattr(
+        "orbitlab.api.main.extract_light_curve_from_tpf",
+        lambda product_uri, aperture_mask="pipeline": (time, flux, None),
+    )
+    monkeypatch.setattr("orbitlab.api.main.run_bls", fake_run_bls)
+
+    payload = bls_preview(
+        BlsPreviewCreate(
+            product_uri="mast:test-product-without-kepler-name",
+            target_id="Kepler-10",
+            mission="Kepler",
+            min_period=0.5,
+            max_period=2.0,
+            max_candidates=1,
+        ),
+        db=None,
+    )
+
+    assert payload["tces"][0]["period_days"] == pytest.approx(kepler_b.period)
+    assert payload["tces"][0]["period_source"] == "known_ephemeris"
+    assert payload["tces"][0]["catalog_match"]["planet"] == "Kepler-10 b"
+    assert any(flag["code"] == "known_period_low_snr" for flag in payload["tces"][0]["flags"])
+    assert payload["candidates"] == []
+
+
 def test_bls_preview_returns_tce_ledger_without_promoting_weak_residual(monkeypatch):
     from orbitlab.api.main import bls_preview
     from orbitlab.api.schemas import BlsPreviewCreate

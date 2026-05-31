@@ -347,6 +347,7 @@ export type BlsPreviewResult = {
 export async function fetchBlsPreview(payload: {
   product_uri: string;
   mission: string;
+  target_id?: string;
   aperture_mask_id?: string;
   min_period?: number;
   max_period?: number;

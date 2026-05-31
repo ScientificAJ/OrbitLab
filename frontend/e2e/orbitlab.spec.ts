@@ -554,7 +554,10 @@ test('advanced mode exposes expert controls and sends expert payload fields', as
   const previewRequest = page.waitForRequest(`${API}/bls-preview`);
   await page.getByRole('button', { name: /BLS Search/ }).click();
   await page.getByRole('button', { name: /Run Preview Search/ }).click();
-  expect(JSON.parse((await previewRequest).postData() ?? '{}')).toMatchObject({ max_candidates: 7 });
+  expect(JSON.parse((await previewRequest).postData() ?? '{}')).toMatchObject({
+    max_candidates: 7,
+    target_id: target.target_id,
+  });
 
   await page.route(`${API}/analysis-jobs`, (route) =>
     json(

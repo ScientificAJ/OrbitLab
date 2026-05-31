@@ -209,7 +209,7 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
         science_config = load_science_config()
         profile = get_search_profile(science_config, "preview_fast")
         preview_profile = replace(profile, min_period=payload.min_period, max_period=payload.max_period)
-        known_target = resolve_known_target(payload.product_uri)
+        known_target = resolve_known_target(payload.target_id or "") or resolve_known_target(payload.product_uri)
         try:
             candidate, bls_result, guided_candidates = _select_primary_candidate(
                 clean_time, clean_flux, known_target, science_config, preview_profile, bls_runner=run_bls
@@ -236,6 +236,7 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
         })
         periodogram = bls_result.periodogram
 
+        preserve_known_primary = bool((candidate.metadata or {}).get("catalog_match"))
         residual_candidates = find_multi_planet_candidates(
             clean_time,
             clean_flux,
@@ -246,7 +247,8 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
             period_samples=profile.period_samples,
             max_period_samples=profile.max_period_samples,
             min_signal_to_noise=science_config.borderline_snr_min,
-            preserve_initial_candidate=candidate.signal_to_noise >= science_config.borderline_snr_min,
+            preserve_initial_candidate=preserve_known_primary
+            or candidate.signal_to_noise >= science_config.borderline_snr_min,
         )
         candidates = list(residual_candidates[:1])
         for guided_candidate in guided_candidates[1:]:

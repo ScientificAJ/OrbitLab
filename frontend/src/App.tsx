@@ -472,6 +472,20 @@ export default function App() {
 
     return { min, span: max > min ? max - min : 1 };
   }, [tpfPreview]);
+  const blsMaxPeriodLimit = useMemo(() => {
+    const baseline = Number(tpfPreview?.baseline);
+    return Number.isFinite(baseline) && baseline > 0
+      ? Math.min(MAX_PERIOD_CEILING, baseline * 0.8)
+      : MAX_PERIOD_CEILING;
+  }, [tpfPreview?.baseline]);
+
+  useEffect(() => {
+    if (blsMaxPeriodLimit >= MAX_PERIOD_CEILING) return;
+    setMaxPeriod((current) => Number(Math.min(current, blsMaxPeriodLimit).toFixed(2)));
+    setMinPeriod((current) =>
+      Number(Math.min(current, Math.max(MIN_PERIOD_FLOOR, blsMaxPeriodLimit - 0.1)).toFixed(2)),
+    );
+  }, [blsMaxPeriodLimit]);
 
   function aperturePixelOpacity(value: number) {
     if (!Number.isFinite(value)) return 0.2;
@@ -520,7 +534,7 @@ export default function App() {
   }
 
   function updateMaxPeriod(value: number) {
-    const next = Math.max(Math.min(value, MAX_PERIOD_CEILING), minPeriod + 0.1);
+    const next = Math.max(Math.min(value, blsMaxPeriodLimit), minPeriod + 0.1);
     setMaxPeriod(Number(next.toFixed(2)));
   }
 
@@ -895,6 +909,33 @@ export default function App() {
     }
   }
 
+  async function openBlsModal() {
+    if (!selectedProduct || workflow === 'running') return;
+
+    const token = ++apertureToken.current;
+    const productUri = selectedProduct.product_uri;
+
+    setError(null);
+
+    try {
+      if (!tpfPreview) {
+        const preview = await fetchTpfPreview(productUri);
+        if (token !== apertureToken.current) return;
+        setTpfPreview(preview);
+        setApertureMask((current) =>
+          current.length
+            ? current
+            : Array.from({ length: preview.shape[0] }, () => Array(preview.shape[1]).fill(false)),
+        );
+      }
+      openModal('bls');
+    } catch (err) {
+      if (token !== apertureToken.current) return;
+      setError(err instanceof Error ? err.message : String(err));
+      openModal('bls');
+    }
+  }
+
   async function handleCreateApertureMask() {
     if (!selectedTarget || !selectedProduct || !tpfPreview) return;
     setError(null);
@@ -926,6 +967,7 @@ export default function App() {
     const targetId = selectedTarget?.target_id ?? 'unknown';
     const missionAtRequest = mission;
     const apertureMaskId = selectedApertureMaskId;
+    let requestPeriodLimit = blsMaxPeriodLimit;
 
     setError(null);
     setSuccess(null);
@@ -938,11 +980,41 @@ export default function App() {
       setWorkflow('product-selected');
     }
 
+    if (!tpfPreview) {
+      try {
+        const preview = await fetchTpfPreview(productUri);
+        if (token !== blsPreviewToken.current) return;
+        setTpfPreview(preview);
+        setApertureMask((current) =>
+          current.length
+            ? current
+            : Array.from({ length: preview.shape[0] }, () => Array(preview.shape[1]).fill(false)),
+        );
+        const baseline = Number(preview.baseline);
+        requestPeriodLimit =
+          Number.isFinite(baseline) && baseline > 0 ? Math.min(MAX_PERIOD_CEILING, baseline * 0.8) : MAX_PERIOD_CEILING;
+      } catch {
+        requestPeriodLimit = MAX_PERIOD_CEILING;
+      }
+    }
+
     if (minPeriod >= maxPeriod) {
       setBlsPreviewStatus('failed');
       setBlsPreviewError('Minimum period must be lower than maximum period.');
       return;
     }
+
+    if (minPeriod >= requestPeriodLimit) {
+      setBlsPreviewStatus('failed');
+      setBlsPreviewError(
+        `This product baseline only supports periods below ${requestPeriodLimit.toFixed(
+          2,
+        )} days. Select or stitch a longer observation for this search.`,
+      );
+      return;
+    }
+
+    const requestMaxPeriod = Math.min(maxPeriod, requestPeriodLimit);
 
     setBlsRunning(true);
 
@@ -950,9 +1022,10 @@ export default function App() {
       const payload = await fetchBlsPreview({
         product_uri: productUri,
         mission: missionAtRequest,
+        target_id: targetId,
         aperture_mask_id: apertureMaskId,
         min_period: minPeriod,
-        max_period: maxPeriod,
+        max_period: requestMaxPeriod,
         max_candidates: maxCandidates,
       });
 
@@ -1240,7 +1313,7 @@ export default function App() {
                 <button
                   type="button"
                   disabled={!selectedProduct || workflow === 'running'}
-                  onClick={() => openModal('bls')}
+                  onClick={openBlsModal}
                   title="Box Least Squares searches for repeating transit-like dips."
                 >
                   <FlaskConical size={15} /> BLS Search
@@ -2000,7 +2073,7 @@ export default function App() {
                 name="max-period"
                 type="range"
                 min={MIN_PERIOD_FLOOR}
-                max={MAX_PERIOD_CEILING}
+                max={blsMaxPeriodLimit}
                 value={maxPeriod}
                 onChange={(event) => updateMaxPeriod(Number(event.target.value))}
                 step="0.1"
@@ -2008,8 +2081,8 @@ export default function App() {
               <input
                 aria-label="maximum period value"
                 type="number"
-                min={Math.min(MAX_PERIOD_CEILING, minPeriod + 0.1)}
-                max={MAX_PERIOD_CEILING}
+                min={Math.min(blsMaxPeriodLimit, minPeriod + 0.1)}
+                max={blsMaxPeriodLimit}
                 value={maxPeriod}
                 onChange={(event) => updateMaxPeriod(Number(event.target.value))}
                 step="0.1"
