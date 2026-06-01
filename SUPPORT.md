@@ -8,6 +8,7 @@ OrbitLab is a student hackathon project with a real-data science workflow. The f
 - Deployment and operations: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
 - Model readiness and artifact policy: [docs/MODEL_CARDS.md](docs/MODEL_CARDS.md) and [docs/model_artifacts.md](docs/model_artifacts.md)
 - Science limits and candidate interpretation: [docs/SCIENTIFIC_METHODOLOGY.md](docs/SCIENTIFIC_METHODOLOGY.md)
+- Collaboration expectations: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - Security reports: [SECURITY.md](SECURITY.md)
 
 ## Opening An Issue

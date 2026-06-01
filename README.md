@@ -60,7 +60,7 @@ See [docs/SCIENTIFIC_METHODOLOGY.md](docs/SCIENTIFIC_METHODOLOGY.md), [docs/MODE
 | Check model provenance and artifact readiness       | [docs/MODEL_CARDS.md](docs/MODEL_CARDS.md), [docs/model_artifacts.md](docs/model_artifacts.md)             |
 | Prepare a demo or judging run                       | [docs/DEMO_TARGETS.md](docs/DEMO_TARGETS.md), [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) |
 | Deploy or release OrbitLab                          | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), [docs/RELEASE.md](docs/RELEASE.md)                               |
-| Contribute or ask for help                          | [CONTRIBUTING.md](CONTRIBUTING.md), [SUPPORT.md](SUPPORT.md)                                               |
+| Contribute or ask for help                          | [CONTRIBUTING.md](CONTRIBUTING.md), [SUPPORT.md](SUPPORT.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)     |
 
 ## Screenshots
 
