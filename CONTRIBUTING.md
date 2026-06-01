@@ -6,6 +6,10 @@ OrbitLab uses a branch-and-PR workflow. Keep the pace high, but keep the science
 
 See [TEAM.md](TEAM.md) for the current OrbitLab team roster and GitHub usernames.
 
+## Issues And Support
+
+Use [SUPPORT.md](SUPPORT.md) to decide whether a question belongs in public issues, private security reporting, or local troubleshooting. For science or model-artifact reports, preserve the target ID, product URI, model ID, source revision, and checksum evidence so reviewers can audit the claim.
+
 ## Branch-and-PR Workflow
 
 1. Create a feature branch for your changes (e.g., `feature/description` or `fix/description`).

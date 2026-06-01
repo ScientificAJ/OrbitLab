@@ -42,13 +42,25 @@ OrbitLab is the opposite tradeoff: a usable full-stack workbench that keeps the 
 
 ## Model Readiness
 
-| Mission     | OrbitLab model surface                          | Source                                                                                       | Status policy                                                                                 |
-| ----------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| TESS        | Nigraha global no-dropout binary ensemble       | `ExoplanetML/Nigraha` at pinned commit `c4365b41dd02b187c3210189ffe8e3ead584f4f5`            | Ready only when all registered HDF5 weights exist and match expected SHA-256 values.          |
-| Kepler/K1   | AstroNet-family CNN/BiLSTM/attention checkpoint | `bibinthomas123/Astronet` at pinned commit `9809ce92306f11fbdc96f9830b522026710a3883`        | Ready only when the TensorFlow checkpoint is fetched, registered, and checksum-valid.         |
-| K2          | ExoMAC-KKT RandomForest catalog classifier      | `ZapatoProgramming/ExoMAC-KKT` at pinned revision `5cda5310d5a163679c6915f9463a4d6afc312483` | Ready only when the sklearn bundle, feature schema, labels, metadata, and checksums validate. |
+| Mission   | OrbitLab model surface                          | Source                                                                                       | Status policy                                                                                 |
+| --------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| TESS      | Nigraha global no-dropout binary ensemble       | `ExoplanetML/Nigraha` at pinned commit `c4365b41dd02b187c3210189ffe8e3ead584f4f5`            | Ready only when all registered HDF5 weights exist and match expected SHA-256 values.          |
+| Kepler/K1 | AstroNet-family CNN/BiLSTM/attention checkpoint | `bibinthomas123/Astronet` at pinned commit `9809ce92306f11fbdc96f9830b522026710a3883`        | Ready only when the TensorFlow checkpoint is fetched, registered, and checksum-valid.         |
+| K2        | ExoMAC-KKT RandomForest catalog classifier      | `ZapatoProgramming/ExoMAC-KKT` at pinned revision `5cda5310d5a163679c6915f9463a4d6afc312483` | Ready only when the sklearn bundle, feature schema, labels, metadata, and checksums validate. |
 
 See [docs/SCIENTIFIC_METHODOLOGY.md](docs/SCIENTIFIC_METHODOLOGY.md), [docs/MODEL_CARDS.md](docs/MODEL_CARDS.md), and [docs/model_artifacts.md](docs/model_artifacts.md) for methodology, provenance, and limitations.
+
+## Repository Guide
+
+| Need                                                | Start here                                                                                                 |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Run the app locally                                 | [docs/USAGE.md](docs/USAGE.md)                                                                             |
+| Understand the backend, frontend, and worker design | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                                                               |
+| Review science assumptions and validation limits    | [docs/SCIENTIFIC_METHODOLOGY.md](docs/SCIENTIFIC_METHODOLOGY.md)                                           |
+| Check model provenance and artifact readiness       | [docs/MODEL_CARDS.md](docs/MODEL_CARDS.md), [docs/model_artifacts.md](docs/model_artifacts.md)             |
+| Prepare a demo or judging run                       | [docs/DEMO_TARGETS.md](docs/DEMO_TARGETS.md), [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) |
+| Deploy or release OrbitLab                          | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), [docs/RELEASE.md](docs/RELEASE.md)                               |
+| Contribute or ask for help                          | [CONTRIBUTING.md](CONTRIBUTING.md), [SUPPORT.md](SUPPORT.md)                                               |
 
 ## Screenshots
 
@@ -56,14 +68,14 @@ The repository includes deterministic UI captures generated from the mocked demo
 
 ![OrbitLab demo walkthrough](docs/assets/demo/orbitlab-demo.gif)
 
-| Workflow | Screenshot |
-| --- | --- |
+| Workflow                     | Screenshot                                                                           |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
 | Search and product selection | ![OrbitLab target product workflow](docs/assets/screenshots/02-product-selected.png) |
-| Aperture editor | ![OrbitLab aperture editor](docs/assets/screenshots/03-aperture-editor.png) |
-| BLS candidate preview | ![OrbitLab BLS preview](docs/assets/screenshots/05-bls-preview.png) |
-| Analysis workbench | ![OrbitLab analysis workbench](docs/assets/screenshots/06-analysis-workbench.png) |
-| Model readiness | ![OrbitLab model status modal](docs/assets/screenshots/07-model-status.png) |
-| Voyager Mode easter egg | ![OrbitLab Voyager Mode modal](docs/assets/screenshots/08-voyager-mode.png) |
+| Aperture editor              | ![OrbitLab aperture editor](docs/assets/screenshots/03-aperture-editor.png)          |
+| BLS candidate preview        | ![OrbitLab BLS preview](docs/assets/screenshots/05-bls-preview.png)                  |
+| Analysis workbench           | ![OrbitLab analysis workbench](docs/assets/screenshots/06-analysis-workbench.png)    |
+| Model readiness              | ![OrbitLab model status modal](docs/assets/screenshots/07-model-status.png)          |
+| Voyager Mode easter egg      | ![OrbitLab Voyager Mode modal](docs/assets/screenshots/08-voyager-mode.png)          |
 
 ## Quick Start
 

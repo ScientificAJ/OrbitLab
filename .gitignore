@@ -41,6 +41,7 @@ repodump.txt
 core
 core.*
 *.log
+fix_codex_bwrap_sandbox.sh
 
 # OS/editor noise
 .DS_Store
