@@ -323,8 +323,14 @@ def test_analysis_uses_solar_like_physics_fallback_when_stellar_context_is_missi
 
     physics = payload["tces"][0]["physics"]
     assert physics["stellar_context_source"] == "solar_like_fallback"
+    assert physics["interpretation_locked"] is True
+    assert physics["locked_reason"] == "stellar_parentage_unknown"
+    assert "planet_radius_earth" in physics["locked_fields"]
     assert physics["radius_ratio"] > 0
     assert physics["semi_major_axis_au"] > 0
+    assert payload["tces"][0]["science_readiness"]["status"] == "blocked"
+    assert "stellar_context_unverified" in payload["tces"][0]["science_readiness"]["blockers"]
+    assert payload["science_readiness"]["status"] == "blocked"
     assert payload["stellar_context"]["physics_source"] == "solar_like_fallback"
 
 
@@ -568,6 +574,11 @@ def test_bls_preview_uses_target_id_for_known_kepler_period_and_preserves_low_sn
     assert payload["tces"][0]["period_days"] == pytest.approx(kepler_b.period)
     assert payload["tces"][0]["period_source"] == "known_ephemeris"
     assert payload["tces"][0]["catalog_match"]["planet"] == "Kepler-10 b"
+    assert payload["tces"][0]["physics"]["interpretation_locked"] is True
+    assert payload["tces"][0]["science_readiness"]["result_kind"] == "preview"
+    assert "paper_grade_tls_not_run" in payload["tces"][0]["science_readiness"]["evidence_gaps"]
+    assert "stellar_context_unverified" in payload["tces"][0]["science_readiness"]["blockers"]
+    assert payload["science_readiness"]["status"] == "blocked"
     assert any(flag["code"] == "known_period_low_snr" for flag in payload["tces"][0]["flags"])
     assert payload["candidates"] == []
 

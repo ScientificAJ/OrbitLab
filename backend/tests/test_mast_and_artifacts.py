@@ -74,6 +74,9 @@ def test_kepler_search_falls_back_when_catalog_adapter_is_missing(monkeypatch: p
             "catalog": "NAME",
             "match_type": "catalog",
             "matched_query": None,
+            "trust_state": "name_unverified",
+            "trust_label": "Typed name accepted before a mission catalog ID is proven.",
+            "trust_warnings": ["free_text_name_not_catalog_verified"],
         }
     ]
 
@@ -101,8 +104,13 @@ def test_named_tess_search_includes_exact_query_before_nearby_catalog_rows(monke
         "catalog": "ALIAS",
         "match_type": "alias",
         "matched_query": "TRAPPIST-1",
+        "trust_state": "alias_unresolved",
+        "trust_label": "Alias suggestion; select a catalog product before trusting science output.",
+        "trust_warnings": ["alias_not_catalog_resolved"],
     }
     assert results[1]["target_id"] == "278892590"
+    assert results[1]["trust_state"] == "catalog_resolved"
+    assert results[1]["trust_warnings"] == []
 
 
 @pytest.mark.parametrize("query", ["trappist", "trappist 1", "trappist-1", "trappist1"])
@@ -129,8 +137,10 @@ def test_alias_search_returns_suggestion_before_catalog_rows(monkeypatch: pytest
     assert results[0]["target_id"] == "TRAPPIST-1"
     assert results[0]["match_type"] == "alias"
     assert results[0]["matched_query"] == "trappist"
+    assert results[0]["trust_state"] == "alias_unresolved"
     assert results[1]["target_id"] == "278892590"
     assert results[1]["match_type"] == "catalog"
+    assert results[1]["trust_state"] == "catalog_resolved"
 
 
 def test_alias_search_survives_tess_catalog_resolution_failure(monkeypatch: pytest.MonkeyPatch):
@@ -152,6 +162,9 @@ def test_alias_search_survives_tess_catalog_resolution_failure(monkeypatch: pyte
             "catalog": "ALIAS",
             "match_type": "alias",
             "matched_query": "trappist",
+            "trust_state": "alias_unresolved",
+            "trust_label": "Alias suggestion; select a catalog product before trusting science output.",
+            "trust_warnings": ["alias_not_catalog_resolved"],
         }
     ]
 

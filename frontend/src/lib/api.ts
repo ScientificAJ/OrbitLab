@@ -9,6 +9,16 @@ export type Candidate = {
   red_noise_beta?: number | null;
   effective_snr?: number | null;
   final_score?: number | null;
+  science_readiness?: {
+    status?: 'ready' | 'review' | 'blocked' | 'no_signal' | string;
+    result_kind?: 'preview' | 'analysis' | string;
+    vetting_mode?: string;
+    blockers?: string[];
+    warnings?: string[];
+    evidence_gaps?: string[];
+    interpretation?: string;
+    [key: string]: string | string[] | number | null | undefined;
+  };
   evidence?: Record<string, unknown>;
   evidence_scores?: Record<string, unknown>;
   explanation?: string[];
@@ -22,7 +32,7 @@ export type Candidate = {
     is_in_habitable_zone?: boolean | null;
     is_temperature_habitable?: boolean | null;
     habitability?: Record<string, unknown>;
-    [key: string]: number | string | boolean | Record<string, unknown> | null | undefined;
+    [key: string]: number | string | boolean | string[] | Record<string, unknown> | null | undefined;
   };
   validation?: {
     odd_even_depth_delta?: number | null;
@@ -113,6 +123,16 @@ export type AnalysisResult = {
   schema_version?: string;
   pipeline_version?: string;
   science_config_hash?: string;
+  science_readiness?: {
+    status?: 'ready' | 'review' | 'blocked' | 'no_signal' | string;
+    result_kind?: 'preview' | 'analysis' | string;
+    vetting_mode?: string;
+    tce_count?: number;
+    blockers?: string[];
+    warnings?: string[];
+    evidence_gaps?: string[];
+    [key: string]: string | string[] | number | null | undefined;
+  };
   search_profile?: string;
   active_science_config_keys?: string[];
   inactive_science_config_keys?: string[];
@@ -162,6 +182,9 @@ export type SearchResult = {
   catalog: string;
   match_type?: 'catalog' | 'alias';
   matched_query?: string | null;
+  trust_state?: string | null;
+  trust_label?: string | null;
+  trust_warnings?: string[];
 };
 
 export type Product = {
@@ -335,6 +358,7 @@ export async function createApertureMask(payload: {
 
 export type BlsPreviewResult = {
   search_profile?: string;
+  science_readiness?: AnalysisResult['science_readiness'];
   periodogram: { period: number[]; power: number[]; duration?: number[] };
   candidates: Candidate[];
   planet_candidates?: Tce[];

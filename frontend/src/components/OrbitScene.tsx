@@ -15,6 +15,7 @@ type CandidateRenderData = {
   radius: number;
   planetRadius: number;
   orbitOpacity: number;
+  ghosted: boolean;
   speed: number;
   phase: number;
   inclination: number;
@@ -40,6 +41,20 @@ function finite(value: number | null | undefined, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
+function candidateDisposition(candidate: Candidate) {
+  const value = (candidate as Candidate & { disposition?: string | null }).disposition;
+  return typeof value === 'string' ? value : undefined;
+}
+
+function scienceStatus(candidate: Candidate) {
+  const value = candidate.science_readiness?.status;
+  return typeof value === 'string' ? value : undefined;
+}
+
+function isGhostedEvidence(candidate: Candidate) {
+  return candidateDisposition(candidate) === 'rejected_signal' || scienceStatus(candidate) === 'blocked';
+}
+
 function orbitRadius(candidate: Candidate, index: number) {
   const semiMajorAxis = finite(candidate.physics?.semi_major_axis_au, 0);
   if (semiMajorAxis > 0) return clamp(4.3 + Math.log1p(semiMajorAxis * 90) * 3.4 + index * 0.45, 4.6, 15.5);
@@ -60,6 +75,7 @@ function planetScale(candidate: Candidate, active: boolean) {
 
 function candidateColor(candidate: Candidate, active: boolean) {
   if (active) return new THREE.Color(0x93ecff);
+  if (isGhostedEvidence(candidate)) return new THREE.Color(0x9aa7ad);
   if (candidate.physics?.is_in_habitable_zone) return new THREE.Color(0x99f2bc);
   if (candidate.validation?.duration_plausible === false) return new THREE.Color(0xffc28a);
   return new THREE.Color(0x76b9ff);
@@ -69,11 +85,13 @@ function candidateRenderData(candidates: Candidate[], selectedId?: string): Cand
   return candidates.slice(0, 8).map((candidate, index) => {
     const active = candidate.candidate_id === selectedId;
     const snr = clamp(finite(candidate.signal_to_noise, 6), 4, 35);
+    const ghosted = isGhostedEvidence(candidate);
     return {
       candidate,
       radius: orbitRadius(candidate, index),
-      planetRadius: planetScale(candidate, active),
-      orbitOpacity: clamp(0.22 + snr / 58 + (active ? 0.28 : 0), 0.24, 0.92),
+      planetRadius: planetScale(candidate, active) * (ghosted ? 0.78 : 1),
+      orbitOpacity: clamp(0.22 + snr / 58 + (active ? 0.28 : 0), 0.24, 0.92) * (ghosted ? 0.44 : 1),
+      ghosted,
       speed: clamp(0.022 / Math.sqrt(Math.max(candidate.period, 0.15)), 0.003, 0.045),
       phase: (finite(candidate.epoch, index) * 2.4 + index * 0.72) % (Math.PI * 2),
       inclination: (index - (candidates.length - 1) / 2) * 0.035,
@@ -313,9 +331,11 @@ export function OrbitScene({
         new THREE.MeshStandardMaterial({
           color: data.hue,
           emissive: data.hue,
-          emissiveIntensity: active ? 0.42 : 0.14,
+          emissiveIntensity: data.ghosted ? 0.04 : active ? 0.42 : 0.14,
           metalness: 0.05,
-          roughness: 0.48,
+          roughness: data.ghosted ? 0.86 : 0.48,
+          transparent: data.ghosted,
+          opacity: data.ghosted ? 0.56 : 1,
         }),
       );
       planet.name = data.candidate.candidate_id;
@@ -387,8 +407,9 @@ export function OrbitScene({
         const y = Math.sin(angle + Math.PI / 4) * planet.inclination * 9;
         planet.mesh.position.set(Math.cos(angle) * planet.radius, y, Math.sin(angle) * planet.radius);
         const transitMaterial = planet.transit.material as THREE.MeshBasicMaterial;
-        transitMaterial.opacity =
+        const baseTransitOpacity =
           planet.candidate.candidate_id === selectedId ? 0.42 + Math.sin(frame * 0.025) * 0.1 : 0.18;
+        transitMaterial.opacity = planet.ghosted ? baseTransitOpacity * 0.45 : baseTransitOpacity;
       });
 
       const selectedPlanet = planetMeshes.find((planet) => planet.candidate.candidate_id === selectedId);
@@ -508,18 +529,19 @@ export function OrbitScene({
         <div className="orbit-labels" aria-label="Rendered candidate orbits">
           {candidates.map((candidate, index) => {
             const active = candidate.candidate_id === selectedId;
+            const ghosted = isGhostedEvidence(candidate);
             return (
               <button
                 type="button"
                 key={candidate.candidate_id}
-                className={`orbit-label ${active ? 'active' : ''}`}
+                className={`orbit-label ${active ? 'active' : ''} ${ghosted ? 'ghost' : ''}`}
                 data-testid={`orbit-label-${candidate.candidate_id}`}
                 aria-label={`Inspect rendered orbit ${index + 1}`}
                 aria-pressed={active}
                 onClick={() => onSelectCandidate?.(candidate.candidate_id)}
               >
                 <span>{candidate.candidate_id}</span>
-                <small>{candidate.period.toFixed(4)} d</small>
+                <small>{ghosted ? 'blocked' : `${candidate.period.toFixed(4)} d`}</small>
               </button>
             );
           })}
@@ -532,11 +554,12 @@ export function OrbitScene({
           {candidates.slice(0, 6).map((candidate, index) => {
             const size = orbitSize(candidate, index);
             const active = candidate.candidate_id === selectedId;
+            const ghosted = isGhostedEvidence(candidate);
             return (
               <button
                 type="button"
                 key={candidate.candidate_id}
-                className={`fallback-orbit ${active ? 'active' : ''}`}
+                className={`fallback-orbit ${active ? 'active' : ''} ${ghosted ? 'ghost' : ''}`}
                 style={{ width: `${size}%`, height: `${size}%` }}
                 data-testid={`fallback-orbit-${candidate.candidate_id}`}
                 aria-label={`Select orbit ${candidate.candidate_id}`}

@@ -67,6 +67,9 @@ def search_targets(query: str, *, mission: str | None = None, limit: int = 20) -
                 "catalog": "ALIAS",
                 "match_type": "alias",
                 "matched_query": query,
+                "trust_state": "alias_unresolved",
+                "trust_label": "Alias suggestion; select a catalog product before trusting science output.",
+                "trust_warnings": ["alias_not_catalog_resolved"],
             }
         )
     if query and not query.isdigit() and not alias_target:
@@ -78,6 +81,9 @@ def search_targets(query: str, *, mission: str | None = None, limit: int = 20) -
                 "catalog": "NAME",
                 "match_type": "catalog",
                 "matched_query": None,
+                "trust_state": "name_unverified",
+                "trust_label": "Typed name accepted before a mission catalog ID is proven.",
+                "trust_warnings": ["free_text_name_not_catalog_verified"],
             }
         )
     try:
@@ -95,6 +101,9 @@ def search_targets(query: str, *, mission: str | None = None, limit: int = 20) -
                 "catalog": catalog,
                 "match_type": "catalog",
                 "matched_query": None,
+                "trust_state": "mission_fallback_unverified",
+                "trust_label": "Mission fallback row; product lookup must prove this target.",
+                "trust_warnings": ["catalog_query_failed"],
             }
         ]
     rows = table[:limit]
@@ -107,6 +116,9 @@ def search_targets(query: str, *, mission: str | None = None, limit: int = 20) -
             "catalog": catalog,
             "match_type": "catalog",
             "matched_query": None,
+            "trust_state": "catalog_resolved",
+            "trust_label": "Mission catalog row with coordinates.",
+            "trust_warnings": [],
         }
         key = (item["catalog"], item["target_id"])
         if key not in seen:

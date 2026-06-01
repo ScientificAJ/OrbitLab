@@ -45,6 +45,7 @@ from orbitlab.science.mast import extract_light_curve_from_tpf, list_tpf_product
 from orbitlab.science.pipeline import (
     _annotate_ledger_candidates,
     _candidate_duplicate,
+    _candidate_science_readiness,
     _candidate_with_metadata,
     _disposition,
     _known_planet_payload,
@@ -52,6 +53,7 @@ from orbitlab.science.pipeline import (
     _period_alias_code,
     _select_primary_candidate,
     _structured_flags,
+    _summarize_science_readiness,
 )
 from orbitlab.science.science_config import get_search_profile, load_science_config
 from orbitlab.storage.database import SessionLocal, engine, init_db
@@ -288,6 +290,17 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
                 )
             )
             physics["stellar_context_source"] = "solar_like_fallback"
+            physics["interpretation_locked"] = True
+            physics["locked_reason"] = "preview_solar_like_fallback"
+            physics["locked_fields"] = [
+                "planet_radius_earth",
+                "semi_major_axis_au",
+                "equilibrium_temperature_k",
+                "kopparapu_hz",
+            ]
+            physics["trust_message"] = (
+                "Preview physics uses solar fallback values and is locked until full analysis verifies stellar context."
+            )
             flags = _structured_flags(
                 c,
                 validation,
@@ -305,6 +318,17 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
                 },
             )
             disposition, action_label, confidence_band, disposition_score = _disposition(c, flags, science_config)
+            science_readiness = _candidate_science_readiness(
+                result_kind="preview",
+                vetting_mode="fast",
+                flags=flags,
+                physics=physics,
+                paper_grade=None,
+                fpp=None,
+                sector_consistency=None,
+                detrending_sensitivity=None,
+                ml=None,
+            )
             candidate_id = f"preview-tce-{index}"
             phase, folded_flux = phase_fold(bls_result.search_time, bls_result.search_flux, c.period, c.epoch)
             binned_phase, binned_flux = bin_phase_curve(phase, folded_flux, 401)
@@ -348,6 +372,7 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
                 "disposition_score": disposition_score,
                 "confidence_band": confidence_band,
                 "flags": flags,
+                "science_readiness": science_readiness,
                 "physics": physics,
                 "detection_metrics": {
                     "bls_snr": c.signal_to_noise,
@@ -381,6 +406,11 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
             "candidates": candidate_payloads,
             "planet_candidates": candidate_payloads,
             "tces": tce_payloads,
+            "science_readiness": _summarize_science_readiness(
+                tce_payloads,
+                result_kind="preview",
+                vetting_mode="fast",
+            ),
             "folded_curves": folded_curves,
             "bls_light_curve": {
                 "time": bls_result.search_time.astype(float).tolist(),

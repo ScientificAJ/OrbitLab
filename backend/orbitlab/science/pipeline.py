@@ -355,6 +355,18 @@ def _apply_habitability_caution(physics: dict[str, Any], physics_source: str) ->
             "status": "insufficient_stellar_data",
             "reason": "stellar parameters are fallback solar values",
         }
+        next_physics["interpretation_locked"] = True
+        next_physics["locked_reason"] = "stellar_parentage_unknown"
+        next_physics["locked_fields"] = [
+            "planet_radius_earth",
+            "semi_major_axis_au",
+            "equilibrium_temperature_k",
+            "kopparapu_hz",
+        ]
+        next_physics["trust_message"] = (
+            "Physical properties use solar fallback values and are locked for interpretation until stellar "
+            "radius, mass, and temperature are verified."
+        )
         next_physics["is_in_habitable_zone"] = None
         next_physics["is_temperature_habitable"] = None
     else:
@@ -362,7 +374,133 @@ def _apply_habitability_caution(physics: dict[str, Any], physics_source: str) ->
             "status": "assessed",
             "reason": "stellar parameters were supplied for this run",
         }
+        next_physics["interpretation_locked"] = False
+        next_physics["locked_reason"] = None
+        next_physics["locked_fields"] = []
+        next_physics["trust_message"] = "Physical properties use supplied stellar context."
     return next_physics
+
+
+def _candidate_science_readiness(
+    *,
+    result_kind: str,
+    vetting_mode: str,
+    flags: list[dict],
+    physics: dict[str, Any],
+    paper_grade: dict[str, Any] | None,
+    fpp: dict[str, Any] | None,
+    sector_consistency: dict[str, Any] | None,
+    detrending_sensitivity: dict[str, Any] | None,
+    ml: dict[str, Any] | None,
+) -> dict[str, Any]:
+    gaps: list[str] = []
+    blockers: list[str] = []
+    warnings: list[str] = []
+
+    if result_kind == "preview":
+        gaps.extend([
+            "paper_grade_tls_not_run",
+            "dave_modshift_not_run",
+            "triceratops_not_run",
+            "ml_not_run",
+            "catalog_contamination_not_run",
+        ])
+        warnings.append("preview_is_detection_only")
+
+    for flag in flags:
+        code = str(flag.get("code", "unknown"))
+        severity = flag.get("severity")
+        if severity == "hard_fail":
+            blockers.append(code)
+        elif severity == "warning":
+            warnings.append(code)
+
+    if physics.get("interpretation_locked"):
+        blockers.append("stellar_context_unverified")
+
+    if vetting_mode == "paper":
+        if not paper_grade or paper_grade.get("status") != "pass":
+            blockers.append("paper_grade_not_passed")
+        if fpp and fpp.get("status") not in {"complete", "skipped"}:
+            blockers.append("fpp_incomplete")
+
+    sector_status = (sector_consistency or {}).get("multi_sector_status")
+    if sector_status in {"single_sector_only", "insufficient_data"}:
+        warnings.append(str(sector_status))
+    elif sector_status == "inconsistent":
+        blockers.append("sector_inconsistent")
+
+    detrending_status = (detrending_sensitivity or {}).get("status")
+    if detrending_status == "unstable_result":
+        blockers.append("detrending_unstable")
+    elif detrending_status in {"failed", "inconclusive"}:
+        warnings.append(f"detrending_{detrending_status}")
+
+    ml_conflicts = (ml or {}).get("evidence_conflicts")
+    if isinstance(ml_conflicts, dict) and ml_conflicts.get("status") == "inconclusive":
+        conflicts = ml_conflicts.get("conflicts") or []
+        warnings.extend(str(conflict) for conflict in conflicts)
+
+    unique_blockers = sorted(set(blockers))
+    unique_warnings = sorted(set(warnings))
+    unique_gaps = sorted(set(gaps))
+    if unique_blockers:
+        status = "blocked"
+    elif unique_warnings or unique_gaps:
+        status = "review"
+    else:
+        status = "ready"
+    return {
+        "status": status,
+        "result_kind": result_kind,
+        "vetting_mode": vetting_mode,
+        "blockers": unique_blockers,
+        "warnings": unique_warnings,
+        "evidence_gaps": unique_gaps,
+        "interpretation": (
+            "Do not present as a planet candidate until blockers are cleared."
+            if unique_blockers
+            else "Review warnings and missing evidence before follow-up claims."
+            if status == "review"
+            else "Evidence gates passed for the selected mode; still not a confirmed planet."
+        ),
+    }
+
+
+def _summarize_science_readiness(tces: list[dict], *, result_kind: str, vetting_mode: str) -> dict[str, Any]:
+    statuses = [tce.get("science_readiness", {}).get("status") for tce in tces]
+    blockers = sorted({
+        blocker
+        for tce in tces
+        for blocker in tce.get("science_readiness", {}).get("blockers", [])
+    })
+    warnings = sorted({
+        warning
+        for tce in tces
+        for warning in tce.get("science_readiness", {}).get("warnings", [])
+    })
+    gaps = sorted({
+        gap
+        for tce in tces
+        for gap in tce.get("science_readiness", {}).get("evidence_gaps", [])
+    })
+    if any(status == "blocked" for status in statuses):
+        status = "blocked"
+    elif any(status == "review" for status in statuses) or gaps:
+        status = "review"
+    elif statuses:
+        status = "ready"
+    else:
+        status = "no_signal"
+    return {
+        "status": status,
+        "result_kind": result_kind,
+        "vetting_mode": vetting_mode,
+        "tce_count": len(tces),
+        "blockers": blockers,
+        "warnings": warnings,
+        "evidence_gaps": gaps,
+    }
 
 
 def _structured_flags(candidate, validation: dict, config, support: dict | None = None) -> list[dict]:
@@ -1138,6 +1276,17 @@ def analyze_light_curve_arrays(
                     "detail": str(exc),
                 }
         ml = _attach_ml_domain_evidence(ml, mission_upper=mission_upper, flags=flags, physics=physics)
+        science_readiness = _candidate_science_readiness(
+            result_kind="analysis",
+            vetting_mode=vetting_mode,
+            flags=flags,
+            physics=physics,
+            paper_grade=paper_grade,
+            fpp=fpp,
+            sector_consistency=sector_consistency,
+            detrending_sensitivity=detrending_sensitivity,
+            ml=ml,
+        )
         evidence_obj = build_candidate_evidence(
             candidate=candidate,
             search_time=bls_result.search_time,
@@ -1208,6 +1357,7 @@ def analyze_light_curve_arrays(
             "final_score": evidence["final_score"],
             "confidence_band": confidence_band,
             "flags": flags,
+            "science_readiness": science_readiness,
             "explanation": list(evidence["explanation"]),
             "evidence": evidence,
             "evidence_scores": {
@@ -1386,6 +1536,11 @@ def analyze_light_curve_arrays(
         "data_quality": data_quality,
         "tces": tce_payloads,
         "planet_candidates": planet_candidate_payloads,
+        "science_readiness": _summarize_science_readiness(
+            tce_payloads,
+            result_kind="analysis",
+            vetting_mode=vetting_mode,
+        ),
         "validation_status": "complete",
         "engine_status": engine_status,
         "deep_mode_progress": {

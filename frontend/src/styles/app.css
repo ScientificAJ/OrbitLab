@@ -541,6 +541,23 @@ label,
   text-align: left;
 }
 
+.candidate-card.readiness-blocked {
+  border-color: color-mix(in srgb, var(--error) 58%, var(--border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 84%, var(--error) 12%), var(--surface-soft)),
+    var(--surface-soft);
+}
+
+.candidate-card.readiness-review {
+  border-color: color-mix(in srgb, var(--warning) 54%, var(--border));
+}
+
+.readiness-mini {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 800;
+}
+
 .candidate-card,
 .selection-list button,
 .theme-choice,
@@ -857,6 +874,37 @@ label,
   font-size: 12px;
 }
 
+.science-readiness-banner {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.science-readiness-banner strong,
+.science-readiness-banner span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.science-readiness-banner strong {
+  color: var(--text-strong);
+}
+
+.science-readiness-banner.readiness-blocked {
+  border-color: color-mix(in srgb, var(--error) 52%, var(--border-strong));
+}
+
+.science-readiness-banner.readiness-review {
+  border-color: color-mix(in srgb, var(--warning) 54%, var(--border-strong));
+}
+
 .orbit-labels {
   position: absolute;
   z-index: 3;
@@ -886,6 +934,11 @@ label,
   border-color: #8ee7ff;
   background: rgba(18, 49, 59, 0.88);
   box-shadow: 0 0 18px rgba(142, 231, 255, 0.18);
+}
+
+.orbit-label.ghost {
+  border-style: dashed;
+  opacity: 0.68;
 }
 
 .orbit-label span,
@@ -956,6 +1009,11 @@ label,
   box-shadow:
     0 0 16px rgba(118, 228, 247, 0.24),
     inset 0 0 18px rgba(118, 228, 247, 0.12);
+}
+
+.fallback-orbit.ghost {
+  border-style: dashed;
+  opacity: 0.48;
 }
 
 .fallback-planet {
@@ -1316,6 +1374,10 @@ label,
 
 .status-ready {
   color: var(--success);
+}
+
+.status-warning {
+  color: var(--warning);
 }
 
 .status-bad {

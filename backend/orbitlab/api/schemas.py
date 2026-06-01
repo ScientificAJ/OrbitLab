@@ -21,6 +21,9 @@ class SearchResult(BaseModel):
     catalog: str
     match_type: str = Field(default="catalog", pattern="^(catalog|alias)$")
     matched_query: str | None = None
+    trust_state: str | None = None
+    trust_label: str | None = None
+    trust_warnings: list[str] = Field(default_factory=list)
 
 
 class Product(BaseModel):
@@ -95,6 +98,7 @@ class CandidatePayload(BaseModel):
     display_priority: int | None = None
     secondary_context: dict[str, Any] | None = None
     ml: dict[str, Any] | None = None
+    science_readiness: dict[str, Any] | None = None
 
 
 class TcePayload(CandidatePayload):
@@ -159,6 +163,7 @@ class AnalysisResult(BaseModel):
     bls_light_curve: dict[str, list[float]] | None = None
     stellar_context: StellarContext | None = None
     preprocessing: dict[str, Any] | None = None
+    science_readiness: dict[str, Any] | None = None
 
 
 class MaskCreate(BaseModel):

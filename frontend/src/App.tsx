@@ -108,6 +108,21 @@ function nestedRecord(record: Record<string, unknown> | undefined, key: string) 
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
 }
 
+function stringList(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function readinessClass(status: unknown) {
+  if (status === 'ready') return 'status-ready';
+  if (status === 'blocked') return 'status-bad';
+  if (status === 'review') return 'status-warning';
+  return '';
+}
+
+function compactList(values: string[] | undefined, empty = 'none') {
+  return values?.length ? values.slice(0, 4).join(', ') : empty;
+}
+
 function normalizeVettingMode(value: unknown): VettingMode {
   return value === 'deep' || value === 'fast' ? value : 'paper';
 }
@@ -121,10 +136,12 @@ function CandidateCard({
   active: boolean;
   onSelect: () => void;
 }) {
+  const readiness = candidate.science_readiness;
+  const status = readiness?.status;
   return (
     <button
       type="button"
-      className={`candidate-card ${active ? 'active' : ''}`}
+      className={`candidate-card ${active ? 'active' : ''} readiness-${status ?? 'unknown'}`}
       onClick={onSelect}
       title="SNR is signal strength; depth is how much the star dims during the transit."
     >
@@ -133,16 +150,19 @@ function CandidateCard({
       <small>
         SNR {formatNumber(candidate.signal_to_noise, 2)} · depth {formatNumber(candidate.depth * 1_000_000, 0)} ppm
       </small>
+      {status && <small className={`readiness-mini ${readinessClass(status)}`}>{status}</small>}
     </button>
   );
 }
 
 function TceCard({ tce, active, onSelect }: { tce: Tce; active: boolean; onSelect: () => void }) {
   const action = tce.action_label && tce.action_label !== 'none' ? tce.action_label : tce.disposition;
+  const readiness = tce.science_readiness;
+  const status = readiness?.status;
   return (
     <button
       type="button"
-      className={`candidate-card tce-card ${active ? 'active' : ''}`}
+      className={`candidate-card tce-card ${active ? 'active' : ''} readiness-${status ?? 'unknown'}`}
       onClick={onSelect}
       title="TCEs preserve signals that need vetting even when they are not promoted candidates."
     >
@@ -151,6 +171,7 @@ function TceCard({ tce, active, onSelect }: { tce: Tce; active: boolean; onSelec
       <small>
         SNR {formatNumber(tce.signal_to_noise, 2)} · period {formatNumber(tce.period_days ?? tce.period, 4)} d
       </small>
+      {status && <small className={`readiness-mini ${readinessClass(status)}`}>{status}</small>}
       {tce.flags?.length ? (
         <small className="flag-badges">
           {tce.flags.slice(0, 3).map((flag) => (
@@ -419,11 +440,13 @@ export default function App() {
     selectedTce?.sector_consistency ?? nestedRecord(selected?.vetting, 'sector_consistency');
   const selectedMlDomain = nestedRecord(selected?.ml as Record<string, unknown> | undefined, 'domain_awareness');
   const selectedMlConflicts = nestedRecord(selected?.ml as Record<string, unknown> | undefined, 'evidence_conflicts');
+  const selectedReadiness = selected?.science_readiness;
+  const selectedPhysicsLocked = selected?.physics?.interpretation_locked === true;
   const isAdvanced = mode === 'advanced';
 
   const renderedOrbitCandidates = useMemo<Candidate[]>(() => {
     if (result?.candidates.length) return result.candidates;
-    return tces.filter((tce) => tce.disposition !== 'rejected_signal');
+    return tces;
   }, [result?.candidates, tces]);
 
   const folded = selected && result ? result.folded_curves[selected.candidate_id] : undefined;
@@ -1039,6 +1062,7 @@ export default function App() {
         candidates: payload.candidates,
         planet_candidates: payload.planet_candidates ?? (payload.candidates as Tce[]),
         tces: payload.tces ?? (payload.candidates as Tce[]),
+        science_readiness: payload.science_readiness,
         periodogram: payload.periodogram,
         folded_curves: payload.folded_curves,
         light_curve: payload.bls_light_curve,
@@ -1234,7 +1258,10 @@ export default function App() {
                   onClick={() => chooseTarget(target)}
                 >
                   <span>{target.target_id}</span>
-                  <small>{target.matched_query ? `Alias for "${target.matched_query}"` : target.catalog}</small>
+                  <small>
+                    {target.trust_label ??
+                      (target.matched_query ? `Alias for "${target.matched_query}"` : target.catalog)}
+                  </small>
                 </button>
               ))}
               {suggestedTargets.length > 0 && catalogTargets.length > 0 && (
@@ -1248,7 +1275,7 @@ export default function App() {
                   onClick={() => chooseTarget(target)}
                 >
                   <span>{target.target_id}</span>
-                  <small>{target.catalog}</small>
+                  <small>{target.trust_label ?? target.catalog}</small>
                 </button>
               ))}
               {!targets.length && (
@@ -1527,6 +1554,17 @@ export default function App() {
               {workflow}
             </div>
           </div>
+          {result?.science_readiness && (
+            <div className={`science-readiness-banner readiness-${result.science_readiness.status ?? 'unknown'}`}>
+              <strong>Science readiness: {String(result.science_readiness.status ?? 'unknown')}</strong>
+              <span>
+                {compactList(
+                  stringList(result.science_readiness.blockers),
+                  compactList(stringList(result.science_readiness.evidence_gaps), 'no blockers'),
+                )}
+              </span>
+            </div>
+          )}
           <OrbitScene
             candidates={renderedOrbitCandidates}
             selectedId={selected?.candidate_id}
@@ -1593,6 +1631,28 @@ export default function App() {
               yLabel="flux"
               mode="markers"
             />
+          </div>
+          <div className="panel details">
+            <h2>
+              Science Readiness{' '}
+              <HelpTip label="Shows whether this signal is ready, review-only, or blocked by missing or failing evidence." />
+            </h2>
+            <dl>
+              <dt>Status</dt>
+              <dd className={readinessClass(selectedReadiness?.status)}>
+                {String(selectedReadiness?.status ?? 'n/a')}
+              </dd>
+              <dt>Run Type</dt>
+              <dd>{String(selectedReadiness?.result_kind ?? result?.science_readiness?.result_kind ?? 'n/a')}</dd>
+              <dt>Blockers</dt>
+              <dd>{compactList(selectedReadiness?.blockers)}</dd>
+              <dt>Warnings</dt>
+              <dd>{compactList(selectedReadiness?.warnings)}</dd>
+              <dt>Missing Evidence</dt>
+              <dd>{compactList(selectedReadiness?.evidence_gaps)}</dd>
+              <dt>Interpretation</dt>
+              <dd>{selectedReadiness?.interpretation ?? 'n/a'}</dd>
+            </dl>
           </div>
           <div className="panel details">
             <h2>
@@ -1758,6 +1818,16 @@ export default function App() {
               <dd>
                 {String(selected?.physics?.stellar_context_source ?? result?.stellar_context?.physics_source ?? 'n/a')}
               </dd>
+              <dt>Physics Lock</dt>
+              <dd className={selectedPhysicsLocked ? 'status-bad' : 'status-ready'}>
+                {selectedPhysicsLocked ? String(selected?.physics?.locked_reason ?? 'locked') : 'clear'}
+              </dd>
+              {selectedPhysicsLocked && (
+                <>
+                  <dt>Lock Reason</dt>
+                  <dd>{String(selected?.physics?.trust_message ?? 'Stellar context is not verified.')}</dd>
+                </>
+              )}
             </dl>
           </div>
           <div className="panel details">
