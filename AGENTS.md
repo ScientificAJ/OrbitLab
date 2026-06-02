@@ -36,6 +36,9 @@ kindness in all user-facing and collaborator-facing behavior.
 
 ## Quality Bar
 
+- Highest possible standard is the default. If an agent thinks a plan, design,
+  analysis, or fix is already high standard, it must raise the bar by 10x and
+  look for the deeper, stronger, more complete version before proceeding.
 - Science accuracy target: NASA-level rigor. Inspect the data path,
   assumptions, candidate provenance, aliases, validation flags, benchmark
   outputs, and false-positive handling before changing result semantics.
@@ -47,6 +50,9 @@ kindness in all user-facing and collaborator-facing behavior.
 - Engineering target: maximum-effort solution within the task scope. If the
   first fix exposes adjacent failure points, inspect them instead of declaring
   victory too early.
+- Do not optimize for "good enough." Optimize for the best achievable result
+  under real constraints, with evidence, tests, polish, and a clear upgrade path
+  when perfection is not reachable in one pass.
 
 ## Required Workflow
 
@@ -63,6 +69,9 @@ kindness in all user-facing and collaborator-facing behavior.
    - Keep the user's full objective intact.
    - Identify risky files, expected verification, and any external research
      needed.
+   - Run a 10x quality check on the plan: ask what a much stronger science,
+     UI, reliability, and testing solution would include, then include as much
+     of that as is realistically achievable.
 
 3. Analyze and Research
    - Trace root causes across modules instead of guessing from symptoms.
