@@ -163,8 +163,13 @@ kindness in all user-facing and collaborator-facing behavior.
 
 5. Test
    - Run focused tests for the changed area.
-   - Run broader regression checks when science logic, shared UI, deployment,
-     or data contracts are touched.
+   - Do not run the whole test suite for every microchange. Be smart and scale
+     verification to risk; tiny documentation, copy, token, spacing, or
+     localized UI changes usually need only focused checks.
+   - Run broader regression checks only when the change is genuinely high
+     blast-radius: science logic, simulation behavior, shared UI foundations,
+     deployment, data contracts, persistence, accessibility-critical flows, or
+     user-visible workflows.
    - Scale verification intelligently to the risk and blast radius. Tiny,
      localized UI polish does not automatically require exhaustive UX/e2e/live
      smoke coverage; use lightweight checks such as diff review, lint/build,
@@ -176,6 +181,17 @@ kindness in all user-facing and collaborator-facing behavior.
    - For substantial OrbitLab work, prefer the full verification stack:
      backend lint/tests, `scripts/preflight.sh`, frontend lint/unit/e2e/build,
      and any relevant benchmark checks.
+   - Independently of risk, keep a rolling task cadence. At the start of each
+     task, create or update a small markdown note in `.agents/task-log/` with
+     the task number, start time, goal, expected verification level, and whether
+     it is task 1, 2, or 3 in the cadence.
+   - On every third task in that cadence, run the whole appropriate suite for
+     the body of work completed across those three tasks. If failures appear
+     from earlier pushed work, fix them in a follow-up commit and push that fix
+     instead of pretending the delayed suite belongs to only the third task.
+   - It is acceptable to push each completed task after its focused verification
+     and run the full cadence suite later on task 3, unless the current task is
+     clearly major or high-risk enough to require the suite immediately.
 
 6. Live Smoke
    - When the app behavior matters, verify against the real local API/UI.
