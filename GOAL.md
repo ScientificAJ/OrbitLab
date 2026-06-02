@@ -1,5 +1,7 @@
 # OrbitLab: real core issues for a NASA-grade exoplanet system
 
+Status: historical planning note. Several items in this memo have since been implemented or documented for OrbitLab `v0.2.0`; use `docs/SCIENTIFIC_METHODOLOGY.md`, `docs/RELEASE.md`, and `CHANGELOG.md` as the current source of truth.
+
 You’re right. I made the answer heavier than the project and spent too much time polishing the warning label instead of opening the engine bay. That was not useful enough.
 
 Here is the corrected version: **not nomenclature-first, not legal-caveat-first, but actual project engineering.**
@@ -658,7 +660,7 @@ That is where OrbitLab should go.
 
 Alright, let’s look at this handover. If Mark Rober walked into the room, grabbed a marker, and looked at this spec for a NASA-grade exoplanet workbench, the first thing he’d say is:
 
-*"The engineering here is super clean. It actually talks to real hardware—the spacecraft data—instead of just playing in a sandbox. But if we are telling people this is an 'Accuracy Paper-Grade' machine, we have a few massive blind spots where the physics of the universe is going to bite us in the butt. We’ve built an incredibly precise digital caliper, but we're measuring a wobbling piece of Jell-O."*
+_"The engineering here is super clean. It actually talks to real hardware—the spacecraft data—instead of just playing in a sandbox. But if we are telling people this is an 'Accuracy Paper-Grade' machine, we have a few massive blind spots where the physics of the universe is going to bite us in the butt. We’ve built an incredibly precise digital caliper, but we're measuring a wobbling piece of Jell-O."_
 
 To get this to a true NASA-flight-readiness level, we need to bridge the gap between "good software engineering" and "relentless physical reality."
 
@@ -671,7 +673,7 @@ Here is the breakdown of the core scientific issues with the 2026 OrbitLab imple
 ### The Issue
 
 OrbitLab uses Astropy’s Box Least Squares (BLS) as its broad periodogram and residual multi-candidate engine. BLS assumes transits look like a perfect cardboard box dropped into the light curve.
-But physics isn’t a box. Stars are spheres, and they have **limb darkening**—they are brighter in the center than at the edges. When a planet crosses, the dip is a smooth, elegant curve, not a box. While the primary search uses Transit Least Squares (TLS) to handle this properly, your *multi-candidate residual search* drops back to BLS.
+But physics isn’t a box. Stars are spheres, and they have **limb darkening**—they are brighter in the center than at the edges. When a planet crosses, the dip is a smooth, elegant curve, not a box. While the primary search uses Transit Least Squares (TLS) to handle this properly, your _multi-candidate residual search_ drops back to BLS.
 If a star has multiple planets, BLS will completely miss or miscalculate the shallow, curved signatures of the smaller siblings left in the residuals.
 
 ### The NASA/Rober Goal
@@ -691,11 +693,11 @@ If a star has multiple planets, BLS will completely miss or miscalculate the sha
 
 This is a classic "almost-had-it" engineering disconnect. OrbitLab pulls down the real Target Pixel Files (TPFs) so the user can see the actual pixels lighting up. That’s awesome. But then, when it passes data to TRICERATOPS to calculate the False Positive Probability (FPP), it just sends a flat, 1D binned light curve.
 
-TRICERATOPS is a spatial-statistical beast. It wants to know exactly *which* pixels you calculated that flux from so it can determine if a background eclipsing binary 3 arcseconds away is bleeding into your custom mask. By stripping the pixel-level aperture mask before feeding TRICERATOPS, you are throwing away your best shield against background impostors.
+TRICERATOPS is a spatial-statistical beast. It wants to know exactly _which_ pixels you calculated that flux from so it can determine if a background eclipsing binary 3 arcseconds away is bleeding into your custom mask. By stripping the pixel-level aperture mask before feeding TRICERATOPS, you are throwing away your best shield against background impostors.
 
 ### The NASA/Rober Goal
 
-**Max out the data loop.** Feed the actual pipeline-derived or user-selected `aperture_mask` straight into TRICERATOPS via its `calc_depths` path. If the code doesn’t tell the math *where* it’s looking on the detector sky, the math can’t tell you if you’re being tricked by a nearby star.
+**Max out the data loop.** Feed the actual pipeline-derived or user-selected `aperture_mask` straight into TRICERATOPS via its `calc_depths` path. If the code doesn’t tell the math _where_ it’s looking on the detector sky, the math can’t tell you if you’re being tricked by a nearby star.
 
 ---
 
@@ -706,7 +708,7 @@ TRICERATOPS is a spatial-statistical beast. It wants to know exactly *which* pix
 The implementation calculates a basic center-of-mass (flux-weighted moment) centroid for the target star. If the centroid shifts during a transit, OrbitLab flags a warning.
 Here’s the catch: stars don't sit perfectly still on the detector. The spacecraft jitters, thermal changes cause breathing in the optics, and the fine-guidance sensors drop corrections.
 
-A simple image moment can’t distinguish between *"the spacecraft shook by 0.01 pixels"* and *"the light shifted because a background star dropped in brightness."* NASA pipelines use a Pixel Response Function (PRF) fit—a mathematical model of how a point source of light spills across a grid of pixels—to track the absolute micro-position of the star.
+A simple image moment can’t distinguish between _"the spacecraft shook by 0.01 pixels"_ and _"the light shifted because a background star dropped in brightness."_ NASA pipelines use a Pixel Response Function (PRF) fit—a mathematical model of how a point source of light spills across a grid of pixels—to track the absolute micro-position of the star.
 
 ### The NASA/Rober Goal
 
@@ -723,7 +725,7 @@ That sounds fine for an app, but in exoplanet physics, it’s a disaster. If you
 
 ### The NASA/Rober Goal
 
-**Fail smart, or estimate with guards.** If the catalog doesn't know the star, you can't assume it's our Sun. The system should use an empirical stellar property relation lookup table based on whatever sparse data *is* available (like Gaia broadband colors or $G-RP$ color indices). If that still fails, block the physics engine entirely and put a giant, clear warning: **"Physical Properties Locked: Stellar Parentage Unknown."**
+**Fail smart, or estimate with guards.** If the catalog doesn't know the star, you can't assume it's our Sun. The system should use an empirical stellar property relation lookup table based on whatever sparse data _is_ available (like Gaia broadband colors or $G-RP$ color indices). If that still fails, block the physics engine entirely and put a giant, clear warning: **"Physical Properties Locked: Stellar Parentage Unknown."**
 
 ---
 

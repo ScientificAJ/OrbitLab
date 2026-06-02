@@ -1,5 +1,7 @@
 # OrbitLab Submission Checklist
 
+Status: current for OrbitLab `v0.2.0`.
+
 Use this before a judged demo.
 
 ## Local Dry Run
@@ -20,6 +22,17 @@ Use this before a judged demo.
 - Candidate outputs are triage signals, not planet confirmations.
 - K2 ML uses the registered ExoMAC-KKT tabular replacement model.
 - Report export is available only after full analysis, not preview-only BLS results.
+- Public releases include a Science Provenance Release Room with model checksums, calibration/source checksums, benchmark deltas, SBOM, release asset checksums, and GitHub attestation evidence.
+
+## Release Evidence
+
+Before a final public demo or judge handoff, confirm:
+
+1. `CHANGELOG.md` matches the release body.
+2. `docs/RELEASE.md` lists the release-room assets expected for the tag.
+3. The GitHub release contains `orbitlab-release-report.md`, JSON benchmark/checksum assets, `sbom.spdx.json`, `release-room-assets.sha256`, and `orbitlab-release-room-vX.Y.Z.zip`.
+4. The release-room zip attestation verifies with GitHub for the repository.
+5. Any model readiness mismatch between the release packet and the demo machine is explained plainly.
 
 ## Media
 

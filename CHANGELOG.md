@@ -6,7 +6,7 @@ All notable OrbitLab changes are tracked here.
 
 ### Added
 
--
+- Expanded documentation for the Science Provenance Release Room, release trust boundaries, model checksum readiness, deployment provenance checks, and submission evidence review.
 
 ## v0.2.0 - 2026-06-03
 

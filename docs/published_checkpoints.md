@@ -1,5 +1,7 @@
 # Published Checkpoints
 
+Status: current for OrbitLab `v0.2.0`; release-level checksum evidence is also captured in the Science Provenance Release Room described in `docs/RELEASE.md`.
+
 ## Nigraha TESS Weights
 
 The real published checkpoint set currently wired into OrbitLab is the Nigraha TESS ensemble:

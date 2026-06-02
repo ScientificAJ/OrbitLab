@@ -1,5 +1,7 @@
 # OrbitLab Deployment Runbook
 
+Status: current for OrbitLab `v0.2.0`.
+
 This runbook covers a production-style deployment without storing model bundles in git.
 
 ## Components
@@ -48,6 +50,35 @@ Then verify:
 curl https://api.example/api/v1/models
 ```
 
+## Release Provenance Before Deployment
+
+Before deploying a public tag, confirm the release-room packet exists for that tag:
+
+```bash
+gh release view vX.Y.Z
+gh run list --workflow release-room.yml --limit 5
+```
+
+Minimum expected release assets:
+
+- `orbitlab-release-report.md`
+- `release-metadata.json`
+- `model-artifact-checksums.json`
+- `calibration-source-checksums.json`
+- `science-benchmark-current.json`
+- `science-benchmark-delta.json`
+- `sbom.spdx.json`
+- `release-room-assets.sha256`
+- `orbitlab-release-room-vX.Y.Z.zip`
+
+For production-style deployments, compare the deployed model readiness with the release packet:
+
+```bash
+curl https://api.example/api/v1/models
+```
+
+If the deployment has different readiness than the release room, document why. Common valid reasons are a newer mounted artifact volume, a deliberately unavailable model for a lightweight demo host, or a release generated before artifacts were fetched.
+
 ## Health Checks
 
 - API: `GET /api/v1/health` returns `status`, `database`, and `worker_mode`.
@@ -55,6 +86,7 @@ curl https://api.example/api/v1/models
 - Frontend: request `/` from the deployed frontend.
 - Worker: submit a small analysis job or inspect Celery worker heartbeats.
 - Redis/Postgres: use platform health checks plus the API health response.
+- Release room: verify the latest public tag has release-room assets and GitHub attestation when deployment is promoted as a public release.
 
 ## Rollback And Restart
 

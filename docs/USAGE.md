@@ -1,5 +1,7 @@
 # OrbitLab Usage Guide
 
+Status: current for OrbitLab `v0.2.0`.
+
 This guide walks through running OrbitLab and using the main workflow with real mission data. OrbitLab is intentionally conservative: it shows BLS and analysis candidates only when they come from the selected product and pipeline, not from illustrative placeholder data.
 
 ## 1. Start The App
@@ -108,10 +110,26 @@ The ML panel is intentionally honest about missing artifacts. Use `ML Status` to
 
 Preview-only BLS results are useful for exploration, but report export is available only after a full analysis.
 
-## 9. Troubleshooting
+## 9. Inspect Release Evidence
+
+For public releases, OrbitLab publishes release-room assets on the GitHub release page. Use them when you need to audit what the release knew about models, calibration sources, benchmarks, and dependencies.
+
+Useful assets:
+
+- `orbitlab-release-report.md` - human-readable release summary.
+- `model-artifact-checksums.json` - model registry and checksum readiness.
+- `science-benchmark-current.md` - benchmark result summary.
+- `science-benchmark-delta.md` - benchmark movement against a baseline when available.
+- `sbom.spdx.json` - SPDX dependency inventory.
+- `release-room-assets.sha256` - checksums for generated release-room assets.
+
+The release-room packet is separate from the running app. If a local deployment has different model readiness than a public release packet, inspect the local `.orbitlab/models.json`, mounted model directory, and `GET /api/v1/models`.
+
+## 10. Troubleshooting
 
 - `No matching targets found`: try a known target from [DEMO_TARGETS.md](DEMO_TARGETS.md), confirm the mission, and check MAST connectivity.
 - `No target pixel products found`: try another mission/product target, or wait and retry if MAST is slow.
 - Star-only simulation: run BLS Search or full Analysis; OrbitLab does not draw fake orbits before candidates exist.
 - LAN page does not load: bind to `0.0.0.0`, open `http://<LAN-IP>:5173`, and allow ports `5173` and `8000`.
 - Model is unavailable: run the relevant fetch script shown in `ML Status` or in [model_artifacts.md](model_artifacts.md).
+- Release asset is missing: check [RELEASE.md](RELEASE.md), rerun `release-room.yml` by tag, and verify the GitHub release assets.

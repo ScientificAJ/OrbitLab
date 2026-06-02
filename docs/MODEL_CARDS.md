@@ -1,6 +1,10 @@
 # OrbitLab Model Cards
 
+Status: current for OrbitLab `v0.2.0`.
+
 OrbitLab treats model artifacts as external scientific dependencies. A model is ready only when its registered files exist locally and pass checksum validation.
+
+Global model-card rule: ML outputs are vetting evidence, not planet confirmation. A score may support, weaken, or contextualize a TCE, but final product wording must still distinguish reviewable TCEs, promoted `planet_candidates`, and externally confirmed planets.
 
 ## Nigraha TESS Ensemble
 
@@ -49,3 +53,13 @@ curl http://127.0.0.1:8000/api/v1/models
 ```
 
 The response is the public truth for demo and contributor workflows. Ready means artifact files exist and checksums match. Unavailable means the service cannot honestly produce model-backed outputs.
+
+## Release Provenance
+
+Every public release should include the model-card truth in machine-checkable form through the Science Provenance Release Room:
+
+- `model-artifact-checksums.json` records registered model paths, expected checksums, actual checksums, and readiness/mismatch detail.
+- `calibration-source-checksums.json` tracks this model-card document, `docs/model_artifacts.md`, and key calibration/science source files.
+- `orbitlab-release-report.md` summarizes ready and unavailable/mismatched model IDs for release reviewers.
+
+Reviewers should compare `GET /api/v1/models` from the running app with the release-room artifact when debugging deployment drift. If the running app reports a model as ready but the release packet reported it unavailable, the deployment likely has newer local artifacts than the release build. If the release packet reported ready but the running app reports unavailable, inspect the deployed registry path, mounted artifact volume, and checksums.

@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/ScientificAJ/OrbitLab/actions/workflows/ci.yml/badge.svg)](https://github.com/ScientificAJ/OrbitLab/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/ScientificAJ/OrbitLab/actions/workflows/codeql.yml/badge.svg)](https://github.com/ScientificAJ/OrbitLab/actions/workflows/codeql.yml)
-[![Release](https://img.shields.io/github/v/release/ScientificAJ/OrbitLab?include_prereleases&label=release)](https://github.com/ScientificAJ/OrbitLab/releases/tag/v0.1.0-mvp)
+[![Release](https://img.shields.io/github/v/release/ScientificAJ/OrbitLab?include_prereleases&label=release)](https://github.com/ScientificAJ/OrbitLab/releases/latest)
 [![Coverage](https://codecov.io/gh/ScientificAJ/OrbitLab/branch/main/graph/badge.svg)](https://codecov.io/gh/ScientificAJ/OrbitLab)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](pyproject.toml)
@@ -17,6 +17,14 @@ Research-grade exoplanet candidate workbench for real TESS, Kepler, and K2 targe
 OrbitLab helps students, judges, and citizen-science teams inspect candidate transits from NASA mission data without pretending certainty. It searches MAST products, extracts light curves from target pixel files, runs BLS transit searches, applies basic validation and physics checks, and reports mission-aware pretrained ML readiness through a public API.
 
 The project is intentionally strict: the backend does not fabricate planets, light curves, model scores, charts, screenshots, or downloaded artifacts. If data or a checksum-verified model artifact is missing, OrbitLab says so.
+
+## Current Release And Trust Packet
+
+Latest release: [`v0.2.0`](https://github.com/ScientificAJ/OrbitLab/releases/tag/v0.2.0).
+
+Every public release is expected to ship a Science Provenance Release Room: a generated audit packet with source commit metadata, model artifact checksums, calibration/source checksums, science benchmark results and deltas, SPDX SBOM, release-room asset checksums, a zipped release packet, and GitHub artifact attestations when the release workflow runs. The packet helps reviewers verify what was built and what evidence existed at release time.
+
+Trust boundary: a release-room packet proves provenance, checksums, benchmarks, dependency inventory, and release assets. It does not turn BLS detections, ML scores, or promoted TCEs into confirmed planets. OrbitLab's strongest in-app claim is still follow-up candidate under the current evidence gates.
 
 ## Problem
 
@@ -38,6 +46,7 @@ OrbitLab is the opposite tradeoff: a usable full-stack workbench that keeps the 
 - Exports reproducible evidence packets with light curves, periodograms, folded curves, vetting JSON, catalog context, ML evidence, and final disposition notes.
 - Reports model availability at `GET /api/v1/models` using local artifact checksums.
 - Keeps model downloads reproducible through pinned fetch scripts.
+- Publishes release-room provenance assets for public releases so benchmark, model, calibration, SBOM, and attestation evidence are inspectable outside the app.
 - Starts the local stack with `scripts/start_all.sh`.
 
 ## Model Readiness
@@ -58,6 +67,7 @@ See [docs/SCIENTIFIC_METHODOLOGY.md](docs/SCIENTIFIC_METHODOLOGY.md), [docs/MODE
 | Understand the backend, frontend, and worker design | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                                                               |
 | Review science assumptions and validation limits    | [docs/SCIENTIFIC_METHODOLOGY.md](docs/SCIENTIFIC_METHODOLOGY.md)                                           |
 | Check model provenance and artifact readiness       | [docs/MODEL_CARDS.md](docs/MODEL_CARDS.md), [docs/model_artifacts.md](docs/model_artifacts.md)             |
+| Audit release provenance and generated assets       | [docs/RELEASE.md](docs/RELEASE.md)                                                                         |
 | Prepare a demo or judging run                       | [docs/DEMO_TARGETS.md](docs/DEMO_TARGETS.md), [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) |
 | Deploy or release OrbitLab                          | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), [docs/RELEASE.md](docs/RELEASE.md)                               |
 | Contribute or ask for help                          | [CONTRIBUTING.md](CONTRIBUTING.md), [SUPPORT.md](SUPPORT.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)     |
@@ -162,12 +172,15 @@ Base prefix: `/api/v1`
 - `frontend/src/` - React/Vite application.
 - `scripts/` - repeatable artifact, startup, and operational scripts.
 - `docs/` - architecture, model cards, artifact policy, and repo notes.
+- `.github/workflows/` - CI, CodeQL, and release-room automation.
+- `.agents/task-log/` - rolling task logs for agent handoffs and verification cadence.
 - `.orbitlab/` - ignored local runtime state: cached MAST products, model artifacts, logs, pid files, and the default SQLite database.
 
 ## Judging Highlights
 
 - Real archive data first: no generated light curves or model outputs.
 - Reproducible artifact provenance with pinned sources and checksums.
+- Release-room provenance with model/calibration checksums, science benchmark deltas, SBOM, release asset checksums, and GitHub attestations.
 - Mission-aware ML behavior for TESS, Kepler/K1, and K2.
 - Clear unavailable states for missing models, with K2 handled by the registered ExoMAC-KKT replacement.
 - Full-stack demo path with FastAPI, React/Vite, Docker Compose, and local preflight checks.
@@ -177,6 +190,7 @@ Run the same core checks used by contributors:
 ```bash
 scripts/preflight.sh
 scripts/run_orbitlab_science_benchmark.py --output-dir .orbitlab/benchmarks/latest
+python scripts/build_release_room.py --tag vX.Y.Z --clean
 scripts/export_evidence_packet.py path/to/analysis_result.json .orbitlab/evidence-packets/example
 ```
 

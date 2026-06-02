@@ -1,5 +1,7 @@
 # OrbitLab Hackathon Notes
 
+Status: current for OrbitLab `v0.2.0`.
+
 ## Pitch
 
 OrbitLab is a real-data exoplanet candidate workbench. It turns NASA MAST target pixel files into inspectable transit candidates with a transparent pipeline: product search, light-curve extraction, BLS detection, validation context, mission-aware model readiness, and a React interface for exploration.
@@ -13,7 +15,7 @@ OrbitLab is a real-data exoplanet candidate workbench. It turns NASA MAST target
 
 ## Core Innovation
 
-OrbitLab combines a full-stack user experience with strict data provenance. The app does not invent model scores when artifacts are missing, and it distinguishes between what is downloadable now and what is only documented in papers.
+OrbitLab combines a full-stack user experience with strict data provenance. The app does not invent model scores when artifacts are missing, distinguishes between what is downloadable now and what is only documented in papers, and publishes release-room evidence so judges can audit what a public release actually contained.
 
 ## Demo Flow
 
@@ -34,6 +36,7 @@ OrbitLab combines a full-stack user experience with strict data provenance. The 
 - K2 ExoMAC-KKT catalog-classifier registration.
 - Docker Compose support for Redis/Postgres and a TensorFlow 1.x Kepler runtime path.
 - React/Vite frontend for interactive exploration.
+- Science Provenance Release Room assets for public releases: model checksums, calibration/source checksums, benchmark deltas, SPDX SBOM, release asset checksums, zip packet, and GitHub attestation evidence.
 
 ## Known Limits
 
@@ -42,10 +45,12 @@ OrbitLab combines a full-stack user experience with strict data provenance. The 
 - K2 uses ExoMAC-KKT as the registered replacement model for mission-aware ML readiness and inference.
 - ExoMAC-KKT is a K2-capable tabular classifier, not a light-curve CNN.
 - Candidate labels are decision support, not discovery confirmation.
+- Release-room evidence proves provenance and benchmark state; it does not confirm planets.
 
 ## Judging Notes
 
 - The strongest judging signal is transparency: every unavailable state should be visible instead of hidden.
 - Use real targets and preserve the target/product identifiers in the demo.
 - Do not present BLS candidates or ML scores as confirmed planets.
+- Show the release-room packet when judges ask how the release can be audited after the demo.
 - Show the roadmap to make it clear which polish items are intentionally deferred.

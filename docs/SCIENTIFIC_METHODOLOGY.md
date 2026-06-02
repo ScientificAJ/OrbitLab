@@ -1,6 +1,6 @@
 # OrbitLab Scientific Methodology
 
-Status: source-backed methodology for the current OrbitLab implementation as of 2026-05-27.
+Status: source-backed methodology for the current OrbitLab implementation as of OrbitLab `v0.2.0` on 2026-06-03.
 
 Audience: scientists, hackathon judges, maintainers, and advanced users who need to understand exactly what the system does, what research method each module follows, where OrbitLab is one-to-one with published or reference implementations, and where a published pipeline remains scientifically stronger.
 
@@ -37,34 +37,36 @@ OrbitLab does not claim that a promoted signal is a confirmed planet. The strong
 5. Traceable thresholds. Numeric gates live in `backend/orbitlab/science/science_config.toml` and are emitted with results.
 6. Reproducible artifact policy. Model artifacts are pinned, checksum validated, and fetched by scripts rather than fabricated.
 7. Honest limitations. The app distinguishes exact attached paper methods from useful approximations and still-stronger external pipelines.
+8. Release-level provenance. Public releases include model checksums, calibration/source checksums, benchmark deltas, SBOM data, release asset checksums, and GitHub attestations so scientific evidence can be audited after the demo.
 
 ## Primary Code Map
 
-| Area | Code |
-| --- | --- |
-| FastAPI endpoints and job creation | `backend/orbitlab/api/main.py` |
-| API schemas | `backend/orbitlab/api/schemas.py` |
-| Worker execution | `backend/orbitlab/worker.py` |
-| MAST search, TPF resolution, light-curve extraction | `backend/orbitlab/science/mast.py` |
-| Data cleaning | `backend/orbitlab/science/data_quality.py` |
-| BLS detection and residual search | `backend/orbitlab/science/bls.py` |
-| Wotan detrending | `backend/orbitlab/science/detrending.py` |
-| TLS search/refinement | `backend/orbitlab/science/tls_refinement.py` |
-| Main science orchestration | `backend/orbitlab/science/pipeline.py` |
-| Core validation metrics | `backend/orbitlab/science/validation.py` |
-| Evidence scoring | `backend/orbitlab/science/evidence.py` |
-| Difference image and aperture diagnostics | `backend/orbitlab/science/tpf_diagnostics.py` |
-| DAVE ModShift, RoboVet, SWEET | `backend/orbitlab/science/dave_vetting.py` |
-| TIC/Gaia/NASA Archive context | `backend/orbitlab/science/catalog_context.py` |
-| TRICERATOPS FPP/NFPP wrapper | `backend/orbitlab/science/triceratops_fpp.py` |
-| Planet physics and Kopparapu HZ | `backend/orbitlab/science/physics.py` |
-| Nigraha tensorization | `backend/orbitlab/ml/nigraha_adapter.py` |
-| Nigraha HDF5 ensemble inference | `backend/orbitlab/ml/nigraha_service.py` |
-| Frontend data contract | `frontend/src/lib/api.ts` |
-| Frontend workbench | `frontend/src/App.tsx` |
-| Method thresholds | `backend/orbitlab/science/science_config.toml` |
-| Full repo gate | `scripts/preflight.sh` |
-| DAVE binary build | `scripts/build_dave_modshift.sh` |
+| Area                                                | Code                                           |
+| --------------------------------------------------- | ---------------------------------------------- |
+| FastAPI endpoints and job creation                  | `backend/orbitlab/api/main.py`                 |
+| API schemas                                         | `backend/orbitlab/api/schemas.py`              |
+| Worker execution                                    | `backend/orbitlab/worker.py`                   |
+| MAST search, TPF resolution, light-curve extraction | `backend/orbitlab/science/mast.py`             |
+| Data cleaning                                       | `backend/orbitlab/science/data_quality.py`     |
+| BLS detection and residual search                   | `backend/orbitlab/science/bls.py`              |
+| Wotan detrending                                    | `backend/orbitlab/science/detrending.py`       |
+| TLS search/refinement                               | `backend/orbitlab/science/tls_refinement.py`   |
+| Main science orchestration                          | `backend/orbitlab/science/pipeline.py`         |
+| Core validation metrics                             | `backend/orbitlab/science/validation.py`       |
+| Evidence scoring                                    | `backend/orbitlab/science/evidence.py`         |
+| Difference image and aperture diagnostics           | `backend/orbitlab/science/tpf_diagnostics.py`  |
+| DAVE ModShift, RoboVet, SWEET                       | `backend/orbitlab/science/dave_vetting.py`     |
+| TIC/Gaia/NASA Archive context                       | `backend/orbitlab/science/catalog_context.py`  |
+| TRICERATOPS FPP/NFPP wrapper                        | `backend/orbitlab/science/triceratops_fpp.py`  |
+| Planet physics and Kopparapu HZ                     | `backend/orbitlab/science/physics.py`          |
+| Nigraha tensorization                               | `backend/orbitlab/ml/nigraha_adapter.py`       |
+| Nigraha HDF5 ensemble inference                     | `backend/orbitlab/ml/nigraha_service.py`       |
+| Frontend data contract                              | `frontend/src/lib/api.ts`                      |
+| Frontend workbench                                  | `frontend/src/App.tsx`                         |
+| Method thresholds                                   | `backend/orbitlab/science/science_config.toml` |
+| Full repo gate                                      | `scripts/preflight.sh`                         |
+| DAVE binary build                                   | `scripts/build_dave_modshift.sh`               |
+| Release-room provenance                             | `scripts/build_release_room.py`                |
 
 ## End-to-End Data Flow
 
@@ -93,7 +95,24 @@ User target query
   -> tces and planet_candidates payload
   -> stored result
   -> frontend evidence workbench
+  -> optional evidence export
+  -> release-room provenance packet for tagged releases
 ```
+
+## Result Trust Boundaries
+
+OrbitLab uses separate evidence layers because mixing them creates false certainty:
+
+| Layer                          | Meaning                                                                                | User-facing wording                                                       |
+| ------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Typed target query             | Text the user entered.                                                                 | Search input only; not proof of a catalog match.                          |
+| Catalog/MAST match             | A resolved mission target/product returned by archive tooling.                         | Real target/product selection.                                            |
+| TCE                            | A reviewable threshold-crossing signal preserved in the ledger.                        | Needs review; may be borderline or rejected.                              |
+| `planet_candidates`            | TCEs promoted by OrbitLab's current evidence gates.                                    | Follow-up candidate, not confirmed.                                       |
+| Known/confirmed planet context | External archive/catalog context such as NASA Exoplanet Archive rows.                  | External catalog context, not OrbitLab's own discovery claim.             |
+| Release-room evidence          | Checksums, benchmarks, SBOM, release assets, and attestations generated for a release. | Reproducibility and provenance evidence, not a target-level confirmation. |
+
+Any UI, API, report, release note, or demo narration must preserve these boundaries. The safe sentence is: "This signal is a real TCE found in real mission data; its displayed disposition describes how it performed under OrbitLab's current evidence gates."
 
 ## Data Acquisition Methodology
 
@@ -155,15 +174,15 @@ The use of `1.4826 * MAD` estimates Gaussian-equivalent scatter from the median 
 
 Data-quality fields emitted:
 
-| Field | Meaning |
-| --- | --- |
-| `raw_cadence_count` | Number of input samples before cleaning. |
-| `used_cadence_count` | Number of samples after cleaning. |
-| `baseline_days` | Time span of finite input data. |
-| `gap_fraction` | Approximate missing-cadence fraction from median cadence. |
-| `quality_flag_fraction` | Fraction of cadences with nonzero mission quality flag. |
-| `scatter_ppm` | Standard deviation of cleaned residuals in ppm. |
-| `red_noise_beta` | Correlated-noise inflation estimate. |
+| Field                   | Meaning                                                   |
+| ----------------------- | --------------------------------------------------------- |
+| `raw_cadence_count`     | Number of input samples before cleaning.                  |
+| `used_cadence_count`    | Number of samples after cleaning.                         |
+| `baseline_days`         | Time span of finite input data.                           |
+| `gap_fraction`          | Approximate missing-cadence fraction from median cadence. |
+| `quality_flag_fraction` | Fraction of cadences with nonzero mission quality flag.   |
+| `scatter_ppm`           | Standard deviation of cleaned residuals in ppm.           |
+| `red_noise_beta`        | Correlated-noise inflation estimate.                      |
 
 Where research pipelines are stronger:
 
@@ -253,13 +272,13 @@ SNR = depth / scatter * sqrt(N_in_transit)
 
 Search profile thresholds:
 
-| Profile | min_period | max_period | period_samples | max_period_samples | min_transits | max_search_cadences |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `preview_fast` | 0.5 d | 30 d | 4096 | 50000 | 2 | 6000 |
-| `science_standard` | 0.2 d | 60 d | 8192 | 50000 | 2 | 6000 |
-| `science_deep` | 0.1 d | 60 d | 50000 | 50000 | 2 | 9000 |
-| `paper_grade` | 0.1 d | 60 d | 50000 | 50000 | 2 | 9000 |
-| `long_period` | 10 d | 120 d | 50000 | 50000 | 1 | 9000 |
+| Profile            | min_period | max_period | period_samples | max_period_samples | min_transits | max_search_cadences |
+| ------------------ | ---------: | ---------: | -------------: | -----------------: | -----------: | ------------------: |
+| `preview_fast`     |      0.5 d |       30 d |           4096 |              50000 |            2 |                6000 |
+| `science_standard` |      0.2 d |       60 d |           8192 |              50000 |            2 |                6000 |
+| `science_deep`     |      0.1 d |       60 d |          50000 |              50000 |            2 |                9000 |
+| `paper_grade`      |      0.1 d |       60 d |          50000 |              50000 |            2 |                9000 |
+| `long_period`      |       10 d |      120 d |          50000 |              50000 |            1 |                9000 |
 
 One-to-one alignment:
 
@@ -302,18 +321,18 @@ primary = _tls_primary_candidate(paper_tls_primary)
 
 TLS output fields:
 
-| Field | Meaning |
-| --- | --- |
-| `period_days` | Best TLS period. |
-| `duration_days` | TLS duration. |
-| `epoch_days` | TLS T0. |
-| `depth_fraction` | TLS depth. |
-| `snr` | TLS SNR where available. |
-| `sde` | TLS signal detection efficiency. |
-| `sde_raw` | Raw SDE where available. |
-| `fap` | TLS false-alarm probability where available. |
-| `transit_count` | TLS transit count where available. |
-| `distinct_transit_count` | Distinct TLS transit count where available. |
+| Field                      | Meaning                                          |
+| -------------------------- | ------------------------------------------------ |
+| `period_days`              | Best TLS period.                                 |
+| `duration_days`            | TLS duration.                                    |
+| `epoch_days`               | TLS T0.                                          |
+| `depth_fraction`           | TLS depth.                                       |
+| `snr`                      | TLS SNR where available.                         |
+| `sde`                      | TLS signal detection efficiency.                 |
+| `sde_raw`                  | Raw SDE where available.                         |
+| `fap`                      | TLS false-alarm probability where available.     |
+| `transit_count`            | TLS transit count where available.               |
+| `distinct_transit_count`   | Distinct TLS transit count where available.      |
 | `periodogram_period_count` | Number of TLS periods evaluated where available. |
 
 Paper-grade gates:
@@ -355,11 +374,11 @@ This avoids the common failure mode where a low-SNR but scientifically reviewabl
 
 Disposition logic:
 
-| Disposition | Action label | Meaning |
-| --- | --- | --- |
-| `planet_candidate` | `follow_up_needed` | Passed current promotion gates. |
-| `borderline_tce` | `review_needed` | Reviewable signal but not promoted. |
-| `rejected_signal` | `none` | Failed hard evidence gate or too weak. |
+| Disposition        | Action label       | Meaning                                |
+| ------------------ | ------------------ | -------------------------------------- |
+| `planet_candidate` | `follow_up_needed` | Passed current promotion gates.        |
+| `borderline_tce`   | `review_needed`    | Reviewable signal but not promoted.    |
+| `rejected_signal`  | `none`             | Failed hard evidence gate or too weak. |
 
 Core promotion thresholds:
 
@@ -386,15 +405,15 @@ Relevant implementation:
 
 Validation metrics:
 
-| Metric | Formula or rule | Threshold behavior |
-| --- | --- | --- |
-| Duration plausibility | `0 < duration < 0.5 * period` | Implausible duration is hard fail. |
-| Odd/even depth delta | `abs(depth_odd - depth_even)` | sigma >= 3.0 hard fail in structured flags. |
-| Secondary eclipse SNR | secondary depth over robust scatter | SNR >= 5.0 hard fail in structured flags. |
-| Stellar rotation harmonic | period/rotation near 0.25, 0.5, 1, 2, 4 | warning. |
-| Centroid significance | `centroid_shift / centroid_uncertainty` | >= 2 sigma warning, >= 3 sigma stronger warning. |
-| Pixel fallback centroid shift | pixels > 1.0 if no uncertainty | warning. |
-| SAP/PDCSAP agreement | correlation < 0.8 if both supplied | warning. |
+| Metric                        | Formula or rule                         | Threshold behavior                               |
+| ----------------------------- | --------------------------------------- | ------------------------------------------------ |
+| Duration plausibility         | `0 < duration < 0.5 * period`           | Implausible duration is hard fail.               |
+| Odd/even depth delta          | `abs(depth_odd - depth_even)`           | sigma >= 3.0 hard fail in structured flags.      |
+| Secondary eclipse SNR         | secondary depth over robust scatter     | SNR >= 5.0 hard fail in structured flags.        |
+| Stellar rotation harmonic     | period/rotation near 0.25, 0.5, 1, 2, 4 | warning.                                         |
+| Centroid significance         | `centroid_shift / centroid_uncertainty` | >= 2 sigma warning, >= 3 sigma stronger warning. |
+| Pixel fallback centroid shift | pixels > 1.0 if no uncertainty          | warning.                                         |
+| SAP/PDCSAP agreement          | correlation < 0.8 if both supplied      | warning.                                         |
 
 Odd/even calculation:
 
@@ -482,24 +501,24 @@ OrbitLab attachment:
 
 Parsed ModShift fields:
 
-| OrbitLab key | Meaning |
-| --- | --- |
-| `mod_sig_pri` | primary event significance |
-| `mod_sig_sec` | secondary event significance |
-| `mod_sig_ter` | tertiary event significance |
-| `mod_sig_pos` | positive-going event significance |
-| `mod_sig_oe` | odd/even model-shift significance |
-| `mod_dmm` | depth mean/median metric |
-| `mod_shape` | shape/sinusoidal metric |
-| `mod_sig_fa1` | first false-alarm significance threshold |
-| `mod_sig_fa2` | second false-alarm significance threshold |
-| `mod_Fred` | red-noise factor |
-| `mod_ph_pri` | primary phase |
-| `mod_ph_sec` | secondary phase |
-| `mod_ph_ter` | tertiary phase |
-| `mod_ph_pos` | positive event phase |
-| `mod_secdepth` | secondary depth |
-| `mod_secdeptherr` | secondary depth uncertainty |
+| OrbitLab key      | Meaning                                   |
+| ----------------- | ----------------------------------------- |
+| `mod_sig_pri`     | primary event significance                |
+| `mod_sig_sec`     | secondary event significance              |
+| `mod_sig_ter`     | tertiary event significance               |
+| `mod_sig_pos`     | positive-going event significance         |
+| `mod_sig_oe`      | odd/even model-shift significance         |
+| `mod_dmm`         | depth mean/median metric                  |
+| `mod_shape`       | shape/sinusoidal metric                   |
+| `mod_sig_fa1`     | first false-alarm significance threshold  |
+| `mod_sig_fa2`     | second false-alarm significance threshold |
+| `mod_Fred`        | red-noise factor                          |
+| `mod_ph_pri`      | primary phase                             |
+| `mod_ph_sec`      | secondary phase                           |
+| `mod_ph_ter`      | tertiary phase                            |
+| `mod_ph_pos`      | positive event phase                      |
+| `mod_secdepth`    | secondary depth                           |
+| `mod_secdeptherr` | secondary depth uncertainty               |
 
 Exact RoboVet inequalities implemented:
 
@@ -700,12 +719,12 @@ Research methodology:
 
 OrbitLab tensor contract:
 
-| Input | Shape | Construction |
-| --- | --- | --- |
-| `global_view` | `(1, 201, 1)` | Full folded curve binned to 201 bins. |
-| `local_view` | `(1, 81, 1)` | Window around primary transit, width based on duration/period. |
-| `odd_even_view` | `(1, 162, 1)` | Concatenated secondary/half-period local view plus primary local view. |
-| Scalars | `(1, 1)` each | Depth, duration, Teff, radius, logg, mass, luminosity, density, rp/rs, even depth, odd depth. |
+| Input           | Shape         | Construction                                                                                  |
+| --------------- | ------------- | --------------------------------------------------------------------------------------------- |
+| `global_view`   | `(1, 201, 1)` | Full folded curve binned to 201 bins.                                                         |
+| `local_view`    | `(1, 81, 1)`  | Window around primary transit, width based on duration/period.                                |
+| `odd_even_view` | `(1, 162, 1)` | Concatenated secondary/half-period local view plus primary local view.                        |
+| Scalars         | `(1, 1)` each | Depth, duration, Teff, radius, logg, mass, luminosity, density, rp/rs, even depth, odd depth. |
 
 Scaling:
 
@@ -795,12 +814,12 @@ distance_au = sqrt(luminosity_solar / S_eff)
 
 Current limits used:
 
-| Boundary | Use |
-| --- | --- |
-| Recent Venus | optimistic inner |
+| Boundary           | Use                |
+| ------------------ | ------------------ |
+| Recent Venus       | optimistic inner   |
 | Runaway greenhouse | conservative inner |
 | Maximum greenhouse | conservative outer |
-| Early Mars | optimistic outer |
+| Early Mars         | optimistic outer   |
 
 Methodology delta:
 
@@ -853,45 +872,45 @@ Relevant implementation:
 - `backend/orbitlab/science/pipeline.py`
 - `backend/orbitlab/science/science_config.toml`
 
-| Gate | Config | Current value | Severity on failure | Purpose |
-| --- | --- | ---: | --- | --- |
-| Effective SNR | `paper_promotion_snr` | 7.1 | hard fail | Require strong signal before paper promotion. |
-| Observed transits | `paper_min_transits` | 2 | hard fail | Reject single-event promotions. |
-| TLS SDE | `paper_tls_sde_min` | 7.0 | hard fail | Require published TLS-style detection strength. |
-| TLS transit count | `paper_min_transits` | 2 | hard fail | Ensure repeated TLS support. |
-| DAVE ModShift | official binary status | pass/fail | hard fail | Reject non-transit-like or significant secondary behavior. |
-| DAVE SWEET | `paper_sweet_sigma` | 3.0 | warning or hard fail if not complete | Flag sinusoidal variability. |
-| Nigraha probability | `paper_ml_threshold` | 0.4 | warning if low, hard fail if absent for TESS paper run | Require supporting TESS ML evidence. |
-| TRICERATOPS FPP | `paper_triceratops_fpp_max` | 0.015 | hard fail | Statistical validation false-positive threshold. |
-| TRICERATOPS NFPP | `paper_triceratops_nfpp_max` | 0.001 | hard fail | Nearby false-positive threshold. |
-| Catalog contamination | `paper_catalog_radius_arcsec` | 120 arcsec | warning | Identify nearby stars capable of mimicking depth. |
+| Gate                  | Config                        | Current value | Severity on failure                                    | Purpose                                                    |
+| --------------------- | ----------------------------- | ------------: | ------------------------------------------------------ | ---------------------------------------------------------- |
+| Effective SNR         | `paper_promotion_snr`         |           7.1 | hard fail                                              | Require strong signal before paper promotion.              |
+| Observed transits     | `paper_min_transits`          |             2 | hard fail                                              | Reject single-event promotions.                            |
+| TLS SDE               | `paper_tls_sde_min`           |           7.0 | hard fail                                              | Require published TLS-style detection strength.            |
+| TLS transit count     | `paper_min_transits`          |             2 | hard fail                                              | Ensure repeated TLS support.                               |
+| DAVE ModShift         | official binary status        |     pass/fail | hard fail                                              | Reject non-transit-like or significant secondary behavior. |
+| DAVE SWEET            | `paper_sweet_sigma`           |           3.0 | warning or hard fail if not complete                   | Flag sinusoidal variability.                               |
+| Nigraha probability   | `paper_ml_threshold`          |           0.4 | warning if low, hard fail if absent for TESS paper run | Require supporting TESS ML evidence.                       |
+| TRICERATOPS FPP       | `paper_triceratops_fpp_max`   |         0.015 | hard fail                                              | Statistical validation false-positive threshold.           |
+| TRICERATOPS NFPP      | `paper_triceratops_nfpp_max`  |         0.001 | hard fail                                              | Nearby false-positive threshold.                           |
+| Catalog contamination | `paper_catalog_radius_arcsec` |    120 arcsec | warning                                                | Identify nearby stars capable of mimicking depth.          |
 
 ## Module-by-Module Research Comparison
 
-| OrbitLab module | What OrbitLab does | Paper/reference method | GitHub/reference implementation | One-to-one status | Where the paper/reference is better |
-| --- | --- | --- | --- | --- | --- |
-| `mast.py` | Searches/downloads mission products and extracts TPF light curves. | SPOC/MAST mission products and DV products. | MAST, Lightkurve/Astroquery ecosystem. | Uses real archive products. | SPOC DV is stronger for calibrated mission-scale TCE products. |
-| `data_quality.py` | Removes invalid/quality cadences and supports manual artifact masks. | Mission quality masks and calibrated data conditioning. | Lightkurve/Astroquery mission products. | Partial. | Mission pipelines model systematics more deeply. |
-| `detrending.py` | Runs `wotan.flatten(..., method="biweight")`. | Wotan biweight recommended for shallow-transit recovery. | `hippke/wotan`. | Strong for biweight detrending. | Wotan paper's method selection is better for special variability classes. |
-| `detrending_sensitivity.py` | Re-runs local candidate recovery across raw cleaned flux, Wotan windows, and transit-masked detrending. | Robust transit validation should not depend on one flattening choice. | Wotan plus OrbitLab BLS recovery checks. | Local stress test attached to deep/paper results. | Full injection-calibrated detrending model selection remains stronger. |
-| `bls.py` | Runs Astropy BLS with adaptive period/duration grid, binning, robust SNR. | Kovacs et al. BLS box model. | `astropy.timeseries.BoxLeastSquares`. | Uses reference BLS implementation. | Survey-calibrated BLS false-alarm behavior is stronger than local thresholding. |
-| `tls_refinement.py` | Runs `transitleastsquares` for paper primary and deep refinement. | Hippke and Heller TLS. | `hippke/tls`. | Strong. Uses real package. | Runtime does not recalibrate SDE for every target population. |
-| `injection_recovery.py` | Injects box and smooth TLS-like transits into light curves, reruns recovery, and reports sensitivity summaries. | Kepler/TLS injection-retrieval methodology. | Local injection plus Astropy BLS recovery. | Attached for deep/paper analyses and benchmark grids. | Pixel-level mission injection campaigns remain stronger. |
-| `sector_consistency.py` | Emits per-sector period, depth, SNR, centroid, and aperture evidence; marks single-product runs as `single_sector_only`. | TESS/Kepler DV-style multi-sector consistency review. | Local BLS plus pixel diagnostics. | Attached to every TCE payload. | Full stitched multi-sector product retrieval and joint fitting remain stronger. |
-| `pipeline.py` | Builds TCE ledger, applies gates, emits evidence. | Kepler/TESS candidate triage separates TCEs from planet candidates. | Local OrbitLab orchestration. | Local synthesis. | Full mission DV/Robovetter pipelines are more exhaustive. |
-| `validation.py` | Odd/even, secondary, duration, harmonic, centroid checks. | DV and vetting diagnostics. | Local implementation. | Partial. | Formal DV diagnostics are stronger. |
-| `tpf_diagnostics.py` | Difference-image and aperture stability evidence from pixel cube. | DV centroid and PRF diagnostics. | Local implementation. | Partial. | PRF centroiding is better for source localization. |
-| `dave_vetting.py` ModShift | Calls official DAVE `modshift` binary. | DAVE ModShift. | `exoplanetvetting/DAVE`. | Strong for ModShift executable. | Full DAVE pipeline has more context. |
-| `dave_vetting.py` RoboVet | Applies exact upstream inequalities. | DAVE `RoboVet.py`. | `.orbitlab/external/DAVE/vetting/RoboVet.py`. | Strong for copied logic. | Full DAVE end-to-end trap-fit context remains stronger. |
-| `dave_vetting.py` SWEET | Fits sin/cos harmonics at P/2, P, 2P. | DAVE SWEET sinusoid screen. | DAVE vetting family. | Approximate. | Official SWEET in full DAVE is better for exact reproduction. |
-| `catalog_context.py` | TIC/Gaia neighbor screening and NASA Archive TOI/confirmed context. | TESS follow-up context and archive federation. | Astroquery MAST and NASA Archive. | Strong for live catalog/API use. | Does not replace follow-up observations. |
-| `triceratops_fpp.py` | Calls real `target.calc_depths` when aperture pixels are available, then `target.calc_probs`, emits FPP/NFPP and scenario probabilities. | TRICERATOPS Bayesian FPP/NFPP with nearby-source context. | `stevengiacalone/triceratops`. | Strong for `calc_probs`, thresholds, and selected-aperture depth context. | Contrast-curve and follow-up-observation constraints remain stronger when available. |
-| `nigraha_adapter.py` | Builds global/local/odd-even tensors and scalar features. | Nigraha TESS CNN input representation. | `ExoplanetML/Nigraha`. | Partial. | Full upstream TFRecord/training/catalog workflow is stronger. |
-| `nigraha_service.py` | Runs checksum-validated 10-HDF5 ensemble in NumPy. | Nigraha supervised ML ensemble. | `ExoplanetML/Nigraha`. | Strong for inference from released weights. | Upstream TensorFlow pipeline is stronger for exact training reproduction. |
-| `benchmarks/science_benchmark.py` | Runs a truth-set harness over known-planet, injected, false-positive, scrambled, and stellar-variability cases. | Kepler DR25 completeness/reliability benchmark discipline. | Local benchmark runner. | Attached as a repeatable project check. | NASA archive-scale benchmark products are broader and calibrated on mission populations. |
-| `evidence_packet.py` | Exports manifests, light curves, periodograms, folded curves, vetting, catalog, TRICERATOPS, ML, and final disposition files. | Follow-up review depends on reproducible evidence packets. | Local exporter. | Strong for OrbitLab payload reproducibility. | Formal mission DV reports include many more specialized diagnostics. |
-| `physics.py` | Calculates radius, semi-major axis, Teq, Kopparapu HZ. | Kepler's law, transit depth, Kopparapu HZ. | Local implementation from published equations. | Strong for equations, weak when stellar inputs absent. | Stellar characterization with uncertainties is better. |
-| `App.tsx` | Shows Accuracy/paper mode by default and evidence panels. | Scientific review workflow requires visible evidence. | Local UI. | Product implementation. | Expert vetting tools may expose deeper plots and raw products. |
+| OrbitLab module                   | What OrbitLab does                                                                                                                       | Paper/reference method                                                | GitHub/reference implementation                | One-to-one status                                                         | Where the paper/reference is better                                                      |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `mast.py`                         | Searches/downloads mission products and extracts TPF light curves.                                                                       | SPOC/MAST mission products and DV products.                           | MAST, Lightkurve/Astroquery ecosystem.         | Uses real archive products.                                               | SPOC DV is stronger for calibrated mission-scale TCE products.                           |
+| `data_quality.py`                 | Removes invalid/quality cadences and supports manual artifact masks.                                                                     | Mission quality masks and calibrated data conditioning.               | Lightkurve/Astroquery mission products.        | Partial.                                                                  | Mission pipelines model systematics more deeply.                                         |
+| `detrending.py`                   | Runs `wotan.flatten(..., method="biweight")`.                                                                                            | Wotan biweight recommended for shallow-transit recovery.              | `hippke/wotan`.                                | Strong for biweight detrending.                                           | Wotan paper's method selection is better for special variability classes.                |
+| `detrending_sensitivity.py`       | Re-runs local candidate recovery across raw cleaned flux, Wotan windows, and transit-masked detrending.                                  | Robust transit validation should not depend on one flattening choice. | Wotan plus OrbitLab BLS recovery checks.       | Local stress test attached to deep/paper results.                         | Full injection-calibrated detrending model selection remains stronger.                   |
+| `bls.py`                          | Runs Astropy BLS with adaptive period/duration grid, binning, robust SNR.                                                                | Kovacs et al. BLS box model.                                          | `astropy.timeseries.BoxLeastSquares`.          | Uses reference BLS implementation.                                        | Survey-calibrated BLS false-alarm behavior is stronger than local thresholding.          |
+| `tls_refinement.py`               | Runs `transitleastsquares` for paper primary and deep refinement.                                                                        | Hippke and Heller TLS.                                                | `hippke/tls`.                                  | Strong. Uses real package.                                                | Runtime does not recalibrate SDE for every target population.                            |
+| `injection_recovery.py`           | Injects box and smooth TLS-like transits into light curves, reruns recovery, and reports sensitivity summaries.                          | Kepler/TLS injection-retrieval methodology.                           | Local injection plus Astropy BLS recovery.     | Attached for deep/paper analyses and benchmark grids.                     | Pixel-level mission injection campaigns remain stronger.                                 |
+| `sector_consistency.py`           | Emits per-sector period, depth, SNR, centroid, and aperture evidence; marks single-product runs as `single_sector_only`.                 | TESS/Kepler DV-style multi-sector consistency review.                 | Local BLS plus pixel diagnostics.              | Attached to every TCE payload.                                            | Full stitched multi-sector product retrieval and joint fitting remain stronger.          |
+| `pipeline.py`                     | Builds TCE ledger, applies gates, emits evidence.                                                                                        | Kepler/TESS candidate triage separates TCEs from planet candidates.   | Local OrbitLab orchestration.                  | Local synthesis.                                                          | Full mission DV/Robovetter pipelines are more exhaustive.                                |
+| `validation.py`                   | Odd/even, secondary, duration, harmonic, centroid checks.                                                                                | DV and vetting diagnostics.                                           | Local implementation.                          | Partial.                                                                  | Formal DV diagnostics are stronger.                                                      |
+| `tpf_diagnostics.py`              | Difference-image and aperture stability evidence from pixel cube.                                                                        | DV centroid and PRF diagnostics.                                      | Local implementation.                          | Partial.                                                                  | PRF centroiding is better for source localization.                                       |
+| `dave_vetting.py` ModShift        | Calls official DAVE `modshift` binary.                                                                                                   | DAVE ModShift.                                                        | `exoplanetvetting/DAVE`.                       | Strong for ModShift executable.                                           | Full DAVE pipeline has more context.                                                     |
+| `dave_vetting.py` RoboVet         | Applies exact upstream inequalities.                                                                                                     | DAVE `RoboVet.py`.                                                    | `.orbitlab/external/DAVE/vetting/RoboVet.py`.  | Strong for copied logic.                                                  | Full DAVE end-to-end trap-fit context remains stronger.                                  |
+| `dave_vetting.py` SWEET           | Fits sin/cos harmonics at P/2, P, 2P.                                                                                                    | DAVE SWEET sinusoid screen.                                           | DAVE vetting family.                           | Approximate.                                                              | Official SWEET in full DAVE is better for exact reproduction.                            |
+| `catalog_context.py`              | TIC/Gaia neighbor screening and NASA Archive TOI/confirmed context.                                                                      | TESS follow-up context and archive federation.                        | Astroquery MAST and NASA Archive.              | Strong for live catalog/API use.                                          | Does not replace follow-up observations.                                                 |
+| `triceratops_fpp.py`              | Calls real `target.calc_depths` when aperture pixels are available, then `target.calc_probs`, emits FPP/NFPP and scenario probabilities. | TRICERATOPS Bayesian FPP/NFPP with nearby-source context.             | `stevengiacalone/triceratops`.                 | Strong for `calc_probs`, thresholds, and selected-aperture depth context. | Contrast-curve and follow-up-observation constraints remain stronger when available.     |
+| `nigraha_adapter.py`              | Builds global/local/odd-even tensors and scalar features.                                                                                | Nigraha TESS CNN input representation.                                | `ExoplanetML/Nigraha`.                         | Partial.                                                                  | Full upstream TFRecord/training/catalog workflow is stronger.                            |
+| `nigraha_service.py`              | Runs checksum-validated 10-HDF5 ensemble in NumPy.                                                                                       | Nigraha supervised ML ensemble.                                       | `ExoplanetML/Nigraha`.                         | Strong for inference from released weights.                               | Upstream TensorFlow pipeline is stronger for exact training reproduction.                |
+| `benchmarks/science_benchmark.py` | Runs a truth-set harness over known-planet, injected, false-positive, scrambled, and stellar-variability cases.                          | Kepler DR25 completeness/reliability benchmark discipline.            | Local benchmark runner.                        | Attached as a repeatable project check.                                   | NASA archive-scale benchmark products are broader and calibrated on mission populations. |
+| `evidence_packet.py`              | Exports manifests, light curves, periodograms, folded curves, vetting, catalog, TRICERATOPS, ML, and final disposition files.            | Follow-up review depends on reproducible evidence packets.            | Local exporter.                                | Strong for OrbitLab payload reproducibility.                              | Formal mission DV reports include many more specialized diagnostics.                     |
+| `physics.py`                      | Calculates radius, semi-major axis, Teq, Kopparapu HZ.                                                                                   | Kepler's law, transit depth, Kopparapu HZ.                            | Local implementation from published equations. | Strong for equations, weak when stellar inputs absent.                    | Stellar characterization with uncertainties is better.                                   |
+| `App.tsx`                         | Shows Accuracy/paper mode by default and evidence panels.                                                                                | Scientific review workflow requires visible evidence.                 | Local UI.                                      | Product implementation.                                                   | Expert vetting tools may expose deeper plots and raw products.                           |
 
 ## Exact Threshold Registry
 
@@ -1028,13 +1047,13 @@ Relevant implementation:
 
 High-value coverage:
 
-| Test area | Evidence covered |
-| --- | --- |
+| Test area           | Evidence covered                                                               |
+| ------------------- | ------------------------------------------------------------------------------ |
 | Paper-grade engines | Wotan package call, catalog context, TRICERATOPS wrapper, DAVE RoboVet parser. |
-| TCE vetting | Dispositions, paper-grade required engines, threshold-driven promotion. |
-| Science hardening | BLS reliability, numeric candidate evidence, validation behavior. |
-| Final fixes | Regression coverage from previous OrbitLab reliability passes. |
-| Frontend tests | UI state, Playwright evidence rendering, production build. |
+| TCE vetting         | Dispositions, paper-grade required engines, threshold-driven promotion.        |
+| Science hardening   | BLS reliability, numeric candidate evidence, validation behavior.              |
+| Final fixes         | Regression coverage from previous OrbitLab reliability passes.                 |
+| Frontend tests      | UI state, Playwright evidence rendering, production build.                     |
 
 Recommended verification commands:
 
@@ -1064,37 +1083,37 @@ Dependency import verification:
 This section is intentionally blunt.
 
 1. SPOC/TESS DV is stronger for production mission catalogs.
-OrbitLab starts from selected products and exposes candidate evidence. It does not reproduce the whole SPOC TPS/DV system.
+   OrbitLab starts from selected products and exposes candidate evidence. It does not reproduce the whole SPOC TPS/DV system.
 
 2. TLS is attached through the real package, and OrbitLab now runs local box/TLS-like injection-recovery checks.
-The paper's SDE discussion is still used as a threshold anchor; OrbitLab does not yet replace mission-population false-positive calibration for every sector, cadence, aperture, and stellar-noise regime.
+   The paper's SDE discussion is still used as a threshold anchor; OrbitLab does not yet replace mission-population false-positive calibration for every sector, cadence, aperture, and stellar-noise regime.
 
 3. Wotan is attached through the real package, but paper-grade mode uses fixed biweight detrending.
-The Wotan paper's broader method comparison is stronger for young stars, high-variability stars, or cases where a spline/Huber method is better.
+   The Wotan paper's broader method comparison is stronger for young stars, high-variability stars, or cases where a spline/Huber method is better.
 
 4. DAVE ModShift and RoboVet are attached one-to-one only for the compiled ModShift binary and RoboVet inequalities.
-OrbitLab does not run the full DAVE legacy Python2/Octave/Gnuplot/PRF pipeline.
+   OrbitLab does not run the full DAVE legacy Python2/Octave/Gnuplot/PRF pipeline.
 
 5. SWEET is DAVE-style, not a direct full DAVE submodule call.
-It fits harmonic sinusoids and provides useful evidence, but exact DAVE SWEET reproducibility would require the full upstream execution environment.
+   It fits harmonic sinusoids and provides useful evidence, but exact DAVE SWEET reproducibility would require the full upstream execution environment.
 
 6. TRICERATOPS uses the real package and validation thresholds, but current OrbitLab does not pass the selected aperture into TRICERATOPS.
-The TRICERATOPS tutorial's aperture-aware `calc_depths` path and follow-up constraints are stronger.
+   The TRICERATOPS tutorial's aperture-aware `calc_depths` path and follow-up constraints are stronger.
 
 7. TIC/Gaia contamination checks are catalog screens, not follow-up observations.
-Nearby-source warnings should be treated as "needs review" evidence, not definitive astrophysical rejection.
+   Nearby-source warnings should be treated as "needs review" evidence, not definitive astrophysical rejection.
 
 8. Nigraha inference is attached, but not the full upstream training/catalog-generation workflow.
-OrbitLab validates and runs the released weights; it does not recreate the entire paper's training data and sector-by-sector catalog production.
+   OrbitLab validates and runs the released weights; it does not recreate the entire paper's training data and sector-by-sector catalog production.
 
 9. ML is not confirmation.
-OrbitLab uses ML as supporting evidence only. A high ML probability does not override DAVE, TRICERATOPS, centroid, secondary eclipse, or data-quality hard failures.
+   OrbitLab uses ML as supporting evidence only. A high ML probability does not override DAVE, TRICERATOPS, centroid, secondary eclipse, or data-quality hard failures.
 
 10. Habitability estimates are only as good as stellar context.
-When stellar context is missing, OrbitLab marks habitability as insufficiently constrained and avoids a real habitability claim.
+    When stellar context is missing, OrbitLab marks habitability as insufficiently constrained and avoids a real habitability claim.
 
 11. A promoted `planet_candidate` is still not a confirmed planet.
-It is a high-priority follow-up candidate under OrbitLab's evidence policy.
+    It is a high-priority follow-up candidate under OrbitLab's evidence policy.
 
 ## Reproducibility Contract
 

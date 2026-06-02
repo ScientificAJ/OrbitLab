@@ -1,5 +1,7 @@
 # OrbitLab TODO
 
+Status: current for OrbitLab `v0.2.0`.
+
 ## Completed In Repo
 
 ### Submission Polish
@@ -35,6 +37,12 @@
 - [x] Add issue labels and milestone plan in `docs/RELEASE.md`.
 - [x] Document release tagging and changelog steps in `docs/RELEASE.md`.
 - [x] Convert direct-push workflow to PR review when the team grows.
+
+### Release Provenance
+
+- [x] Add Science Provenance Release Room generator in `scripts/build_release_room.py`.
+- [x] Add GitHub release workflow for release-room asset upload and attestation in `.github/workflows/release-room.yml`.
+- [x] Document release-room assets, trust boundaries, deployment checks, and submission evidence review.
 
 ## Intentionally Skipped External Items
 
