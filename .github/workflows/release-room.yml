@@ -93,4 +93,6 @@ jobs:
       - name: Upload assets to GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$RELEASE_TAG" "$RELEASE_ROOM_DIR"/* --clobber
+        run: |
+          find "$RELEASE_ROOM_DIR" -maxdepth 1 -type f -print0 \
+            | xargs -0 -r gh release upload "$RELEASE_TAG" --clobber
