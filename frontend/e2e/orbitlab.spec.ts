@@ -665,6 +665,8 @@ test('BLS preview renders candidates, periodogram, folded plot, and API errors',
   await expect(page.getByTestId('orbit-zoom-in')).toContainText('1x');
   await expect(page.getByTestId('orbit-camera-reset')).toBeVisible();
   await expect(page.getByRole('button', { name: /Pause orbit simulation|Play orbit simulation/ })).toBeVisible();
+  await expect(page.getByTestId('orbit-evidence-badge')).toContainText('preview evidence');
+  await expect(page.getByTestId('orbit-evidence-badge')).toContainText('confidence');
   const orbitCanvas = page.getByTestId('orbit-canvas');
   await expect(orbitCanvas).toBeVisible();
   expect(pngHasColorVariance(await orbitCanvas.screenshot())).toBe(true);

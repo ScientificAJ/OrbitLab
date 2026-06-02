@@ -450,7 +450,7 @@ export default function App() {
     setThemeBloom(false);
     window.requestAnimationFrame(() => {
       setThemeBloom(true);
-      themeBloomTimeout.current = window.setTimeout(() => setThemeBloom(false), 760);
+      themeBloomTimeout.current = window.setTimeout(() => setThemeBloom(false), 2400);
     });
   }
 
