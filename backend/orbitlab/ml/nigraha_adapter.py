@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import math
+from dataclasses import dataclass
+
 import numpy as np
 
 from orbitlab.science.bls import TransitCandidate
 from orbitlab.science.data_quality import clean_light_curve
 from orbitlab.science.folding import bin_phase_curve, phase_fold
-
 
 NIGRAHA_SCHEMA_VERSION = "orbitlab.nigraha.v1"
 NIGRAHA_MODEL_ID = "nigraha-tess-global-nodropout-binary-ensemble"
@@ -131,7 +131,12 @@ def build_nigraha_tensors(
         bins=81,
     )
 
-    half_phase, half_flux = phase_fold(clean_time, clean_flux, candidate.period, candidate.epoch - 0.5 * candidate.period)
+    half_phase, half_flux = phase_fold(
+        clean_time,
+        clean_flux,
+        candidate.period,
+        candidate.epoch - 0.5 * candidate.period,
+    )
     half_local_flux = _centered_local_view(
         half_phase,
         half_flux,
@@ -191,4 +196,3 @@ def nigraha_tensor_schema() -> dict:
         },
         "dtype": "float32",
     }
-

@@ -39,6 +39,7 @@ class NigrahaVerdict:
 
 _GLOBAL_NIGRAHA_CACHE: dict[str, tuple[NigrahaModelInfo, list[NigrahaNumpyModel]]] = {}
 
+
 class NigrahaService:
     def __init__(self, config: Settings = settings, model_id: str = NIGRAHA_MODEL_ID):
         self.config = config
@@ -71,7 +72,7 @@ class NigrahaService:
         cache_key = f"{self.model_id}:{self.artifact.sha256}:{self.model_path}"
         if cache_key in _GLOBAL_NIGRAHA_CACHE:
             return _GLOBAL_NIGRAHA_CACHE[cache_key][0]
-        
+
         info = self.validate_artifact()
         models = [NigrahaNumpyModel(path) for path in sorted(self.model_path.glob("models_*.hdf5"))]
         _GLOBAL_NIGRAHA_CACHE[cache_key] = (info, models)
@@ -81,11 +82,11 @@ class NigrahaService:
         global _GLOBAL_NIGRAHA_CACHE
         if tensors.schema_version != NIGRAHA_SCHEMA_VERSION:
             raise ModelArtifactError("Nigraha tensor schema is incompatible")
-        
+
         cache_key = f"{self.model_id}:{self.artifact.sha256}:{self.model_path}"
         if cache_key not in _GLOBAL_NIGRAHA_CACHE:
             self.load()
-        
+
         info, models = _GLOBAL_NIGRAHA_CACHE[cache_key]
         inputs = tensors.as_inputs()
         scores = [model.predict(inputs) for model in models]
@@ -117,11 +118,12 @@ class NigrahaNumpyModel:
             for layer_name in root.keys():
                 layer = root[layer_name]
                 datasets: dict[str, np.ndarray] = {}
-                layer.visititems(
-                    lambda name, obj: datasets.__setitem__(name.rsplit("/", 1)[-1].replace(":0", ""), obj[()])
-                    if hasattr(obj, "shape")
-                    else None
-                )
+
+                def collect_dataset(name: str, obj, *, target: dict[str, np.ndarray] = datasets) -> None:
+                    if hasattr(obj, "shape"):
+                        target[name.rsplit("/", 1)[-1].replace(":0", "")] = obj[()]
+
+                layer.visititems(collect_dataset)
                 if "kernel" in datasets and "bias" in datasets:
                     weights[layer_name] = (
                         np.asarray(datasets["kernel"], dtype=np.float32),
@@ -165,14 +167,25 @@ class NigrahaNumpyModel:
         return self._relu(self._conv1d_same(x, kernel, bias))
 
     def _global_path(self, x: np.ndarray) -> np.ndarray:
-        for first, second in (("conv1d", "conv1d_1"), ("conv1d_2", "conv1d_3"), ("conv1d_4", "conv1d_5"), ("conv1d_6", "conv1d_7"), ("conv1d_8", "conv1d_9")):
+        layer_pairs = (
+            ("conv1d", "conv1d_1"),
+            ("conv1d_2", "conv1d_3"),
+            ("conv1d_4", "conv1d_5"),
+            ("conv1d_6", "conv1d_7"),
+            ("conv1d_8", "conv1d_9"),
+        )
+        for first, second in layer_pairs:
             x = self._conv_layer(x, first)
             x = self._conv_layer(x, second)
             x = self._max_pool1d_valid(x, 5, 2)
         return x.reshape((x.shape[0], -1))
 
     def _local_path(self, x: np.ndarray, offset: int) -> np.ndarray:
-        for first, second in ((f"conv1d_{offset}", f"conv1d_{offset + 1}"), (f"conv1d_{offset + 2}", f"conv1d_{offset + 3}")):
+        layer_pairs = (
+            (f"conv1d_{offset}", f"conv1d_{offset + 1}"),
+            (f"conv1d_{offset + 2}", f"conv1d_{offset + 3}"),
+        )
+        for first, second in layer_pairs:
             x = self._conv_layer(x, first)
             x = self._conv_layer(x, second)
             x = self._max_pool1d_valid(x, 3, 2)
@@ -191,19 +204,22 @@ class NigrahaNumpyModel:
         global_path = self._global_path(np.asarray(inputs["global_view"], dtype=np.float32))
         local_path = self._local_path(np.asarray(inputs["local_view"], dtype=np.float32), 10)
         odd_even_path = self._local_path(np.asarray(inputs["odd_even_view"], dtype=np.float32), 14)
-        scalars = [np.asarray(inputs[name], dtype=np.float32).reshape(1, 1) for name in (
-            "Depth",
-            "Duration",
-            "Teff",
-            "Radius",
-            "logg",
-            "Mass",
-            "lum",
-            "rho",
-            "rp_rs",
-            "DepthEven",
-            "DepthOdd",
-        )]
+        scalars = [
+            np.asarray(inputs[name], dtype=np.float32).reshape(1, 1)
+            for name in (
+                "Depth",
+                "Duration",
+                "Teff",
+                "Radius",
+                "logg",
+                "Mass",
+                "lum",
+                "rho",
+                "rp_rs",
+                "DepthEven",
+                "DepthOdd",
+            )
+        ]
         x = np.concatenate([global_path, local_path, odd_even_path, *scalars], axis=1)
         x = self._dense(x, "dense", activation="relu")
         x = self._dense(x, "dense_1", activation="relu")

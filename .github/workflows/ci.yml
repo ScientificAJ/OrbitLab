@@ -2,12 +2,27 @@ name: CI
 
 on:
   push:
+    branches: ["main"]
   pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
 jobs:
   backend:
     name: Backend tests
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -26,14 +41,19 @@ jobs:
       - name: Fetch Nigraha test artifact
         run: python scripts/fetch_nigraha_weights.py
 
+      - name: Lint backend and scripts
+        run: ruff check backend scripts
+
       - name: Run backend tests
         run: pytest --cov=orbitlab --cov-report=term-missing --cov-report=xml
 
       - name: Upload backend coverage artifact
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: backend-coverage
           path: coverage.xml
+          retention-days: 14
 
       - name: Upload backend coverage to Codecov
         uses: codecov/codecov-action@v6
@@ -43,8 +63,9 @@ jobs:
           fail_ci_if_error: false
 
   frontend:
-    name: Frontend checks
+    name: Frontend build
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -75,5 +96,48 @@ jobs:
       - name: Run mocked frontend e2e tests
         run: npm run test:e2e --prefix frontend
 
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          retention-days: 14
+
+      - name: Upload Playwright test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-test-results
+          path: frontend/test-results
+          retention-days: 14
+
       - name: Build frontend
         run: npm run build --prefix frontend
+
+  hygiene:
+    name: Repository hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Validate GitHub ruleset JSON
+        run: python -m json.tool .github/rulesets/main.json
+
+      - name: Validate shell scripts
+        run: bash -n scripts/preflight.sh scripts/start_all.sh
+
+      - name: Compile automation scripts
+        run: |
+          python -m py_compile \
+            scripts/fetch_calibration_sources.py \
+            scripts/fetch_k2_exomac_kkt.py \
+            scripts/fetch_kepler_astronet.py \
+            scripts/fetch_nigraha_weights.py

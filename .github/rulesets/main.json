@@ -1,5 +1,5 @@
 {
-  "name": "Relaxed Main Protection",
+  "name": "Main Protection",
   "target": "branch",
   "enforcement": "active",
   "conditions": {
@@ -21,18 +21,18 @@
     {
       "type": "pull_request",
       "parameters": {
-        "required_approving_review_count": 0,
-        "dismiss_stale_reviews_on_push": false,
-        "require_code_owner_review": false,
+        "required_approving_review_count": 1,
+        "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": true,
         "require_last_push_approval": false,
-        "required_review_thread_resolution": false,
+        "required_review_thread_resolution": true,
         "allowed_merge_methods": ["squash", "merge", "rebase"]
       }
     },
     {
       "type": "required_status_checks",
       "parameters": {
-        "strict_required_status_checks_policy": false,
+        "strict_required_status_checks_policy": true,
         "do_not_enforce_on_create": true,
         "required_status_checks": [
           {
@@ -40,6 +40,15 @@
           },
           {
             "context": "Frontend build"
+          },
+          {
+            "context": "Repository hygiene"
+          },
+          {
+            "context": "Analyze (javascript-typescript)"
+          },
+          {
+            "context": "Analyze (python)"
           }
         ]
       }

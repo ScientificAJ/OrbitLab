@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
@@ -11,7 +11,9 @@ from orbitlab.ml.artifact_registry import register_artifact
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Register a real AstroNet-family model artifact with SHA-256 metadata.")
+    parser = argparse.ArgumentParser(
+        description="Register a real AstroNet-family model artifact with SHA-256 metadata."
+    )
     parser.add_argument("--model-id", required=True)
     parser.add_argument("--mission", required=True, choices=["TESS", "Kepler", "K2"])
     parser.add_argument("--path", required=True, type=Path)
@@ -34,4 +36,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 
 from orbitlab.config import Settings, settings
 from orbitlab.exceptions import ModelArtifactError
 from orbitlab.ml.artifact_registry import KEPLER_ASTRONET_MODEL_ID, get_registered_artifact
-from orbitlab.ml.astronet_adapter import AstroNetTensors, SCHEMA_VERSION
+from orbitlab.ml.astronet_adapter import SCHEMA_VERSION, AstroNetTensors
 from orbitlab.ml.checksum import sha256_path
 
 
@@ -152,9 +152,14 @@ class NumpyAstroNetRuntime:
         local_view = tensors.local_view.reshape(1, -1).astype(np.float32)
         metadata = np.nan_to_num(tensors.metadata.reshape(1, -1).astype(np.float32), nan=0.0)
         score = np.asarray(self.weights["bias"], dtype=np.float32).reshape(-1)[0]
-        score += float((global_view @ np.asarray(self.weights["global_kernel"], dtype=np.float32).reshape(-1, 1)).reshape(-1)[0])
-        score += float((local_view @ np.asarray(self.weights["local_kernel"], dtype=np.float32).reshape(-1, 1)).reshape(-1)[0])
-        score += float((metadata @ np.asarray(self.weights["metadata_kernel"], dtype=np.float32).reshape(-1, 1)).reshape(-1)[0])
+        weighted_inputs = (
+            (global_view, "global_kernel"),
+            (local_view, "local_kernel"),
+            (metadata, "metadata_kernel"),
+        )
+        for view, kernel_name in weighted_inputs:
+            kernel = np.asarray(self.weights[kernel_name], dtype=np.float32).reshape(-1, 1)
+            score += float((view @ kernel).reshape(-1)[0])
         return self._sigmoid(score)
 
 
@@ -181,7 +186,9 @@ class DockerTensorFlowAstroNetRuntime:
         try:
             relative_prefix = self.checkpoint_prefix.resolve().relative_to(repo_root)
         except ValueError as exc:
-            raise ModelArtifactError("Kepler checkpoint must be inside the OrbitLab workspace for Docker inference") from exc
+            raise ModelArtifactError(
+                "Kepler checkpoint must be inside the OrbitLab workspace for Docker inference"
+            ) from exc
         with tempfile.TemporaryDirectory(prefix="orbitlab-kepler-") as temp_name:
             temp_dir = Path(temp_name)
             input_path = temp_dir / "input.npz"

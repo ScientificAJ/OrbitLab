@@ -1,5 +1,4 @@
 import numpy as np
-
 from orbitlab.ml.astronet_adapter import GLOBAL_BINS, LOCAL_BINS, build_astronet_tensors
 from orbitlab.science.bls import TransitCandidate
 
@@ -15,7 +14,14 @@ def injected_transit_curve(period=3.14159, epoch=0.37, duration=0.11, depth=0.01
 
 def test_astronet_adapter_shapes_dtype_and_checksum_are_deterministic():
     time, flux = injected_transit_curve()
-    candidate = TransitCandidate(period=3.14159, epoch=0.37, duration=0.11, depth=0.018, power=55.0, signal_to_noise=14.0)
+    candidate = TransitCandidate(
+        period=3.14159,
+        epoch=0.37,
+        duration=0.11,
+        depth=0.018,
+        power=55.0,
+        signal_to_noise=14.0,
+    )
 
     first = build_astronet_tensors(time, flux, candidate, stellar_radius_solar=1.0, stellar_mass_solar=1.0)
     second = build_astronet_tensors(time, flux, candidate, stellar_radius_solar=1.0, stellar_mass_solar=1.0)
@@ -33,7 +39,14 @@ def test_astronet_adapter_shapes_dtype_and_checksum_are_deterministic():
 def test_astronet_adapter_rejects_nan_flux():
     time, flux = injected_transit_curve()
     flux[:] = np.nan
-    candidate = TransitCandidate(period=3.14159, epoch=0.37, duration=0.11, depth=0.018, power=55.0, signal_to_noise=14.0)
+    candidate = TransitCandidate(
+        period=3.14159,
+        epoch=0.37,
+        duration=0.11,
+        depth=0.018,
+        power=55.0,
+        signal_to_noise=14.0,
+    )
 
     try:
         build_astronet_tensors(time, flux, candidate)
@@ -41,4 +54,3 @@ def test_astronet_adapter_rejects_nan_flux():
         assert "finite" in str(exc) or "invalid" in str(exc)
     else:  # pragma: no cover
         raise AssertionError("NaN flux must be rejected")
-

@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 FORBIDDEN_SOURCE_SNIPPETS = [
     "mo" + "ck " + "planet",
     "dum" + "my " + "candidate",

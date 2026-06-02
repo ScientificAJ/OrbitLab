@@ -20,7 +20,11 @@ def require_real_array(name: str, values: np.ndarray, *, min_size: int = 8) -> n
     return arr.astype(np.float32, copy=False)
 
 
-def clean_light_curve(time: np.ndarray, flux: np.ndarray, quality: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray]:
+def clean_light_curve(
+    time: np.ndarray,
+    flux: np.ndarray,
+    quality: np.ndarray | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
     t = require_real_array("time", time)
     f = require_real_array("flux", flux)
     if t.shape != f.shape:
@@ -40,7 +44,13 @@ def clean_light_curve(time: np.ndarray, flux: np.ndarray, quality: np.ndarray | 
     return t.astype(np.float32), normalized
 
 
-def apply_manual_jitter_mask(time: np.ndarray, flux: np.ndarray, mask: np.ndarray, *, reason: str) -> tuple[np.ndarray, np.ndarray, dict]:
+def apply_manual_jitter_mask(
+    time: np.ndarray,
+    flux: np.ndarray,
+    mask: np.ndarray,
+    *,
+    reason: str,
+) -> tuple[np.ndarray, np.ndarray, dict]:
     if not reason.strip():
         raise ValueError("manual jitter masks require an audit reason")
     t = np.asarray(time)

@@ -3,6 +3,9 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     open-pull-requests-limit: 2
+    commit-message:
+      prefix: "deps"
+      include: "scope"
     schedule:
       interval: "weekly"
     groups:
@@ -20,6 +23,9 @@ updates:
   - package-ecosystem: "npm"
     directory: "/frontend"
     open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps"
+      include: "scope"
     schedule:
       interval: "weekly"
     groups:
@@ -54,6 +60,9 @@ updates:
   - package-ecosystem: "pip"
     directory: "/"
     open-pull-requests-limit: 3
+    commit-message:
+      prefix: "deps"
+      include: "scope"
     schedule:
       interval: "weekly"
     groups:

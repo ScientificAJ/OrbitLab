@@ -1,6 +1,10 @@
 # Default maintainers for repository-wide changes.
 * @ScientificAJ
 
+# Product surfaces.
+/frontend/ @ScientificAJ
+/backend/ @ScientificAJ
+
 # Science, ML, and artifact provenance changes need extra attention.
 /backend/orbitlab/science/ @ScientificAJ
 /backend/orbitlab/ml/ @ScientificAJ
@@ -10,3 +14,7 @@
 # Release and automation surfaces.
 /.github/ @ScientificAJ
 /scripts/ @ScientificAJ
+/pyproject.toml @ScientificAJ
+/docker-compose.yml @ScientificAJ
+/frontend/package.json @ScientificAJ
+/frontend/package-lock.json @ScientificAJ

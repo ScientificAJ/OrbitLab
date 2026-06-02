@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from orbitlab.exceptions import RealDataRequiredError
 from orbitlab.science.data_quality import apply_manual_jitter_mask, clean_light_curve
 

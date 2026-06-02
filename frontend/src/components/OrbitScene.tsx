@@ -104,8 +104,7 @@ function confidenceScore(candidate: Candidate, tone: EvidenceTone) {
       ? 0.04
       : 0.18
     : 0.08;
-  const readinessScore =
-    tone === 'ready' ? 0.18 : tone === 'candidate' ? 0.1 : tone === 'review' ? 0.04 : -0.14;
+  const readinessScore = tone === 'ready' ? 0.18 : tone === 'candidate' ? 0.1 : tone === 'review' ? 0.04 : -0.14;
   return clamp(snrScore + physicsScore + validationScore + readinessScore, 0.08, 0.96);
 }
 

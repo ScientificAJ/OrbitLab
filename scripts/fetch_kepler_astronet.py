@@ -3,14 +3,13 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-from pathlib import Path
 import sys
 import urllib.request
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
 from orbitlab.ml.artifact_registry import KEPLER_ASTRONET_MODEL_ID, register_artifact
-
 
 COMMIT = "9809ce92306f11fbdc96f9830b522026710a3883"
 OWNER = "bibinthomas123"

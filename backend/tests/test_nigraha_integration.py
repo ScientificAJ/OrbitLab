@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import numpy as np
-
 from orbitlab.ml.nigraha_adapter import build_nigraha_tensors
 from orbitlab.ml.nigraha_service import NigrahaNumpyModel
 from orbitlab.science.bls import TransitCandidate

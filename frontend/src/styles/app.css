@@ -552,11 +552,7 @@ input::placeholder {
 .right-rail {
   min-height: 0;
   overflow: auto;
-  background: linear-gradient(
-    180deg,
-    var(--rail-glass-strong),
-    var(--rail-glass)
-  );
+  background: linear-gradient(180deg, var(--rail-glass-strong), var(--rail-glass));
   border-right: 1px solid color-mix(in srgb, var(--border-strong) 72%, transparent);
   box-shadow:
     inset -1px 0 0 color-mix(in srgb, var(--text-strong) 5%, transparent),
@@ -580,11 +576,7 @@ input::placeholder {
 .panel {
   padding: 16px;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
-  background: linear-gradient(
-    180deg,
-    var(--panel-glass-strong),
-    var(--panel-glass)
-  );
+  background: linear-gradient(180deg, var(--panel-glass-strong), var(--panel-glass));
   transition:
     background var(--motion-ui) ease,
     border-color var(--motion-ui) ease,
@@ -935,9 +927,7 @@ label,
       color-mix(in srgb, #03080d 68%, var(--bg) 32%) 58%,
       #03080d
     ),
-    var(--decoration),
-    var(--backdrop),
-    #03080d;
+    var(--decoration), var(--backdrop), #03080d;
   background-position: center, var(--decoration-position), center, center;
   background-size: cover, cover, cover, cover;
   box-shadow:
@@ -1037,9 +1027,7 @@ label,
   padding: 10px 11px;
   border: 1px solid rgba(120, 220, 232, 0.42);
   border-radius: 6px;
-  background:
-    linear-gradient(135deg, rgba(120, 220, 232, 0.11), transparent 36%),
-    rgba(4, 12, 18, 0.72);
+  background: linear-gradient(135deg, rgba(120, 220, 232, 0.11), transparent 36%), rgba(4, 12, 18, 0.72);
   box-shadow:
     0 14px 36px rgba(0, 0, 0, 0.24),
     0 0 30px rgba(120, 220, 232, 0.12);
@@ -1163,9 +1151,7 @@ label,
   padding: 8px 9px 8px 10px;
   border: 1px solid rgba(79, 182, 199, 0.6);
   border-radius: 6px;
-  background:
-    linear-gradient(90deg, rgba(120, 220, 232, 0.08), transparent 36%),
-    rgba(7, 16, 22, 0.72);
+  background: linear-gradient(90deg, rgba(120, 220, 232, 0.08), transparent 36%), rgba(7, 16, 22, 0.72);
   text-align: left;
   box-shadow:
     0 0 18px rgba(79, 182, 199, 0.08),
@@ -1399,12 +1385,7 @@ label,
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--accent) 18%, transparent),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 18%, transparent), transparent);
   transform: translateX(-110%);
   animation: plot-scan 820ms var(--ease-premium) both;
 }

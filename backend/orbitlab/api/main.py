@@ -4,7 +4,7 @@ import json
 import math
 from contextlib import asynccontextmanager
 from dataclasses import asdict, replace
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -93,7 +93,6 @@ def get_db():
 
 @app.get(f"{settings.api_prefix}/health", response_model=HealthResponse)
 def health():
-    from datetime import timezone
 
     database_status = "ok"
     try:
@@ -112,7 +111,7 @@ def health():
         worker_mode="inline" if settings.run_jobs_inline else "celery",
         redis_configured=bool(settings.redis_url),
         frontend="served separately",
-        generated_at=datetime.now(timezone.utc).isoformat(),
+        generated_at=datetime.now(UTC).isoformat(),
     )
 
 
@@ -148,7 +147,7 @@ def search(query: str = Query(min_length=1), mission: str | None = None):
     try:
         return search_targets(query, mission=mission)
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.get(f"{settings.api_prefix}/targets/{{target_id}}/products", response_model=list[Product])
@@ -156,7 +155,7 @@ def products(target_id: str, mission: str | None = None):
     try:
         return list_tpf_products(target_id, mission=mission)
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=str(exc))
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.get(f"{settings.api_prefix}/tpf-preview")
@@ -190,7 +189,7 @@ def tpf_preview(product_uri: str):
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.post(f"{settings.api_prefix}/bls-preview")
@@ -421,9 +420,9 @@ def bls_preview(payload: BlsPreviewCreate, db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc))
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @app.post(f"{settings.api_prefix}/analysis-jobs", response_model=AnalysisJob, status_code=201)
@@ -591,11 +590,10 @@ def report(report_id: str, db: Session = Depends(get_db)):
     record = db.get(AnalysisResultRecord, report_id)
     if record is None:
         raise HTTPException(status_code=404, detail="report not found")
-    from datetime import timezone
 
     return {
         "report_id": report_id,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "format": "json",
         "result": _analysis_response_payload(record),
     }

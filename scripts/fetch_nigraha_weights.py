@@ -3,14 +3,13 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-from pathlib import Path
 import sys
+from pathlib import Path
 from urllib.request import urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
 from orbitlab.ml.artifact_registry import register_artifact
-
 
 COMMIT = "c4365b41dd02b187c3210189ffe8e3ead584f4f5"
 BASE_URL = f"https://raw.githubusercontent.com/ExoplanetML/Nigraha/{COMMIT}/models/weights/global_nodropout/binary"
