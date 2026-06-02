@@ -188,7 +188,6 @@ export function OrbitScene({
     }
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x03080d);
     scene.fog = new THREE.FogExp2(0x03080d, 0.018);
 
     const width = Math.max(mount.clientWidth, 1);
@@ -205,11 +204,12 @@ export function OrbitScene({
 
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     } catch {
       setWebglUnavailable(true);
       return;
     }
+    renderer.setClearColor(0x000000, 0);
     const automatedBrowser = navigator.webdriver;
     renderer.setPixelRatio(automatedBrowser ? 1 : Math.min(window.devicePixelRatio, 1.6));
     renderer.setSize(width, height);
