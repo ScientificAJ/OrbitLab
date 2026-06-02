@@ -265,11 +265,9 @@ export function OrbitScene({
 
   useEffect(() => {
     if (!selectedId || !candidates.length) return undefined;
-    setSelectionPulse(false);
-    const frame = window.requestAnimationFrame(() => setSelectionPulse(true));
+    setSelectionPulse(true);
     const timeout = window.setTimeout(() => setSelectionPulse(false), 6200);
     return () => {
-      window.cancelAnimationFrame(frame);
       window.clearTimeout(timeout);
     };
   }, [candidates.length, selectedId]);

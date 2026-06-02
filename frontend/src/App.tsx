@@ -458,11 +458,8 @@ export default function App() {
     if (completionRevealTimeout.current) {
       window.clearTimeout(completionRevealTimeout.current);
     }
-    setCompletionReveal(false);
-    window.requestAnimationFrame(() => {
-      setCompletionReveal(true);
-      completionRevealTimeout.current = window.setTimeout(() => setCompletionReveal(false), 2200);
-    });
+    setCompletionReveal(true);
+    completionRevealTimeout.current = window.setTimeout(() => setCompletionReveal(false), 2200);
   }
 
   const tces = useMemo<Tce[]>(() => {

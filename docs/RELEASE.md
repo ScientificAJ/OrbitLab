@@ -32,6 +32,51 @@
    git push origin vX.Y.Z
    ```
 
+## Science Provenance Release Room
+
+Every public release should include a release-room packet so OrbitLab can be
+audited like a scientific instrument rather than only a compiled web app.
+
+Generate the packet locally before publishing:
+
+```bash
+python scripts/build_release_room.py --tag vX.Y.Z --clean
+```
+
+The packet includes:
+
+- `orbitlab-release-report.md`
+- `release-metadata.json`
+- `model-artifact-checksums.json`
+- `calibration-source-checksums.json`
+- `science-benchmark-current.json`
+- `science-benchmark-current.md`
+- `science-benchmark-delta.json`
+- `science-benchmark-delta.md`
+- `sbom.spdx.json`
+- `release-room-assets.sha256`
+- `orbitlab-release-room-vX.Y.Z.zip`
+
+The `Science Provenance Release Room` GitHub Actions workflow also runs when a
+release is published. It builds the frontend, fetches the pinned release model
+artifacts, regenerates the packet inside GitHub Actions, uploads the packet as
+release assets, and creates GitHub artifact attestations for the release-room
+archive and SBOM.
+
+For a manual rerun against an existing release, use:
+
+```bash
+gh workflow run release-room.yml -f tag=vX.Y.Z
+```
+
+Trust boundary:
+
+- The release room proves source commit, generated assets, model checksums,
+  benchmark evidence, and dependency inventory.
+- It does not turn BLS, ML, or vetting outputs into confirmed planets.
+- Missing or mismatched model artifacts must be reported as unavailable or
+  mismatched, never replaced with synthetic evidence.
+
 ## Issue Labels
 
 Recommended labels:

@@ -6,14 +6,23 @@ All notable OrbitLab changes are tracked here.
 
 ### Added
 
+-
+
+## v0.2.0 - 2026-06-03
+
+### Added
+
 - Beginner onboarding guidance with a guided tour, coach marks, inline helpers, and technical tooltips.
 - Voyager Mode easter egg with generated mission artwork and a persistent visual overlay toggle.
 - Repository polish assets and automation for stronger GitHub presentation.
+- Science Provenance Release Room generator with model checksums, calibration checksums, benchmark deltas, SPDX SBOM output, release-room checksums, and zipped release assets.
+- GitHub release workflow that builds, uploads, and attests the release-room archive and SBOM.
 
 ### Changed
 
 - Organized beginner guidance UI into a focused component module.
 - Expanded frontend verification around onboarding, settings, mobile layout, and Voyager Mode.
+- Upgraded CI, CodeQL, Dependabot, CODEOWNERS, branch ruleset, and release documentation for stronger repository trust.
 
 ## v0.1.0-mvp - 2026-05-11
 
