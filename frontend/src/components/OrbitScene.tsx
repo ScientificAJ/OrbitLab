@@ -175,8 +175,20 @@ export function OrbitScene({
   const [speedMode, setSpeedMode] = useState(1);
   const [zoomMode, setZoomMode] = useState(1);
   const [cameraReset, setCameraReset] = useState(0);
+  const [selectionPulse, setSelectionPulse] = useState(false);
   const renderData = useMemo(() => candidateRenderData(candidates, selectedId), [candidates, selectedId]);
   const selected = candidates.find((candidate) => candidate.candidate_id === selectedId) ?? candidates[0];
+
+  useEffect(() => {
+    if (!selectedId || !candidates.length) return undefined;
+    setSelectionPulse(false);
+    const frame = window.requestAnimationFrame(() => setSelectionPulse(true));
+    const timeout = window.setTimeout(() => setSelectionPulse(false), 2200);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timeout);
+    };
+  }, [candidates.length, selectedId]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -455,7 +467,7 @@ export function OrbitScene({
   }, [renderData, selectedId, onSelectCandidate, isPlaying, speedMode, zoomMode, cameraReset]);
 
   return (
-    <div className="orbit-scene" ref={mountRef} data-testid="orbit-scene">
+    <div className={`orbit-scene ${selectionPulse ? 'selection-pulse' : ''}`} ref={mountRef} data-testid="orbit-scene">
       <div className="orbit-hud" aria-label="Orbit simulation controls">
         <button
           type="button"

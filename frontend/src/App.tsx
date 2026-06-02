@@ -17,7 +17,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { BeginnerEmptyGuide, HelpTip, TourOverlay, beginnerTourSteps, type TourStepId } from './components/Guidance';
 import { OrbitScene } from './components/OrbitScene';
 import { SciencePlot } from './components/SciencePlot';
@@ -123,6 +123,10 @@ function compactList(values: string[] | undefined, empty = 'none') {
   return values?.length ? values.slice(0, 4).join(', ') : empty;
 }
 
+function staggerStyle(index: number): CSSProperties {
+  return { '--stagger-delay': `${Math.min(index, 8) * 45}ms` } as CSSProperties;
+}
+
 function normalizeVettingMode(value: unknown): VettingMode {
   return value === 'deep' || value === 'fast' ? value : 'paper';
 }
@@ -131,10 +135,12 @@ function CandidateCard({
   candidate,
   active,
   onSelect,
+  index = 0,
 }: {
   candidate: Candidate;
   active: boolean;
   onSelect: () => void;
+  index?: number;
 }) {
   const readiness = candidate.science_readiness;
   const status = readiness?.status;
@@ -144,6 +150,7 @@ function CandidateCard({
       className={`candidate-card ${active ? 'active' : ''} readiness-${status ?? 'unknown'}`}
       onClick={onSelect}
       title="SNR is signal strength; depth is how much the star dims during the transit."
+      style={staggerStyle(index)}
     >
       <span>{candidate.candidate_id}</span>
       <strong>{formatNumber(candidate.period, 4)} d</strong>
@@ -155,7 +162,17 @@ function CandidateCard({
   );
 }
 
-function TceCard({ tce, active, onSelect }: { tce: Tce; active: boolean; onSelect: () => void }) {
+function TceCard({
+  tce,
+  active,
+  onSelect,
+  index = 0,
+}: {
+  tce: Tce;
+  active: boolean;
+  onSelect: () => void;
+  index?: number;
+}) {
   const action = tce.action_label && tce.action_label !== 'none' ? tce.action_label : tce.disposition;
   const readiness = tce.science_readiness;
   const status = readiness?.status;
@@ -165,6 +182,7 @@ function TceCard({ tce, active, onSelect }: { tce: Tce; active: boolean; onSelec
       className={`candidate-card tce-card ${active ? 'active' : ''} readiness-${status ?? 'unknown'}`}
       onClick={onSelect}
       title="TCEs preserve signals that need vetting even when they are not promoted candidates."
+      style={staggerStyle(index)}
     >
       <span>{tce.tce_id ?? tce.candidate_id}</span>
       <strong>{action ?? 'tce'}</strong>
@@ -307,6 +325,8 @@ export default function App() {
   const [workflow, setWorkflow] = useState<WorkflowState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [themeBloom, setThemeBloom] = useState(false);
+  const [completionReveal, setCompletionReveal] = useState(false);
 
   const [tpfPreview, setTpfPreview] = useState<TpfPreview | null>(null);
   const [apertureMask, setApertureMask] = useState<boolean[][]>([]);
@@ -344,6 +364,8 @@ export default function App() {
   const apertureToken = useRef<number>(0);
   const blsPreviewToken = useRef<number>(0);
   const successTimeout = useRef<number | undefined>(undefined);
+  const themeBloomTimeout = useRef<number | undefined>(undefined);
+  const completionRevealTimeout = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     refreshModelStatus();
@@ -360,6 +382,12 @@ export default function App() {
       }
       if (successTimeout.current) {
         window.clearTimeout(successTimeout.current);
+      }
+      if (themeBloomTimeout.current) {
+        window.clearTimeout(themeBloomTimeout.current);
+      }
+      if (completionRevealTimeout.current) {
+        window.clearTimeout(completionRevealTimeout.current);
       }
     };
   }, []);
@@ -411,6 +439,30 @@ export default function App() {
     }
     setSuccess(message);
     successTimeout.current = window.setTimeout(() => setSuccess(null), 6000);
+  }
+
+  function changeTheme(next: ThemeName) {
+    if (next === theme) return;
+    if (themeBloomTimeout.current) {
+      window.clearTimeout(themeBloomTimeout.current);
+    }
+    setTheme(next);
+    setThemeBloom(false);
+    window.requestAnimationFrame(() => {
+      setThemeBloom(true);
+      themeBloomTimeout.current = window.setTimeout(() => setThemeBloom(false), 760);
+    });
+  }
+
+  function triggerCompletionReveal() {
+    if (completionRevealTimeout.current) {
+      window.clearTimeout(completionRevealTimeout.current);
+    }
+    setCompletionReveal(false);
+    window.requestAnimationFrame(() => {
+      setCompletionReveal(true);
+      completionRevealTimeout.current = window.setTimeout(() => setCompletionReveal(false), 2200);
+    });
   }
 
   const tces = useMemo<Tce[]>(() => {
@@ -738,6 +790,7 @@ export default function App() {
       setResult(payload);
       setSelectedId(payload.candidates[0]?.candidate_id ?? payload.tces?.[0]?.candidate_id);
       setWorkflow('complete');
+      triggerCompletionReveal();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setWorkflow('failed');
@@ -773,6 +826,7 @@ export default function App() {
       setResult(payload);
       setSelectedId(payload.candidates[0]?.candidate_id ?? payload.tces?.[0]?.candidate_id);
       setWorkflow('complete');
+      triggerCompletionReveal();
     } catch (err) {
       if (token !== analysisToken.current) return;
       setError(err instanceof Error ? err.message : String(err));
@@ -1074,6 +1128,7 @@ export default function App() {
       setWorkflow('complete');
       setBlsPreviewStatus('complete');
       setActiveModal(null);
+      triggerCompletionReveal();
     } catch (err) {
       if (token !== blsPreviewToken.current) return;
       setBlsPreviewStatus('failed');
@@ -1135,7 +1190,7 @@ export default function App() {
 
   return (
     <main
-      className="shell"
+      className={`shell ${themeBloom ? 'theme-bloom' : ''} ${completionReveal ? 'analysis-reveal' : ''}`}
       data-mode={mode}
       data-theme={theme}
       data-voyager-mode={isVoyagerModeActive ? 'true' : undefined}
@@ -1248,14 +1303,15 @@ export default function App() {
               {isAdvanced ? 'Matches' : '2. Select Target'}{' '}
               <HelpTip label="Aliases can appear before catalog matches so beginners can choose the canonical target." />
             </div>
-            <div className={`selection-list ${tourAnchorClass('target')}`}>
+            <div className={`selection-list motion-cascade ${tourAnchorClass('target')}`}>
               {suggestedTargets.length > 0 && <div className="selection-group-label">Suggested targets</div>}
-              {suggestedTargets.map((target) => (
+              {suggestedTargets.map((target, index) => (
                 <button
                   type="button"
                   key={`${target.catalog}-${target.target_id}-${target.matched_query ?? ''}`}
                   className={selectedTarget?.target_id === target.target_id ? 'active' : ''}
                   onClick={() => chooseTarget(target)}
+                  style={staggerStyle(index)}
                 >
                   <span>{target.target_id}</span>
                   <small>
@@ -1267,12 +1323,13 @@ export default function App() {
               {suggestedTargets.length > 0 && catalogTargets.length > 0 && (
                 <div className="selection-group-label">Catalog matches</div>
               )}
-              {catalogTargets.map((target) => (
+              {catalogTargets.map((target, index) => (
                 <button
                   type="button"
                   key={`${target.catalog}-${target.target_id}`}
                   className={selectedTarget?.target_id === target.target_id ? 'active' : ''}
                   onClick={() => chooseTarget(target)}
+                  style={staggerStyle(suggestedTargets.length + index)}
                 >
                   <span>{target.target_id}</span>
                   <small>{target.trust_label ?? target.catalog}</small>
@@ -1293,13 +1350,14 @@ export default function App() {
               {isAdvanced ? 'Product' : '3. Select Observation File'}{' '}
               <HelpTip label="Observation files contain the pixel data OrbitLab needs for light curves and analysis." />
             </div>
-            <div className={`selection-list ${tourAnchorClass('product')}`}>
-              {products.map((product) => (
+            <div className={`selection-list motion-cascade ${tourAnchorClass('product')}`}>
+              {products.map((product, index) => (
                 <button
                   type="button"
                   key={product.product_uri}
                   className={selectedProduct?.product_uri === product.product_uri ? 'active' : ''}
                   onClick={() => chooseProduct(product)}
+                  style={staggerStyle(index)}
                 >
                   <span>{product.product_id}</span>
                   <small>{product.description}</small>
@@ -1503,12 +1561,13 @@ export default function App() {
           <div className="rail-section">
             <h2>{isAdvanced ? 'Candidates' : '5. Review Candidates'}</h2>
             {result?.candidates.length ? (
-              result.candidates.map((candidate) => (
+              result.candidates.map((candidate, index) => (
                 <CandidateCard
                   key={candidate.candidate_id}
                   candidate={candidate}
                   active={candidate.candidate_id === selected?.candidate_id}
                   onSelect={() => setSelectedId(candidate.candidate_id)}
+                  index={index}
                 />
               ))
             ) : (
@@ -1526,12 +1585,13 @@ export default function App() {
             <div className="rail-section">
               <h2>TCE Ledger</h2>
               {reviewTces.length ? (
-                reviewTces.map((tce) => (
+                reviewTces.map((tce, index) => (
                   <TceCard
                     key={tce.tce_id ?? tce.candidate_id}
                     tce={tce}
                     active={tce.candidate_id === selected?.candidate_id}
                     onSelect={() => setSelectedId(tce.candidate_id)}
+                    index={index}
                   />
                 ))
               ) : (
@@ -1987,7 +2047,7 @@ export default function App() {
                     role="radio"
                     aria-checked={theme === themeName}
                     className={`theme-choice theme-${themeName} ${theme === themeName ? 'active' : ''}`}
-                    onClick={() => setTheme(themeName)}
+                    onClick={() => changeTheme(themeName)}
                   >
                     <span aria-hidden="true" />
                     {label}

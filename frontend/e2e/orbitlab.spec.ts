@@ -362,6 +362,7 @@ test('settings drawer persists mode and theme after reload', async ({ page }) =>
   const sakuraTheme = page.getByRole('radio', { name: 'Sakura' });
   await sakuraTheme.dispatchEvent('click');
   await expect(sakuraTheme).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('.shell')).toHaveClass(/theme-bloom/);
 
   await page.reload();
 
@@ -515,6 +516,8 @@ test('beginner flow can select product, preview candidates, and run analysis', a
 
   await expect(page.getByText('4. Run')).toBeVisible();
   await page.getByRole('button', { name: /Preview Candidates/ }).click();
+  await expect(page.locator('.shell')).toHaveClass(/analysis-reveal/);
+  await expect(page.getByTestId('orbit-scene')).toHaveClass(/selection-pulse/);
   await expect(page.getByRole('button', { name: /preview-1/ })).toBeVisible();
 
   await page.route(`${API}/analysis-jobs`, (route) =>

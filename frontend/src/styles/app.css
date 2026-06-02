@@ -55,6 +55,12 @@
   --control-shadow: 0 10px 24px color-mix(in srgb, var(--bg) 46%, transparent);
   --panel-shadow: 0 18px 42px color-mix(in srgb, var(--bg) 38%, transparent);
   --accent-glow: color-mix(in srgb, var(--accent) 30%, transparent);
+  --motion-fast: 160ms;
+  --motion-ui: 260ms;
+  --motion-premium: 560ms;
+  --motion-bloom: 760ms;
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.2, 1.25, 0.32, 1);
   color: var(--text);
   background: var(--bg);
 }
@@ -240,11 +246,12 @@ button {
     inset 0 1px 0 color-mix(in srgb, var(--text-strong) 16%, transparent),
     var(--control-shadow);
   transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease,
-    color 160ms ease,
-    transform 160ms ease;
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--ease-premium),
+    filter var(--motion-fast) ease;
 }
 
 button svg {
@@ -298,6 +305,9 @@ button:disabled {
   background-position: center, var(--decoration-position), center, center;
   background-size: cover, cover, cover, cover;
   background-attachment: fixed;
+  transition:
+    background var(--motion-bloom) var(--ease-premium),
+    color var(--motion-ui) ease;
 }
 
 .shell[data-voyager-mode='true']::before {
@@ -312,6 +322,25 @@ button:disabled {
     linear-gradient(115deg, transparent 0 36%, rgba(255, 209, 122, 0.1) 36.2%, transparent 36.7% 100%),
     linear-gradient(160deg, transparent 0 58%, rgba(120, 220, 232, 0.09) 58.2%, transparent 58.7% 100%);
   mix-blend-mode: screen;
+}
+
+.shell::after {
+  content: '';
+  position: fixed;
+  inset: -12%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 50% 12%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 24%),
+    radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--text-strong) 16%, transparent), transparent 46%);
+  filter: blur(18px) saturate(142%);
+  transform: scale(0.76);
+  mix-blend-mode: screen;
+}
+
+.shell.theme-bloom::after {
+  animation: theme-bloom var(--motion-bloom) var(--ease-premium);
 }
 
 .shell > * {
@@ -409,12 +438,14 @@ label,
     var(--control-shadow);
   backdrop-filter: blur(12px) saturate(140%);
   transition:
-    border-color 160ms ease,
-    box-shadow 160ms ease;
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    transform var(--motion-fast) var(--ease-premium);
 }
 
 .search-strip:focus-within {
   border-color: var(--accent);
+  transform: translateY(-1px);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--text-strong) 12%, transparent),
     0 0 0 3px var(--accent-glow),
@@ -486,6 +517,8 @@ input::placeholder {
 }
 
 .pipeline-progress {
+  position: relative;
+  overflow: hidden;
   display: grid;
   gap: 8px;
   margin-top: 10px;
@@ -498,6 +531,16 @@ input::placeholder {
   color: var(--muted-strong);
   font-size: 12px;
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-strong) 10%, transparent);
+}
+
+.pipeline-progress::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent, color-mix(in srgb, var(--accent) 18%, transparent), transparent);
+  transform: translateX(-110%);
+  animation: progress-sheen 1.4s var(--ease-premium) 3;
 }
 
 .pipeline-progress progress {
@@ -519,6 +562,10 @@ input::placeholder {
     inset -1px 0 0 color-mix(in srgb, var(--text-strong) 5%, transparent),
     12px 0 34px color-mix(in srgb, var(--bg) 20%, transparent);
   backdrop-filter: blur(15px) saturate(145%);
+  transition:
+    background var(--motion-ui) ease,
+    border-color var(--motion-ui) ease,
+    box-shadow var(--motion-ui) ease;
 }
 
 .right-rail {
@@ -538,6 +585,10 @@ input::placeholder {
     var(--panel-glass-strong),
     var(--panel-glass)
   );
+  transition:
+    background var(--motion-ui) ease,
+    border-color var(--motion-ui) ease,
+    box-shadow var(--motion-ui) ease;
 }
 
 .rail-section + .rail-section,
@@ -637,6 +688,12 @@ label,
   overflow: hidden;
 }
 
+.motion-cascade > button,
+.candidate-card {
+  animation: cascade-in var(--motion-premium) var(--ease-premium) both;
+  animation-delay: var(--stagger-delay, 0ms);
+}
+
 .candidate-card:hover:not(:disabled),
 .selection-list button:hover:not(:disabled),
 .theme-choice:hover:not(:disabled),
@@ -684,6 +741,12 @@ label,
     inset 3px 0 0 var(--accent),
     0 0 0 1px color-mix(in srgb, var(--accent) 36%, transparent),
     0 12px 24px color-mix(in srgb, var(--bg) 42%, transparent);
+}
+
+.candidate-card.active {
+  animation:
+    cascade-in var(--motion-premium) var(--ease-premium) both,
+    selected-card-pulse 680ms var(--ease-premium);
 }
 
 .selection-list {
@@ -737,6 +800,9 @@ label,
   background: var(--stage-wash), var(--decoration), var(--backdrop), var(--bg);
   background-position: center, var(--decoration-position), center, center;
   background-size: cover, cover, cover, cover;
+  transition:
+    background var(--motion-bloom) var(--ease-premium),
+    filter var(--motion-ui) ease;
 }
 
 .stage-header {
@@ -840,6 +906,18 @@ label,
     ),
     var(--surface-soft);
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-strong) 10%, transparent);
+  transition:
+    border-color var(--motion-ui) ease,
+    box-shadow var(--motion-ui) ease,
+    transform var(--motion-ui) var(--ease-premium);
+}
+
+.analysis-reveal .center-stage {
+  animation: science-stage-reveal 860ms var(--ease-premium);
+}
+
+.analysis-reveal .sync-pill {
+  animation: status-complete-pop 780ms var(--ease-spring);
 }
 
 .orbit-scene {
@@ -863,6 +941,31 @@ label,
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--text-strong) 7%, transparent),
     inset 0 -1px 0 color-mix(in srgb, var(--border-strong) 70%, transparent);
+  transition:
+    filter var(--motion-premium) var(--ease-premium),
+    box-shadow var(--motion-ui) ease;
+}
+
+.orbit-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 50% 48%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 22%),
+    linear-gradient(115deg, transparent, color-mix(in srgb, var(--text-strong) 10%, transparent), transparent);
+  mix-blend-mode: screen;
+}
+
+.analysis-reveal .orbit-scene {
+  animation: orbit-scene-reveal 880ms var(--ease-premium);
+}
+
+.analysis-reveal .orbit-scene::after,
+.orbit-scene.selection-pulse::after {
+  animation: orbit-focus-glow 700ms var(--ease-premium);
 }
 
 .orbit-scene canvas {
@@ -1019,12 +1122,18 @@ label,
   text-align: left;
   box-shadow: 0 0 18px rgba(79, 182, 199, 0.08);
   backdrop-filter: blur(10px);
+  transition:
+    border-color var(--motion-fast) ease,
+    background var(--motion-fast) ease,
+    box-shadow var(--motion-fast) ease,
+    transform var(--motion-fast) var(--ease-premium);
 }
 
 .orbit-label.active {
   border-color: #8ee7ff;
   background: rgba(18, 49, 59, 0.82);
   box-shadow: 0 0 18px rgba(142, 231, 255, 0.18);
+  animation: orbit-label-pulse 680ms var(--ease-premium);
 }
 
 .orbit-label.ghost {
@@ -1150,6 +1259,7 @@ label,
 }
 
 .plot-frame {
+  position: relative;
   width: 100%;
   height: 100%;
   min-height: 180px;
@@ -1158,6 +1268,23 @@ label,
   border-radius: 6px;
   background: color-mix(in srgb, var(--plot-glass) 78%, transparent);
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text-strong) 4%, transparent);
+  animation: plot-materialize 520ms var(--ease-premium) both;
+}
+
+.plot-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 18%, transparent),
+    transparent
+  );
+  transform: translateX(-110%);
+  animation: plot-scan 820ms var(--ease-premium) both;
 }
 
 .panel .plot {
@@ -1271,6 +1398,7 @@ label,
   padding: 20px;
   background: rgba(2, 8, 12, 0.68);
   backdrop-filter: blur(5px);
+  animation: overlay-arrive var(--motion-ui) ease both;
 }
 
 .modal {
@@ -1292,6 +1420,8 @@ label,
     0 24px 70px rgba(0, 0, 0, 0.48),
     0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent);
   backdrop-filter: blur(18px) saturate(145%);
+  transform-origin: 50% 46%;
+  animation: modal-arrive 320ms var(--ease-premium) both;
 }
 
 .modal header,
@@ -1338,6 +1468,7 @@ label,
   position: absolute;
   inset: 0;
   background: rgba(2, 8, 12, 0.28);
+  animation: overlay-arrive var(--motion-ui) ease both;
 }
 
 .tour-card {
@@ -1354,6 +1485,7 @@ label,
   border-radius: 8px;
   background: color-mix(in srgb, var(--surface) 88%, #2a2413);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48);
+  animation: modal-arrive 320ms var(--ease-premium) both;
 }
 
 .tour-card h2,
@@ -1601,6 +1733,10 @@ label,
     0 12px 24px color-mix(in srgb, var(--bg) 42%, transparent);
 }
 
+.theme-choice.active span {
+  animation: swatch-pop 520ms var(--ease-spring);
+}
+
 .theme-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
@@ -1665,8 +1801,209 @@ label,
     url('/theme-decorations/nature.webp') center / cover;
 }
 
+@keyframes theme-bloom {
+  0% {
+    opacity: 0;
+    transform: scale(0.62);
+  }
+  38% {
+    opacity: 0.62;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes cascade-in {
+  0% {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translateY(8px) scale(0.992);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes selected-card-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  42% {
+    filter: brightness(1.18) saturate(1.16);
+    box-shadow:
+      inset 3px 0 0 var(--accent),
+      0 0 0 1px color-mix(in srgb, var(--accent) 56%, transparent),
+      0 16px 34px color-mix(in srgb, var(--bg) 42%, transparent),
+      0 0 28px color-mix(in srgb, var(--accent) 24%, transparent);
+  }
+}
+
+@keyframes science-stage-reveal {
+  0% {
+    filter: brightness(0.88) saturate(0.86);
+  }
+  44% {
+    filter: brightness(1.18) saturate(1.24);
+  }
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes status-complete-pop {
+  0% {
+    transform: scale(0.96);
+  }
+  42% {
+    transform: scale(1.08);
+    border-color: var(--accent);
+    box-shadow:
+      0 0 0 4px var(--accent-glow),
+      0 0 28px color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes orbit-scene-reveal {
+  0% {
+    filter: brightness(0.82) saturate(0.86);
+  }
+  52% {
+    filter: brightness(1.24) saturate(1.26);
+  }
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes orbit-focus-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  44% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes orbit-label-pulse {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  42% {
+    transform: translateY(-1px) scale(1.025);
+    box-shadow:
+      0 0 0 3px rgba(142, 231, 255, 0.12),
+      0 0 24px rgba(142, 231, 255, 0.28);
+  }
+}
+
+@keyframes plot-materialize {
+  0% {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes plot-scan {
+  0% {
+    opacity: 0;
+    transform: translateX(-110%);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(110%);
+  }
+}
+
+@keyframes progress-sheen {
+  0% {
+    opacity: 0;
+    transform: translateX(-110%);
+  }
+  36% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(110%);
+  }
+}
+
+@keyframes overlay-arrive {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-arrive {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+    filter: blur(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes swatch-pop {
+  0% {
+    transform: scale(0.86);
+  }
+  55% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  button {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+
+  button,
+  .search-strip,
+  .left-rail,
+  .right-rail,
+  .rail-section,
+  .panel,
+  .center-stage,
+  .sync-pill,
+  .orbit-scene,
+  .orbit-label {
     transition: none;
   }
 
