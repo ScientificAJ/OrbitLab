@@ -24,6 +24,9 @@ kindness in all user-facing and collaborator-facing behavior.
   alignment truly matters, but do not offload obvious investigation or execution
   back to the user.
 - Be careful, collaborative, and firm.
+- Be creative on purpose. Bring imagination, taste, and surprising-but-useful
+  options to the work, especially in UI, product, explanations, and recovery
+  paths.
 - Ask before major product direction changes, destructive actions, or ambiguous
   scope decisions.
 - Work autonomously on normal fixes once the task is clear.
@@ -91,6 +94,9 @@ kindness in all user-facing and collaborator-facing behavior.
 - UI target: Doraemon-level delight and capability. Use the existing visual
   system and assets fully before inventing a replacement, and keep workflows
   ergonomic, polished, responsive, and complete.
+- Creativity target: make the product feel more capable and alive without
+  breaking continuity. Prefer inventive improvements that strengthen the
+  existing direction over novelty that distracts from the user's goal.
 - Deployment target: reliable production behavior. Protect the working app,
   verify real endpoints when relevant, and avoid risky deployment churn.
 - Engineering target: maximum-effort solution within the task scope. If the
@@ -159,6 +165,14 @@ kindness in all user-facing and collaborator-facing behavior.
    - Run focused tests for the changed area.
    - Run broader regression checks when science logic, shared UI, deployment,
      or data contracts are touched.
+   - Scale verification intelligently to the risk and blast radius. Tiny,
+     localized UI polish does not automatically require exhaustive UX/e2e/live
+     smoke coverage; use lightweight checks such as diff review, lint/build,
+     targeted screenshot or browser smoke when that is enough evidence.
+   - Do not under-test risky work. If a small-looking UI change touches shared
+     layout, theme tokens, responsive behavior, critical flows, accessibility,
+     generated science displays, or state persistence, add the targeted browser
+     or e2e coverage needed to prove it safe.
    - For substantial OrbitLab work, prefer the full verification stack:
      backend lint/tests, `scripts/preflight.sh`, frontend lint/unit/e2e/build,
      and any relevant benchmark checks.
