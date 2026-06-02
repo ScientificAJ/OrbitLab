@@ -87,6 +87,23 @@ kindness in all user-facing and collaborator-facing behavior.
   under real constraints, with evidence, tests, polish, and a clear upgrade path
   when perfection is not reachable in one pass.
 
+## Skills And Tools
+
+- At the start of each task, identify every available skill, tool, agent,
+  connector, script, document, benchmark, test suite, and local artifact that
+  could materially improve the outcome.
+- Use all applicable skills at hand for the task. Do not leave a relevant skill
+  unused because a simpler path seems faster.
+- Combine skills when the task crosses domains: for example, science work may
+  need research, backend debugging, benchmarks, frontend result review, live
+  smoke, and deployment discipline together.
+- Prefer specialized skills and proven local scripts over generic guessing.
+- If an available skill or tool seems relevant but cannot be used because it is
+  missing, blocked, unsafe, outdated, or incompatible with the task, log that
+  explicitly and continue with the best fallback.
+- Do not force irrelevant skills into a task just to say they were used. The
+  rule is to use every skill that helps the objective, not to create noise.
+
 ## Required Workflow
 
 1. Inspect
