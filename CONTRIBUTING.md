@@ -14,6 +14,8 @@ Use [SUPPORT.md](SUPPORT.md) to decide whether a question belongs in public issu
 
 All project participation is covered by [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
+For GitHub issue routing, labels, milestones, Dependabot triage, and release-evidence review, use [docs/GITHUB_ORGANIZATION.md](docs/GITHUB_ORGANIZATION.md).
+
 ## Branch-and-PR Workflow
 
 1. Create a feature branch for your changes (e.g., `feature/description` or `fix/description`).

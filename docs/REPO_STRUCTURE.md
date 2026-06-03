@@ -37,6 +37,8 @@ OrbitLab is organized around source, operations, documentation, and local runtim
 - `.github/workflows/release-room.yml` - builds, uploads, and attests Science Provenance Release Room assets for public releases.
 - `.github/dependabot.yml` - dependency update automation.
 - `.github/CODEOWNERS` - ownership hints for review routing.
+- `.github/ISSUE_TEMPLATE/` - structured public issue forms.
+- `.github/labels.yml` - documented label taxonomy for GitHub organization.
 
 ## Documentation
 
@@ -44,6 +46,7 @@ OrbitLab is organized around source, operations, documentation, and local runtim
 - `docs/published_checkpoints.md` - checkpoint provenance notes.
 - `docs/SCIENTIFIC_METHODOLOGY.md` - implementation-backed science methodology and trust boundaries.
 - `docs/RELEASE.md` - release process and Science Provenance Release Room runbook.
+- `docs/GITHUB_ORGANIZATION.md` - GitHub labels, milestones, templates, and triage guide.
 - `docs/REPO_STRUCTURE.md` - this map.
 
 ## Agent Handoff State

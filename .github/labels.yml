@@ -1,0 +1,49 @@
+# OrbitLab label catalog.
+# GitHub itself is updated with `gh label create --force`; this file documents
+# the intended taxonomy for future maintainers and automation.
+
+- name: frontend
+  color: "1d76db"
+  description: "Frontend UI, React, Vite, styling, and browser behavior"
+- name: backend
+  color: "5319e7"
+  description: "FastAPI, storage, workers, and backend contracts"
+- name: science
+  color: "0e8a16"
+  description: "Science pipeline, target evidence, TCEs, vetting, and result semantics"
+- name: validation
+  color: "fbca04"
+  description: "Tests, benchmarks, evidence gates, and scientific validation"
+- name: ml
+  color: "5319e7"
+  description: "Machine learning and model integration"
+- name: artifact
+  color: "c5def5"
+  description: "External model or data artifacts"
+- name: deployment
+  color: "0366d6"
+  description: "Deployment and hosting work"
+- name: documentation
+  color: "0075ca"
+  description: "Improvements or additions to documentation"
+- name: release
+  color: "0052cc"
+  description: "Release notes, tags, release assets, and release workflow"
+- name: provenance
+  color: "0b7285"
+  description: "Checksums, SBOM, attestations, source traceability, and release-room evidence"
+- name: security
+  color: "b60205"
+  description: "Security reports, vulnerability handling, and sensitive repo settings"
+- name: testing
+  color: "c2e0c6"
+  description: "Test coverage, test automation, and QA improvements"
+- name: ci
+  color: "d4c5f9"
+  description: "CI, CodeQL, GitHub Actions, and automation health"
+- name: repository
+  color: "bfdadc"
+  description: "Repository organization, templates, labels, milestones, and contributor workflow"
+- name: demo-blocker
+  color: "b60205"
+  description: "Blocks a judged demo, hosted demo, or critical walkthrough"

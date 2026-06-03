@@ -6,6 +6,6 @@ contact_links:
   - name: OrbitLab documentation
     url: https://github.com/ScientificAJ/OrbitLab/tree/main/docs
     about: Read architecture, model artifact, and repository structure notes.
-  - name: MVP release
-    url: https://github.com/ScientificAJ/OrbitLab/releases/tag/v0.1.0-mvp
-    about: View the current prototype release.
+  - name: Latest release and provenance assets
+    url: https://github.com/ScientificAJ/OrbitLab/releases/latest
+    about: View the latest release, release-room packet, checksums, SBOM, and attestation evidence.

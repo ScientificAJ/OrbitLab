@@ -1,0 +1,48 @@
+name: Release provenance
+description: Report a release-room, checksum, SBOM, attestation, or release asset issue.
+title: "[Release provenance]: "
+labels: ["release", "provenance"]
+body:
+  - type: input
+    id: release_tag
+    attributes:
+      label: Release tag
+      placeholder: v0.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: asset_area
+    attributes:
+      label: Asset area
+      options:
+        - Release metadata
+        - Model artifact checksums
+        - Calibration/source checksums
+        - Science benchmark current report
+        - Science benchmark delta report
+        - SBOM
+        - Release-room asset checksums
+        - Release-room zip
+        - GitHub attestation
+        - GitHub Actions workflow
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: Issue
+      description: What is missing, mismatched, stale, unverifiable, or confusing?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Include GitHub release links, workflow run IDs, checksum output, `gh attestation verify` output, or relevant asset snippets.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected release behavior
+      description: Describe the release-room behavior expected from `docs/RELEASE.md`.

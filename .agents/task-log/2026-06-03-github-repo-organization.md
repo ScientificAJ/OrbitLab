@@ -1,0 +1,33 @@
+# GitHub Repo Organization Task Log
+
+- Task number: 1 of 3 in the rolling cadence.
+- Start time: 2026-06-03 09:42:35 IST.
+- Goal: Organize the GitHub repository so issues, labels, milestones, templates, and repo-facing docs match OrbitLab's current science/release posture.
+- Expected verification: Focused GitHub/docs checks: inspect repo metadata, labels, issues, PRs, templates, run Markdown formatting and YAML syntax checks, then push and confirm CI/CodeQL.
+- Cadence status: Task 1. Full cadence suite is due on task 3 unless this task touches runtime code or high-risk automation.
+- Initial inspection:
+  - Local tree was clean.
+  - Repo is public, default branch is `main`, issues/projects are enabled, wiki is disabled, and delete-branch-on-merge is enabled.
+  - Open issue: `#21 Deploy OrbitLab frontend and backend`.
+  - Open PRs are Dependabot updates plus the older branch/PR workflow doc PR.
+  - No milestones currently exist.
+  - Existing issue template contact link still pointed at `v0.1.0-mvp`.
+- Local changes:
+  - Added issue forms for science result concerns and release provenance reports.
+  - Updated issue contact links to the latest release/provenance assets.
+  - Added `docs/GITHUB_ORGANIZATION.md` and linked it from README, support, contributing, release, and repo-structure docs.
+  - Added `.github/labels.yml` as the tracked label taxonomy.
+  - Expanded the PR template for release/provenance review.
+- GitHub changes:
+  - Created/updated labels: `frontend`, `backend`, `science`, `validation`, `release`, `provenance`, `security`, `testing`, `ci`, `repository`, and `demo-blocker`.
+  - Created milestones: `v0.2.x stabilization`, `Science hardening`, `Hosted demo`, and `Contributor readiness`.
+  - Assigned issue `#21` to `Hosted demo` and added `demo-blocker`.
+  - Added repo topics: `astropy`, `bls`, `provenance`, `vite`, `exoplanet-detection`, and `target-pixel-files`.
+- Verification:
+  - `git diff --check` passed.
+  - Markdown/YAML formatting check passed for all touched files.
+  - Ruby YAML parse passed for GitHub issue templates and `.github/labels.yml`.
+  - `gh label list` confirmed the new live labels.
+  - `gh api repos/ScientificAJ/OrbitLab/milestones` confirmed the new live milestones.
+  - `gh issue view 21` confirmed the `Hosted demo` milestone and `demo-blocker` label.
+  - `gh repo view --json repositoryTopics` confirmed the expanded repo topics.

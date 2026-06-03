@@ -1,0 +1,56 @@
+name: Science result concern
+description: Report a questionable target result, candidate disposition, benchmark drift, or science-evidence problem.
+title: "[Science]: "
+labels: ["science", "validation"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What result looks scientifically wrong, confusing, or under-evidenced?
+    validations:
+      required: true
+  - type: textarea
+    id: target_product
+    attributes:
+      label: Target and product evidence
+      description: Include mission, target query/ID, selected product ID, product URI, sector/campaign/quarter, and whether this was preview or full analysis.
+      placeholder: |
+        Mission:
+        Target query or ID:
+        Product ID / URI:
+        Preview or full analysis:
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed output
+      description: Include candidate/TCE IDs, period, epoch, depth, SNR, disposition, warnings, screenshots, report JSON, or benchmark output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected scientific behavior
+      description: Explain the expected result and cite archive/catalog/paper evidence when available.
+  - type: dropdown
+    id: boundary
+    attributes:
+      label: Trust-boundary area
+      options:
+        - Target/catalog matching
+        - Product retrieval or light curve extraction
+        - BLS/TLS detection
+        - TCE ledger or promotion
+        - Catalog context or confirmed-planet wording
+        - ML/model evidence
+        - Benchmark or release-room evidence
+        - UI/report presentation
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Attachments and logs
+      description: Link compact logs, report JSON, benchmark reports, release-room assets, or screenshots. Do not attach large MAST/model artifacts.

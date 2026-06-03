@@ -137,16 +137,23 @@ Recommended labels:
 - `frontend`
 - `backend`
 - `science`
+- `validation`
 - `ml`
 - `artifact`
 - `deployment`
 - `documentation`
+- `release`
+- `provenance`
+- `security`
+- `testing`
+- `ci`
+- `repository`
 - `good first issue`
 - `demo-blocker`
 
 ## Milestones
 
-- `Hackathon submission`: demo stability, documentation, screenshots, video.
+- `v0.2.x stabilization`: release evidence, docs, repo hygiene, and regression polish for the public `v0.2.0` line.
 - `Hosted demo`: DNS/TLS, deployment runbook, health checks, rollback.
 - `Science hardening`: centroid checks, false-positive validation, stellar context.
 - `Contributor readiness`: PR workflow, issue triage, release notes.

@@ -70,6 +70,7 @@ See [docs/SCIENTIFIC_METHODOLOGY.md](docs/SCIENTIFIC_METHODOLOGY.md), [docs/MODE
 | Review science assumptions and validation limits    | [docs/SCIENTIFIC_METHODOLOGY.md](docs/SCIENTIFIC_METHODOLOGY.md)                                           |
 | Check model provenance and artifact readiness       | [docs/MODEL_CARDS.md](docs/MODEL_CARDS.md), [docs/model_artifacts.md](docs/model_artifacts.md)             |
 | Audit release provenance and generated assets       | [docs/RELEASE.md](docs/RELEASE.md)                                                                         |
+| Organize GitHub issues, labels, milestones, and PRs | [docs/GITHUB_ORGANIZATION.md](docs/GITHUB_ORGANIZATION.md)                                                 |
 | Prepare a demo or judging run                       | [docs/DEMO_TARGETS.md](docs/DEMO_TARGETS.md), [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) |
 | Deploy or release OrbitLab                          | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), [docs/RELEASE.md](docs/RELEASE.md)                               |
 | Contribute or ask for help                          | [CONTRIBUTING.md](CONTRIBUTING.md), [SUPPORT.md](SUPPORT.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)     |
