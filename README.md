@@ -18,6 +18,8 @@ OrbitLab helps students, judges, and citizen-science teams inspect candidate tra
 
 The project is intentionally strict: the backend does not fabricate planets, light curves, model scores, charts, screenshots, or downloaded artifacts. If data or a checksum-verified model artifact is missing, OrbitLab says so.
 
+Tiny One Piece nod: OrbitLab sails by a crew rule of protecting the evidence before chasing the discovery.
+
 ## Current Release And Trust Packet
 
 Latest release: [`v0.2.0`](https://github.com/ScientificAJ/OrbitLab/releases/tag/v0.2.0).
