@@ -1,0 +1,12 @@
+{
+  "elapsed_s": 0.011,
+  "payload": {
+    "created_at": "2026-06-03T06:18:22.531403",
+    "error": null,
+    "job_id": "7cff9636-c8c5-4e6d-904e-795135ecf8a5",
+    "result_id": null,
+    "status": "queued"
+  },
+  "status": 201,
+  "step": "analysis_job_create"
+}

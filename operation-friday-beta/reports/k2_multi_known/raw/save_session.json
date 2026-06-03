@@ -1,0 +1,22 @@
+{
+  "elapsed_s": 0.01,
+  "payload": {
+    "created_at": "2026-06-03T06:27:36.833685",
+    "name": "Operation Friday Beta - k2_multi_known",
+    "payload": {
+      "case": {
+        "case_id": "k2_multi_known",
+        "expected_context": "K2 target should exercise K2 product retrieval and ExoMAC-KKT readiness/result surfaces.",
+        "mission": "K2",
+        "purpose": "K2/ExoMAC model path and multi-planet system check.",
+        "query": "EPIC 201367065"
+      },
+      "product_uri": "mast:K2/url/missions/k2/target_pixel_files/c1/201300000/67000/ktwo201367065-c01_lpd-targ.fits.gz",
+      "result_id": "66ef777a-ce18-495a-9504-0f296afe7531",
+      "target_id": "EPIC 201367065"
+    },
+    "session_id": "3270d751-4f69-41e4-9e7e-ab73451c5142"
+  },
+  "status": 201,
+  "step": "save_session"
+}

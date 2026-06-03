@@ -1,0 +1,630 @@
+{
+  "elapsed_s": 14.082,
+  "payload": [
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 01",
+      "product_id": "60829138",
+      "product_uri": "mast:TESS/product/tess2018206045859-s0001-0000000025155310-0120-s_tp.fits",
+      "size": 49184640
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 02",
+      "product_id": "60866701",
+      "product_uri": "mast:TESS/product/tess2018234235059-s0002-0000000025155310-0121-s_tp.fits",
+      "size": 48355200
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 03",
+      "product_id": "60916106",
+      "product_uri": "mast:TESS/product/tess2018263035959-s0003-0000000025155310-0123-s_tp.fits",
+      "size": 48245760
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 04",
+      "product_id": "61105181",
+      "product_uri": "mast:TESS/product/tess2018292075959-s0004-0000000025155310-0124-s_tp.fits",
+      "size": 45777600
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 05",
+      "product_id": "61541637",
+      "product_uri": "mast:TESS/product/tess2018319095959-s0005-0000000025155310-0125-s_tp.fits",
+      "size": 46414080
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 06",
+      "product_id": "62244999",
+      "product_uri": "mast:TESS/product/tess2018349182500-s0006-0000000025155310-0126-s_tp.fits",
+      "size": 38419200
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 07",
+      "product_id": "62319659",
+      "product_uri": "mast:TESS/product/tess2019006130736-s0007-0000000025155310-0131-s_tp.fits",
+      "size": 43153920
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 08",
+      "product_id": "62449438",
+      "product_uri": "mast:TESS/product/tess2019032160000-s0008-0000000025155310-0136-s_tp.fits",
+      "size": 80432640
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 09",
+      "product_id": "62891350",
+      "product_uri": "mast:TESS/product/tess2019058134432-s0009-0000000025155310-0139-s_tp.fits",
+      "size": 44559360
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 10",
+      "product_id": "64300723",
+      "product_uri": "mast:TESS/product/tess2019085135100-s0010-0000000025155310-0140-s_tp.fits",
+      "size": 46304640
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 11",
+      "product_id": "65133223",
+      "product_uri": "mast:TESS/product/tess2019112060037-s0011-0000000025155310-0143-s_tp.fits",
+      "size": 47839680
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 12",
+      "product_id": "65173646",
+      "product_uri": "mast:TESS/product/tess2019140104343-s0012-0000000025155310-0144-s_tp.fits",
+      "size": 49291200
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 13",
+      "product_id": "65453521",
+      "product_uri": "mast:TESS/product/tess2019169103026-s0013-0000000025155310-0146-s_tp.fits",
+      "size": 50172480
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 27",
+      "product_id": "27811104",
+      "product_uri": "mast:TESS/product/tess2020186164531-s0027-0000000025155310-0189-a_fast-tp.fits",
+      "size": 258422400
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 28",
+      "product_id": "27822814",
+      "product_uri": "mast:TESS/product/tess2020212050318-s0028-0000000025155310-0190-a_fast-tp.fits",
+      "size": 267716160
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 29",
+      "product_id": "27973388",
+      "product_uri": "mast:TESS/product/tess2020238165205-s0029-0000000025155310-0193-a_fast-tp.fits",
+      "size": 277810560
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 30",
+      "product_id": "27992126",
+      "product_uri": "mast:TESS/product/tess2020266004630-s0030-0000000025155310-0195-a_fast-tp.fits",
+      "size": 290013120
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 31",
+      "product_id": "28066833",
+      "product_uri": "mast:TESS/product/tess2020294194027-s0031-0000000025155310-0198-a_fast-tp.fits",
+      "size": 269974080
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 32",
+      "product_id": "28149162",
+      "product_uri": "mast:TESS/product/tess2020324010417-s0032-0000000025155310-0200-a_fast-tp.fits",
+      "size": 276160320
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 33",
+      "product_id": "28217886",
+      "product_uri": "mast:TESS/product/tess2020351194500-s0033-0000000025155310-0203-a_fast-tp.fits",
+      "size": 274167360
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 27",
+      "product_id": "27797841",
+      "product_uri": "mast:TESS/product/tess2020186164531-s0027-0000000025155310-0189-s_tp.fits",
+      "size": 42992640
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 28",
+      "product_id": "27818483",
+      "product_uri": "mast:TESS/product/tess2020212050318-s0028-0000000025155310-0190-s_tp.fits",
+      "size": 44547840
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 29",
+      "product_id": "27899839",
+      "product_uri": "mast:TESS/product/tess2020238165205-s0029-0000000025155310-0193-s_tp.fits",
+      "size": 46218240
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 30",
+      "product_id": "27977748",
+      "product_uri": "mast:TESS/product/tess2020266004630-s0030-0000000025155310-0195-s_tp.fits",
+      "size": 48231360
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 31",
+      "product_id": "28075484",
+      "product_uri": "mast:TESS/product/tess2020294194027-s0031-0000000025155310-0198-s_tp.fits",
+      "size": 44870400
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 32",
+      "product_id": "28132980",
+      "product_uri": "mast:TESS/product/tess2020324010417-s0032-0000000025155310-0200-s_tp.fits",
+      "size": 45889920
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 33",
+      "product_id": "28217009",
+      "product_uri": "mast:TESS/product/tess2020351194500-s0033-0000000025155310-0203-s_tp.fits",
+      "size": 45593280
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 34",
+      "product_id": "28304113",
+      "product_uri": "mast:TESS/product/tess2021014023720-s0034-0000000025155310-0204-a_fast-tp.fits",
+      "size": 268511040
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 36",
+      "product_id": "60756582",
+      "product_uri": "mast:TESS/product/tess2021065132309-s0036-0000000025155310-0207-a_fast-tp.fits",
+      "size": 266080320
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 37",
+      "product_id": "61147133",
+      "product_uri": "mast:TESS/product/tess2021091135823-s0037-0000000025155310-0208-a_fast-tp.fits",
+      "size": 268865280
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 38",
+      "product_id": "61587272",
+      "product_uri": "mast:TESS/product/tess2021118034608-s0038-0000000025155310-0209-a_fast-tp.fits",
+      "size": 283487040
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 39",
+      "product_id": "62002318",
+      "product_uri": "mast:TESS/product/tess2021146024351-s0039-0000000025155310-0210-a_fast-tp.fits",
+      "size": 296686080
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 34",
+      "product_id": "28307745",
+      "product_uri": "mast:TESS/product/tess2021014023720-s0034-0000000025155310-0204-s_tp.fits",
+      "size": 44668800
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 36",
+      "product_id": "60754299",
+      "product_uri": "mast:TESS/product/tess2021065132309-s0036-0000000025155310-0207-s_tp.fits",
+      "size": 44265600
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 37",
+      "product_id": "61141770",
+      "product_uri": "mast:TESS/product/tess2021091135823-s0037-0000000025155310-0208-s_tp.fits",
+      "size": 44712000
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 38",
+      "product_id": "61580982",
+      "product_uri": "mast:TESS/product/tess2021118034608-s0038-0000000025155310-0209-s_tp.fits",
+      "size": 47105280
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 39",
+      "product_id": "62011100",
+      "product_uri": "mast:TESS/product/tess2021146024351-s0039-0000000025155310-0210-s_tp.fits",
+      "size": 49308480
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 61",
+      "product_id": "117948956",
+      "product_uri": "mast:TESS/product/tess2023018032328-s0061-0000000025155310-0250-s_tp.fits",
+      "size": 44867520
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 63",
+      "product_id": "127085439",
+      "product_uri": "mast:TESS/product/tess2023069172124-s0063-0000000025155310-0255-s_tp.fits",
+      "size": 46811520
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 64",
+      "product_id": "139085467",
+      "product_uri": "mast:TESS/product/tess2023096110322-s0064-0000000025155310-0257-s_tp.fits",
+      "size": 47494080
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 65",
+      "product_id": "151519766",
+      "product_uri": "mast:TESS/product/tess2023124020739-s0065-0000000025155310-0259-s_tp.fits",
+      "size": 49207680
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 66",
+      "product_id": "173748636",
+      "product_uri": "mast:TESS/product/tess2023153011303-s0066-0000000025155310-0260-s_tp.fits",
+      "size": 50728320
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 67",
+      "product_id": "170992443",
+      "product_uri": "mast:TESS/product/tess2023181235917-s0067-0000000025155310-0261-s_tp.fits",
+      "size": 48965760
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 68",
+      "product_id": "176742293",
+      "product_uri": "mast:TESS/product/tess2023209231226-s0068-0000000025155310-0262-s_tp.fits",
+      "size": 48568320
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 69",
+      "product_id": "182726222",
+      "product_uri": "mast:TESS/product/tess2023237165326-s0069-0000000025155310-0264-s_tp.fits",
+      "size": 45495360
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 87",
+      "product_id": "238527863",
+      "product_uri": "mast:TESS/product/tess2024353092137-s0087-0000000025155310-0284-s_tp.fits",
+      "size": 47456640
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 97",
+      "product_id": "365497259",
+      "product_uri": "mast:TESS/product/tess2025258001959-s0097-0000000025155310-0294-a_fast-tp.fits",
+      "size": 578499840
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 98",
+      "product_id": "378109646",
+      "product_uri": "mast:TESS/product/tess2025312202959-s0098-0000000025155310-0298-a_fast-tp.fits",
+      "size": 608578560
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 88",
+      "product_id": "245358946",
+      "product_uri": "mast:TESS/product/tess2025014115807-s0088-0000000025155310-0285-s_tp.fits",
+      "size": 48997440
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 90",
+      "product_id": "262855841",
+      "product_uri": "mast:TESS/product/tess2025071122000-s0090-0000000025155310-0287-s_tp.fits",
+      "size": 49256640
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 93",
+      "product_id": "300575039",
+      "product_uri": "mast:TESS/product/tess2025154050500-s0093-0000000025155310-0290-s_tp.fits",
+      "size": 46212480
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 94",
+      "product_id": "302070439",
+      "product_uri": "mast:TESS/product/tess2025180145000-s0094-0000000025155310-0291-s_tp.fits",
+      "size": 45619200
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 95",
+      "product_id": "337124610",
+      "product_uri": "mast:TESS/product/tess2025206162959-s0095-0000000025155310-0292-s_tp.fits",
+      "size": 44510400
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 96",
+      "product_id": "354001179",
+      "product_uri": "mast:TESS/product/tess2025232030459-s0096-0000000025155310-0293-s_tp.fits",
+      "size": 45293760
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 97",
+      "product_id": "365497258",
+      "product_uri": "mast:TESS/product/tess2025258001959-s0097-0000000025155310-0294-s_tp.fits",
+      "size": 96330240
+    },
+    {
+      "description": "Target pixel files",
+      "mission": "TESS Sector 98",
+      "product_id": "378109645",
+      "product_uri": "mast:TESS/product/tess2025312202959-s0098-0000000025155310-0298-s_tp.fits",
+      "size": 101220480
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 01",
+      "product_id": "59744635",
+      "product_uri": "mast:HLSP/tess-spoc/s0001/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0001_tess_v1_tp.fits",
+      "size": 3312000
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 02",
+      "product_id": "59894199",
+      "product_uri": "mast:HLSP/tess-spoc/s0002/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0002_tess_v1_tp.fits",
+      "size": 3257280
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 03",
+      "product_id": "60045109",
+      "product_uri": "mast:HLSP/tess-spoc/s0003/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0003_tess_v1_tp.fits",
+      "size": 3251520
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 04",
+      "product_id": "60195290",
+      "product_uri": "mast:HLSP/tess-spoc/s0004/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0004_tess_v1_tp.fits",
+      "size": 3084480
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 05",
+      "product_id": "60384655",
+      "product_uri": "mast:HLSP/tess-spoc/s0005/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0005_tess_v1_tp.fits",
+      "size": 3127680
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 06",
+      "product_id": "60516122",
+      "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
+      "size": 2597760
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 07",
+      "product_id": "62079188",
+      "product_uri": "mast:HLSP/tess-spoc/s0007/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0007_tess_v1_tp.fits",
+      "size": 2911680
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 08",
+      "product_id": "62539166",
+      "product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0008_tess_v1_tp.fits",
+      "size": 2934720
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 09",
+      "product_id": "62703897",
+      "product_uri": "mast:HLSP/tess-spoc/s0009/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0009_tess_v1_tp.fits",
+      "size": 3003840
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 10",
+      "product_id": "62962474",
+      "product_uri": "mast:HLSP/tess-spoc/s0010/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0010_tess_v1_tp.fits",
+      "size": 3121920
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 11",
+      "product_id": "63099053",
+      "product_uri": "mast:HLSP/tess-spoc/s0011/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0011_tess_v1_tp.fits",
+      "size": 3222720
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 12",
+      "product_id": "63232407",
+      "product_uri": "mast:HLSP/tess-spoc/s0012/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0012_tess_v1_tp.fits",
+      "size": 3317760
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 13",
+      "product_id": "63431813",
+      "product_uri": "mast:HLSP/tess-spoc/s0013/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0013_tess_v1_tp.fits",
+      "size": 3381120
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 27",
+      "product_id": "53571584",
+      "product_uri": "mast:HLSP/tess-spoc/s0027/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0027_tess_v1_tp.fits",
+      "size": 8625600
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 28",
+      "product_id": "53817470",
+      "product_uri": "mast:HLSP/tess-spoc/s0028/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0028_tess_v1_tp.fits",
+      "size": 8939520
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 29",
+      "product_id": "53890189",
+      "product_uri": "mast:HLSP/tess-spoc/s0029/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0029_tess_v1_tp.fits",
+      "size": 9273600
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 30",
+      "product_id": "54052016",
+      "product_uri": "mast:HLSP/tess-spoc/s0030/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0030_tess_v1_tp.fits",
+      "size": 9676800
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 31",
+      "product_id": "61434193",
+      "product_uri": "mast:HLSP/tess-spoc/s0031/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0031_tess_v1_tp.fits",
+      "size": 9002880
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 32",
+      "product_id": "61204888",
+      "product_uri": "mast:HLSP/tess-spoc/s0032/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0032_tess_v1_tp.fits",
+      "size": 9207360
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 33",
+      "product_id": "61668481",
+      "product_uri": "mast:HLSP/tess-spoc/s0033/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0033_tess_v1_tp.fits",
+      "size": 9146880
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 34",
+      "product_id": "61724920",
+      "product_uri": "mast:HLSP/tess-spoc/s0034/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0034_tess_v1_tp.fits",
+      "size": 8962560
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 36",
+      "product_id": "65517204",
+      "product_uri": "mast:HLSP/tess-spoc/s0036/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0036_tess_v1_tp.fits",
+      "size": 8881920
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 37",
+      "product_id": "65662765",
+      "product_uri": "mast:HLSP/tess-spoc/s0037/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0037_tess_v1_tp.fits",
+      "size": 8971200
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 38",
+      "product_id": "65811331",
+      "product_uri": "mast:HLSP/tess-spoc/s0038/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0038_tess_v1_tp.fits",
+      "size": 9449280
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 39",
+      "product_id": "65949867",
+      "product_uri": "mast:HLSP/tess-spoc/s0039/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0039_tess_v1_tp.fits",
+      "size": 9889920
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 61",
+      "product_id": "178886992",
+      "product_uri": "mast:HLSP/tess-spoc/s0061/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0061_tess_v1_tp.fits",
+      "size": 26933760
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 63",
+      "product_id": "192894449",
+      "product_uri": "mast:HLSP/tess-spoc/s0063/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0063_tess_v1_tp.fits",
+      "size": 28100160
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 64",
+      "product_id": "198854955",
+      "product_uri": "mast:HLSP/tess-spoc/s0064/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0064_tess_v1_tp.fits",
+      "size": 28509120
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 65",
+      "product_id": "199246913",
+      "product_uri": "mast:HLSP/tess-spoc/s0065/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0065_tess_v1_tp.fits",
+      "size": 29496960
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 66",
+      "product_id": "213225816",
+      "product_uri": "mast:HLSP/tess-spoc/s0066/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0066_tess_v1_tp.fits",
+      "size": 30450240
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 67",
+      "product_id": "201137429",
+      "product_uri": "mast:HLSP/tess-spoc/s0067/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0067_tess_v1_tp.fits",
+      "size": 29396160
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 68",
+      "product_id": "201362714",
+      "product_uri": "mast:HLSP/tess-spoc/s0068/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0068_tess_v1_tp.fits",
+      "size": 29154240
+    },
+    {
+      "description": "FITS",
+      "mission": "TESS Sector 69",
+      "product_id": "213066075",
+      "product_uri": "mast:HLSP/tess-spoc/s0069/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0069_tess_v1_tp.fits",
+      "size": 27311040
+    }
+  ],
+  "status": 200,
+  "step": "products"
+}

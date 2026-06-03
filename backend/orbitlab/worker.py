@@ -17,6 +17,7 @@ from orbitlab.science.data_quality import apply_manual_jitter_mask, clean_light_
 from orbitlab.science.mast import extract_light_curve_bundle_from_tpf
 from orbitlab.science.pipeline import analyze_light_curve_arrays
 from orbitlab.storage.database import SessionLocal
+from orbitlab.storage.json_safety import to_jsonable
 from orbitlab.storage.orm import AnalysisJobRecord, AnalysisResultRecord, ApertureMaskRecord, ArtifactMaskRecord
 
 logger = logging.getLogger(__name__)
@@ -93,6 +94,7 @@ def run_analysis_job(self, job_id: str) -> str:
             )
             result_id = str(uuid4())
             payload["result_id"] = result_id
+            payload = to_jsonable(payload)
             db.add(AnalysisResultRecord(id=result_id, job_id=job.id, payload_json=payload))
             job.status = "complete"
             job.error = None

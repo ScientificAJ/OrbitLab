@@ -1,0 +1,14 @@
+{
+  "elapsed_s": 1.836,
+  "payload": [
+    {
+      "description": "Target Pixel Long Cadence (KTL) - C01",
+      "mission": "K2 Campaign 01",
+      "product_id": "1073804",
+      "product_uri": "mast:K2/url/missions/k2/target_pixel_files/c1/201300000/67000/ktwo201367065-c01_lpd-targ.fits.gz",
+      "size": 17992663
+    }
+  ],
+  "status": 200,
+  "step": "products"
+}

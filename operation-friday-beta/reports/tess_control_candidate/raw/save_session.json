@@ -1,0 +1,22 @@
+{
+  "elapsed_s": 0.009,
+  "payload": {
+    "created_at": "2026-06-03T06:30:51.298545",
+    "name": "Operation Friday Beta - tess_control_candidate",
+    "payload": {
+      "case": {
+        "case_id": "tess_control_candidate",
+        "expected_context": "If no strong TCE appears, OrbitLab should show no candidates or low-confidence/rejected signals clearly.",
+        "mission": "TESS",
+        "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
+        "query": "TIC 25155310"
+      },
+      "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
+      "result_id": "50215c98-d7cf-487b-933f-6de47a902218",
+      "target_id": "TIC 25155310"
+    },
+    "session_id": "5c5c8cc4-6e84-44f3-b0c9-53c9e13e6d76"
+  },
+  "status": 201,
+  "step": "save_session"
+}

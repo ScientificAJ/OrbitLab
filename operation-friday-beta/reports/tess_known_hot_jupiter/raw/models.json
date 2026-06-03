@@ -1,0 +1,31 @@
+{
+  "elapsed_s": 4.147,
+  "payload": {
+    "k2_exomac_kkt": {
+      "checksum": "d8a28d99cb29be8cfd0870d964bdde0bb3e97ee8d0aee9fded946ad5a54b2c2c",
+      "model_id": "k2-exomac-kkt-randomforest",
+      "schema_version": "orbitlab.exomac-kkt.v1",
+      "source": "ZapatoProgramming/ExoMAC-KKT pretrained NASA Kepler/K2/TESS catalog classifier",
+      "status": "ready",
+      "version": "5cda5310d5a163679c6915f9463a4d6afc312483"
+    },
+    "kepler_astronet": {
+      "checksum": "68dee983c65e9e4cd67748906e8a6796ce1810f7cbe66bf9a34938af9b61b9a3",
+      "model_id": "kepler-astronet-cnn-bilstm-attention",
+      "schema_version": "orbitlab.astronet.v1",
+      "source": "bibinthomas123/Astronet TensorFlow checkpoint at 9809ce92306f11fbdc96f9830b522026710a3883",
+      "status": "ready",
+      "version": "9809ce92306f11fbdc96f9830b522026710a3883"
+    },
+    "nigraha_tess": {
+      "checksum": "1ff146fb1cd3f9bfd354c3c71a95b93adfee53edaf494cc5507bd5865d850f93",
+      "model_id": "nigraha-tess-global-nodropout-binary-ensemble",
+      "schema_version": "orbitlab.nigraha.v1",
+      "source": "ExoplanetML/Nigraha models/weights/global_nodropout/binary at c4365b41dd02b187c3210189ffe8e3ead584f4f5",
+      "status": "ready",
+      "version": "c4365b41dd02b187c3210189ffe8e3ead584f4f5"
+    }
+  },
+  "status": 200,
+  "step": "models"
+}

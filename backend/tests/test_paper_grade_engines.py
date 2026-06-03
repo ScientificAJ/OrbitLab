@@ -61,6 +61,65 @@ def test_tic_catalog_context_flags_neighbor_that_can_mimic_depth(monkeypatch):
     assert context["contamination"]["capable_neighbor_count"] == 1
 
 
+def test_tic_catalog_context_survives_archive_column_drift(monkeypatch):
+    from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive
+    from astroquery.mast import Catalogs
+
+    rows = _FakeTable(
+        [
+            {"ID": "123456789", "ra": 10.0, "dec": 20.0, "Tmag": 10.0, "GAIA": "target-gaia"},
+            {"ID": "987654321", "ra": 10.001, "dec": 20.0, "Tmag": 12.0, "GAIA": "neighbor-gaia"},
+        ]
+    )
+    monkeypatch.setattr(Catalogs, "query_object", lambda *args, **kwargs: rows)
+
+    def fake_archive_query(*, table, select, **kwargs):
+        if table == "toi":
+            return _FakeTable([{"toi": 123.01, "tid": 123456789, "tfopwg_disp": "PC"}])
+        if "gaia_id" in select:
+            raise RuntimeError("ORA-00904: 'GAIA_ID': invalid identifier")
+        return _FakeTable([{"pl_name": "Test b", "hostname": "TIC 123456789", "tic_id": "TIC 123456789"}])
+
+    monkeypatch.setattr(NasaExoplanetArchive, "query_criteria", fake_archive_query)
+
+    context = query_tic_catalog_context("TIC 123456789", observed_depth=0.01)
+
+    assert context["status"] == "partial"
+    assert context["archive_context"]["status"] == "partial"
+    assert context["exofop_toi"]["match_count"] == 1
+    assert context["nasa_exoplanet_archive"]["status"] == "partial"
+    assert context["nasa_exoplanet_archive"]["omitted_columns"] == ["gaia_id"]
+    assert context["nasa_exoplanet_archive"]["confirmed_planet_count"] == 1
+    assert context["contamination"]["status"] == "warning"
+
+
+def test_tic_catalog_context_uses_resolved_tic_for_named_target(monkeypatch):
+    from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive
+    from astroquery.mast import Catalogs
+
+    rows = _FakeTable([{"ID": "150428135", "ra": 100.0, "dec": -65.0, "Tmag": 10.8, "GAIA": "toi-gaia"}])
+    monkeypatch.setattr(Catalogs, "query_object", lambda *args, **kwargs: rows)
+    archive_wheres = []
+
+    def fake_archive_query(*, table, where, **kwargs):
+        archive_wheres.append((table, where))
+        if table == "toi":
+            return _FakeTable([{"toi": 700.01, "tid": 150428135, "tfopwg_disp": "KP"}])
+        return _FakeTable([{"pl_name": "TOI-700 d", "hostname": "TOI-700", "tic_id": "TIC 150428135"}])
+
+    monkeypatch.setattr(NasaExoplanetArchive, "query_criteria", fake_archive_query)
+
+    context = query_tic_catalog_context("TOI-700", observed_depth=0.001)
+
+    assert context["status"] == "complete"
+    assert context["tic"]["target_id"] == 150428135
+    assert context["tic"]["query_target_id"] is None
+    assert ("toi", "tid=150428135") in archive_wheres
+    assert ("pscomppars", "tic_id like '%150428135%'") in archive_wheres
+    assert context["exofop_toi"]["match_count"] == 1
+    assert context["nasa_exoplanet_archive"]["confirmed_planet_count"] == 1
+
+
 def test_dave_model_shift_uses_official_binary_output(tmp_path):
     binary = tmp_path / "modshift"
     binary.write_text(

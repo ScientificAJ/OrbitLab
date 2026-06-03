@@ -141,7 +141,7 @@ class AnalysisResult(BaseModel):
     result_id: str
     target_id: str
     mission: str
-    candidates: list[CandidatePayload]
+    candidates: list[TcePayload]
     schema_version: str | None = None
     pipeline_version: str | None = None
     science_config_hash: str | None = None

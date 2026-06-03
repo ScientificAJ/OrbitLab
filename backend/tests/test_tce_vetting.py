@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 from orbitlab.api.main import _analysis_response_payload
+from orbitlab.api.schemas import AnalysisResult
 from orbitlab.science.bls import TransitCandidate
 from orbitlab.science.pipeline import _disposition, _structured_flags, analyze_light_curve_arrays
 from orbitlab.science.science_config import load_science_config, science_config_hash
@@ -187,6 +188,95 @@ def test_paper_grade_mode_applies_strict_published_thresholds(monkeypatch):
     assert tce["vetting"]["paper_grade"]["status"] == "fail"
 
 
+def test_paper_grade_analysis_records_triceratops_failure(monkeypatch):
+    candidate = TransitCandidate(period=2.0, epoch=0.1, duration=0.08, depth=0.002, power=12.0, signal_to_noise=9.0)
+
+    class _PaperModel:
+        def predict(self, tensors):
+            return {
+                "status": "complete",
+                "model_source": "test-paper-model",
+                "probability": 0.8,
+                "threshold": 0.4,
+                "label": "planet_candidate",
+                "citation": "test",
+            }
+
+    class _BlsResult:
+        periodogram = {
+            "period": np.array([candidate.period], dtype=np.float32),
+            "power": np.array([candidate.power], dtype=np.float32),
+            "duration": np.array([candidate.duration], dtype=np.float32),
+        }
+        search_time = np.linspace(0, 20, 600, dtype=np.float32)
+        search_flux = (1.0 + 0.0005 * np.sin(np.linspace(0, 20, 600, dtype=np.float32))).astype(np.float32)
+        clean_time = search_time
+        clean_flux = search_flux
+        metadata = {"min_period_days": 0.5, "max_period_days": 10.0}
+
+        def __init__(self):
+            self.candidate = candidate
+
+    monkeypatch.setattr("orbitlab.science.pipeline.run_bls", lambda *args, **kwargs: _BlsResult())
+    monkeypatch.setattr("orbitlab.science.pipeline.find_multi_planet_candidates", lambda *args, **kwargs: [candidate])
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.search_with_tls",
+        lambda *args, **kwargs: {
+            "status": "complete",
+            "period_days": 2.0,
+            "epoch_days": 0.1,
+            "duration_days": 0.08,
+            "depth_fraction": 0.002,
+            "snr": 9.0,
+            "sde": 12.0,
+            "transit_count": 6,
+            "distinct_transit_count": 6,
+        },
+    )
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.run_model_shift",
+        lambda *args, **kwargs: {"status": "pass", "engine": "dave_model_shift", "hard_fail": False, "flags": []},
+    )
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.run_sweet_test",
+        lambda *args, **kwargs: {"status": "pass", "engine": "sweet", "max_sigma": 0.0},
+    )
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.run_injection_recovery",
+        lambda *args, **kwargs: {"status": "complete", "engine": "box_injection_recovery"},
+    )
+    monkeypatch.setattr(
+        "orbitlab.science.pipeline.query_tic_catalog_context",
+        lambda *args, **kwargs: {
+            "status": "complete",
+            "contamination": {"status": "pass", "capable_neighbor_count": 0},
+        },
+    )
+
+    def fail_triceratops(*args, **kwargs):
+        raise RuntimeError("TRILEGAL SSL certificate failure")
+
+    monkeypatch.setattr("orbitlab.science.pipeline.run_triceratops_fpp", fail_triceratops)
+
+    time, flux = _light_curve(period=2.0, depth=0.002, noise=0.0002)
+    payload = analyze_light_curve_arrays(
+        target_id="TIC 123456789",
+        mission="TESS",
+        product_uri="tess2020000000000-s0001-0000000123456789-tp.fits",
+        time=time,
+        flux=flux,
+        vetting_mode="paper",
+        nigraha_service=_PaperModel(),
+    )
+
+    tce = payload["tces"][0]
+    assert tce["fpp"]["status"] == "failed"
+    assert "TRILEGAL SSL certificate failure" in tce["fpp"]["detail"]
+    assert any(flag["code"] == "triceratops_fpp" and flag["severity"] == "hard_fail" for flag in tce["flags"])
+    assert any(flag["code"] == "triceratops_nfpp" and flag["severity"] == "hard_fail" for flag in tce["flags"])
+    assert tce["vetting"]["paper_grade"]["status"] == "fail"
+
+
 def test_disposition_promotes_clean_snr_at_threshold():
     config = load_science_config()
     candidate = TransitCandidate(2.0, 0.1, 0.08, 0.002, 9.0, config.promotion_snr)
@@ -255,6 +345,9 @@ def test_response_aliases_new_and_old_payloads():
                     "duration": 0.1,
                     "depth": 0.01,
                     "signal_to_noise": 7,
+                    "disposition": "planet_candidate",
+                    "detection_metrics": {"effective_snr": 8.0},
+                    "vetting": {"paper_grade": {"status": "pass"}},
                 }
             ],
             "tces": [],
@@ -287,6 +380,10 @@ def test_response_aliases_new_and_old_payloads():
     )
 
     assert _analysis_response_payload(new_record)["candidates"][0]["candidate_id"] == "pc-1"
+    response_payload = AnalysisResult.model_validate(_analysis_response_payload(new_record)).model_dump()
+    assert response_payload["candidates"][0]["disposition"] == "planet_candidate"
+    assert response_payload["candidates"][0]["detection_metrics"] == {"effective_snr": 8.0}
+    assert response_payload["candidates"][0]["vetting"] == {"paper_grade": {"status": "pass"}}
     assert _analysis_response_payload(old_record)["planet_candidates"][0]["candidate_id"] == "old-1"
 
 

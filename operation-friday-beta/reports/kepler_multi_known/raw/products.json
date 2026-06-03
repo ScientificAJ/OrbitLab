@@ -1,0 +1,350 @@
+{
+  "elapsed_s": 0.024,
+  "payload": [
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q2",
+      "mission": "Kepler Quarter 02",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009231120729_spd-targ.fits.gz",
+      "size": 46935547
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q3",
+      "mission": "Kepler Quarter 03",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009291181958_spd-targ.fits.gz",
+      "size": 73081973
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q3",
+      "mission": "Kepler Quarter 03",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009322144938_spd-targ.fits.gz",
+      "size": 73409606
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q3",
+      "mission": "Kepler Quarter 03",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009350160919_spd-targ.fits.gz",
+      "size": 63399977
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q0",
+      "mission": "Kepler Quarter 00",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
+      "size": 902820
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q1",
+      "mission": "Kepler Quarter 01",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009166043257_lpd-targ.fits.gz",
+      "size": 1302105
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q2",
+      "mission": "Kepler Quarter 02",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009259160929_lpd-targ.fits.gz",
+      "size": 4541497
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q3",
+      "mission": "Kepler Quarter 03",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009350155506_lpd-targ.fits.gz",
+      "size": 7168484
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q4",
+      "mission": "Kepler Quarter 04",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010009094841_spd-targ.fits.gz",
+      "size": 29906222
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q5",
+      "mission": "Kepler Quarter 05",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010111051353_spd-targ.fits.gz",
+      "size": 39085363
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q5",
+      "mission": "Kepler Quarter 05",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010140023957_spd-targ.fits.gz",
+      "size": 34492286
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q5",
+      "mission": "Kepler Quarter 05",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010174090439_spd-targ.fits.gz",
+      "size": 41826853
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q6",
+      "mission": "Kepler Quarter 06",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010265121752_spd-targ.fits.gz",
+      "size": 46869583
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q6",
+      "mission": "Kepler Quarter 06",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010234115140_spd-targ.fits.gz",
+      "size": 48476769
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q6",
+      "mission": "Kepler Quarter 06",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010203174610_spd-targ.fits.gz",
+      "size": 42529918
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q7",
+      "mission": "Kepler Quarter 07",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010296114515_spd-targ.fits.gz",
+      "size": 71220198
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q7",
+      "mission": "Kepler Quarter 07",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010326094124_spd-targ.fits.gz",
+      "size": 68610495
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q7",
+      "mission": "Kepler Quarter 07",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010355172524_spd-targ.fits.gz",
+      "size": 66819400
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q4",
+      "mission": "Kepler Quarter 04",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010009091648_lpd-targ.fits.gz",
+      "size": 1024709
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q5",
+      "mission": "Kepler Quarter 05",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010174085026_lpd-targ.fits.gz",
+      "size": 3977970
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q6",
+      "mission": "Kepler Quarter 06",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010265121752_lpd-targ.fits.gz",
+      "size": 4642029
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q7",
+      "mission": "Kepler Quarter 07",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2010355172524_lpd-targ.fits.gz",
+      "size": 7079878
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q9",
+      "mission": "Kepler Quarter 09",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2011116030358_spd-targ.fits.gz",
+      "size": 41480438
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q9",
+      "mission": "Kepler Quarter 09",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2011145075126_spd-targ.fits.gz",
+      "size": 32524573
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q9",
+      "mission": "Kepler Quarter 09",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2011177032512_spd-targ.fits.gz",
+      "size": 35553587
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q10",
+      "mission": "Kepler Quarter 10",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2011208035123_spd-targ.fits.gz",
+      "size": 48056509
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q10",
+      "mission": "Kepler Quarter 10",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2011240104155_spd-targ.fits.gz",
+      "size": 50420368
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q10",
+      "mission": "Kepler Quarter 10",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2011271113734_spd-targ.fits.gz",
+      "size": 48343990
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q11",
+      "mission": "Kepler Quarter 11",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2011334093404_spd-targ.fits.gz",
+      "size": 39067240
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q11",
+      "mission": "Kepler Quarter 11",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2011303113607_spd-targ.fits.gz",
+      "size": 40598816
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q9",
+      "mission": "Kepler Quarter 09",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2011177032512_lpd-targ.fits.gz",
+      "size": 3759904
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q10",
+      "mission": "Kepler Quarter 10",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2011271113734_lpd-targ.fits.gz",
+      "size": 4940297
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q11",
+      "mission": "Kepler Quarter 11",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2012004120508_spd-targ.fits.gz",
+      "size": 41597600
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q13",
+      "mission": "Kepler Quarter 13",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2012121044856_spd-targ.fits.gz",
+      "size": 38939289
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q13",
+      "mission": "Kepler Quarter 13",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2012151031540_spd-targ.fits.gz",
+      "size": 35474102
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q13",
+      "mission": "Kepler Quarter 13",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2012179063303_spd-targ.fits.gz",
+      "size": 32943061
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q14",
+      "mission": "Kepler Quarter 14",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2012242122129_spd-targ.fits.gz",
+      "size": 48670798
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q14",
+      "mission": "Kepler Quarter 14",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2012211050319_spd-targ.fits.gz",
+      "size": 41251724
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q14",
+      "mission": "Kepler Quarter 14",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2012277125453_spd-targ.fits.gz",
+      "size": 55257090
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q15",
+      "mission": "Kepler Quarter 15",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2012310112549_spd-targ.fits.gz",
+      "size": 40560203
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q15",
+      "mission": "Kepler Quarter 15",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2012341132017_spd-targ.fits.gz",
+      "size": 32893405
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q11",
+      "mission": "Kepler Quarter 11",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2012004120508_lpd-targ.fits.gz",
+      "size": 4098169
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q13",
+      "mission": "Kepler Quarter 13",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2012179063303_lpd-targ.fits.gz",
+      "size": 3668749
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q14",
+      "mission": "Kepler Quarter 14",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2012277125453_lpd-targ.fits.gz",
+      "size": 4918363
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q15",
+      "mission": "Kepler Quarter 15",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2013011073258_spd-targ.fits.gz",
+      "size": 45438185
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q17",
+      "mission": "Kepler Quarter 17",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2013121191144_spd-targ.fits.gz",
+      "size": 27754975
+    },
+    {
+      "description": "Target Pixel Short Cadence (TPS) - Q17",
+      "mission": "Kepler Quarter 17",
+      "product_id": "601036",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2013131215648_spd-targ.fits.gz",
+      "size": 5235499
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q15",
+      "mission": "Kepler Quarter 15",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2013011073258_lpd-targ.fits.gz",
+      "size": 4020989
+    },
+    {
+      "description": "Target Pixel Long Cadence (TPL) - Q17",
+      "mission": "Kepler Quarter 17",
+      "product_id": "582316",
+      "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2013131215648_lpd-targ.fits.gz",
+      "size": 1144420
+    }
+  ],
+  "status": 200,
+  "step": "products"
+}

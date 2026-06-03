@@ -1,0 +1,54 @@
+# Operation Friday Beta Audit: k2_multi_known
+
+- Query: `EPIC 201367065`
+- Mission: `K2`
+- Purpose: K2/ExoMAC model path and multi-planet system check.
+- Status: `pass`
+
+## Selected Target/Product
+
+- Target: `EPIC 201367065`
+- Product ID: `1073804`
+- Product URI: `mast:K2/url/missions/k2/target_pixel_files/c1/201300000/67000/ktwo201367065-c01_lpd-targ.fits.gz`
+
+## API Flow Evidence
+
+| Step | HTTP | Elapsed s |
+| --- | ---: | ---: |
+| `health` | 200 | 0.003 |
+| `models` | 200 | 4.17 |
+| `search` | 200 | 2.67 |
+| `products` | 200 | 1.84 |
+| `tpf_preview` | 200 | 1.03 |
+| `aperture_mask` | 201 | 0.02 |
+| `bls_preview` | 200 | 7.82 |
+| `analysis_job_create` | 201 | 0.012 |
+| `analysis_result` | 200 | 0.046 |
+| `report` | 200 | 0.047 |
+| `save_session` | 201 | 0.01 |
+| `sessions` | 200 | 0.003 |
+| `analysis_job_poll` | 200 | 94 polls, status `complete` |
+
+## Science Snapshot
+
+- Preview TCEs: `3`
+- Analysis ledger entries: `2`
+- Periodogram samples: `6652` periods, `6652` powers
+- Folded curves: `2`
+- `candidates` / `planet_candidates` alias match: `True`
+
+## Analysis Candidate Ledger
+
+| ID | Period d | Duration h | Depth ppm | SNR | Disposition | Action | Readiness | ML | Catalog |
+| --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- |
+| `k2-EPIC 201367065-tce-1` | 10.0552 | 2.496 | 9.9872e+05 | 14.02 | borderline_tce | review_needed | blocked | low-confidence | - |
+| `k2-EPIC 201367065-tce-2` | 0.245543 | 1.92 | 210.16 | 28.68 | rejected_signal | none | blocked | false-positive | - |
+
+## Quarantined Artifacts
+
+- `k2-EPIC 201367065-tce-1` is quarantined as `borderline_tce`: implausibly deep signal (99.87% depth).
+- `k2-EPIC 201367065-tce-2` is quarantined as `rejected_signal`: large duration/period ratio (0.3258).
+
+## Findings
+
+- No automated scientific/API consistency findings.

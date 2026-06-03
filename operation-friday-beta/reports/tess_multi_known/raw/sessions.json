@@ -1,0 +1,209 @@
+{
+  "elapsed_s": 0.003,
+  "payload": [
+    {
+      "created_at": "2026-06-03T06:18:10.388819",
+      "name": "Operation Friday Beta - tess_multi_known",
+      "payload": {
+        "case": {
+          "case_id": "tess_multi_known",
+          "expected_context": "Multiple known planets may exist in external catalogs; OrbitLab should preserve TCE evidence and avoid overclaiming confirmation.",
+          "mission": "TESS",
+          "purpose": "Known multi-planet TESS target and alias/catalog context check.",
+          "query": "TOI-700"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0001/5042/8135/hlsp_tess-spoc_tess_phot_0000000150428135-s0006_tess_v1_tp.fits",
+        "result_id": "0212021b-af1f-40c2-86e2-f4920507085e",
+        "target_id": "TOI-700"
+      },
+      "session_id": "0269d1fe-a1f0-45ef-8c75-a57ece4b8952"
+    },
+    {
+      "created_at": "2026-06-03T06:14:42.755117",
+      "name": "Operation Friday Beta - tess_known_hot_jupiter",
+      "payload": {
+        "case": {
+          "case_id": "tess_known_hot_jupiter",
+          "expected_context": "Known planet host context may appear through target/catalog matching, but OrbitLab must still report candidates as follow-up evidence rather than confirmations.",
+          "mission": "TESS",
+          "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
+          "query": "TIC 307210830"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0003/0721/0830/hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+        "result_id": "46afbec0-34fd-4318-a416-7cfdb920b0b3",
+        "target_id": "TIC 307210830"
+      },
+      "session_id": "89fa56b1-860d-4629-a301-b4b944978af7"
+    },
+    {
+      "created_at": "2026-06-03T06:09:16.458031",
+      "name": "Operation Friday Beta - kepler_multi_known",
+      "payload": {
+        "case": {
+          "case_id": "kepler_multi_known",
+          "expected_context": "Kepler target should exercise Kepler product retrieval, BLS preview, full analysis, and AstroNet readiness/result surfaces.",
+          "mission": "Kepler",
+          "purpose": "Kepler known-system check.",
+          "query": "Kepler-10"
+        },
+        "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
+        "result_id": "bf9d0384-b429-436a-9fa3-14676b964ab8",
+        "target_id": "Kepler-10"
+      },
+      "session_id": "fc73171c-6747-48b5-a243-2865cf0c5bb4"
+    },
+    {
+      "created_at": "2026-06-03T06:00:37.679360",
+      "name": "Operation Friday Beta - tess_control_candidate",
+      "payload": {
+        "case": {
+          "case_id": "tess_control_candidate",
+          "expected_context": "If no strong TCE appears, OrbitLab should show no candidates or low-confidence/rejected signals clearly.",
+          "mission": "TESS",
+          "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
+          "query": "TIC 25155310"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
+        "result_id": "50457023-336c-43f6-9065-11e459c6744c",
+        "target_id": "TIC 25155310"
+      },
+      "session_id": "8891f81d-a7e4-4bb7-b14c-b3afbfdf0f36"
+    },
+    {
+      "created_at": "2026-06-03T05:57:08.157578",
+      "name": "Operation Friday Beta - k2_multi_known",
+      "payload": {
+        "case": {
+          "case_id": "k2_multi_known",
+          "expected_context": "K2 target should exercise K2 product retrieval and ExoMAC-KKT readiness/result surfaces.",
+          "mission": "K2",
+          "purpose": "K2/ExoMAC model path and multi-planet system check.",
+          "query": "EPIC 201367065"
+        },
+        "product_uri": "mast:K2/url/missions/k2/target_pixel_files/c1/201300000/67000/ktwo201367065-c01_lpd-targ.fits.gz",
+        "result_id": "2a8008df-5f2e-4fba-b401-305ac2e52671",
+        "target_id": "EPIC 201367065"
+      },
+      "session_id": "f98b960f-9201-43fc-b26a-672618ee93ee"
+    },
+    {
+      "created_at": "2026-06-03T05:49:33.992331",
+      "name": "Operation Friday Beta - kepler_multi_known",
+      "payload": {
+        "case": {
+          "case_id": "kepler_multi_known",
+          "expected_context": "Kepler target should exercise Kepler product retrieval, BLS preview, full analysis, and AstroNet readiness/result surfaces.",
+          "mission": "Kepler",
+          "purpose": "Kepler known-system check.",
+          "query": "Kepler-10"
+        },
+        "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
+        "result_id": "720943f5-2eaa-4049-9c0f-55704487dda8",
+        "target_id": "Kepler-10"
+      },
+      "session_id": "cf096678-5dfd-4aa0-a853-9952ae5e8fdd"
+    },
+    {
+      "created_at": "2026-06-03T05:48:18.721663",
+      "name": "Operation Friday Beta - tess_multi_known",
+      "payload": {
+        "case": {
+          "case_id": "tess_multi_known",
+          "expected_context": "Multiple known planets may exist in external catalogs; OrbitLab should preserve TCE evidence and avoid overclaiming confirmation.",
+          "mission": "TESS",
+          "purpose": "Known multi-planet TESS target and alias/catalog context check.",
+          "query": "TOI-700"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0001/5042/8135/hlsp_tess-spoc_tess_phot_0000000150428135-s0006_tess_v1_tp.fits",
+        "result_id": "820e7b81-c9df-41b4-bb91-bec805c00d0c",
+        "target_id": "TOI-700"
+      },
+      "session_id": "b22dac7a-c08b-418d-929e-2ac669729e67"
+    },
+    {
+      "created_at": "2026-06-03T05:45:11.612999",
+      "name": "Operation Friday Beta - tess_known_hot_jupiter",
+      "payload": {
+        "case": {
+          "case_id": "tess_known_hot_jupiter",
+          "expected_context": "Known planet host context may appear through target/catalog matching, but OrbitLab must still report candidates as follow-up evidence rather than confirmations.",
+          "mission": "TESS",
+          "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
+          "query": "TIC 307210830"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0003/0721/0830/hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+        "result_id": "c1305f03-b560-4ab1-97c8-aed74376cbbf",
+        "target_id": "TIC 307210830"
+      },
+      "session_id": "ff993511-d22e-4f7c-b090-209be7445781"
+    },
+    {
+      "created_at": "2026-06-03T05:37:48.330831",
+      "name": "Operation Friday Beta - tess_known_hot_jupiter",
+      "payload": {
+        "case": {
+          "case_id": "tess_known_hot_jupiter",
+          "expected_context": "Known planet host context may appear through target/catalog matching, but OrbitLab must still report candidates as follow-up evidence rather than confirmations.",
+          "mission": "TESS",
+          "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
+          "query": "TIC 307210830"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0003/0721/0830/hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+        "result_id": "522e87a8-633b-4db8-8740-69f6956f1dde",
+        "target_id": "TIC 307210830"
+      },
+      "session_id": "1e27df54-554e-4589-bc23-c5d4f9a69018"
+    },
+    {
+      "created_at": "2026-06-03T05:33:11.729581",
+      "name": "Operation Friday Beta - tess_known_hot_jupiter",
+      "payload": {
+        "case": {
+          "case_id": "tess_known_hot_jupiter",
+          "expected_context": "Known planet host context may appear through target/catalog matching, but OrbitLab must still report candidates as follow-up evidence rather than confirmations.",
+          "mission": "TESS",
+          "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
+          "query": "TIC 307210830"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0003/0721/0830/hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+        "result_id": "d4020fb0-b14a-41de-8c19-d461eb761b46",
+        "target_id": "TIC 307210830"
+      },
+      "session_id": "aaf8e183-e873-480d-8a67-114fbea48d8e"
+    },
+    {
+      "created_at": "2026-05-11T16:01:05.557387",
+      "name": "TESS-307210830-2026-05-11 16:01",
+      "payload": {
+        "mission": "TESS",
+        "query": "TIC 307210830",
+        "result": null,
+        "selectedProduct": {
+          "description": "Target pixel files",
+          "mission": "TESS Sector 02",
+          "product_id": "60867465",
+          "product_uri": "mast:TESS/product/tess2018234235059-s0002-0000000307210830-0121-s_tp.fits",
+          "size": 48355200
+        },
+        "selectedTarget": {
+          "catalog": "TIC",
+          "dec": -68.3129998725044,
+          "ra": 124.531756290083,
+          "target_id": "307210830"
+        },
+        "workflow": "product-selected"
+      },
+      "session_id": "dff1f5db-c3df-446a-bb22-45a4829e2824"
+    },
+    {
+      "created_at": "2026-05-09T17:00:29.412585",
+      "name": "verification",
+      "payload": {
+        "target": "none"
+      },
+      "session_id": "6e762c81-6c29-4321-8bbb-f12c3fd77c66"
+    }
+  ],
+  "status": 200,
+  "step": "sessions"
+}

@@ -1,0 +1,22 @@
+{
+  "elapsed_s": 0.016,
+  "payload": {
+    "created_at": "2026-06-03T06:14:42.755117",
+    "name": "Operation Friday Beta - tess_known_hot_jupiter",
+    "payload": {
+      "case": {
+        "case_id": "tess_known_hot_jupiter",
+        "expected_context": "Known planet host context may appear through target/catalog matching, but OrbitLab must still report candidates as follow-up evidence rather than confirmations.",
+        "mission": "TESS",
+        "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
+        "query": "TIC 307210830"
+      },
+      "product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0003/0721/0830/hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+      "result_id": "46afbec0-34fd-4318-a416-7cfdb920b0b3",
+      "target_id": "TIC 307210830"
+    },
+    "session_id": "89fa56b1-860d-4629-a301-b4b944978af7"
+  },
+  "status": 201,
+  "step": "save_session"
+}

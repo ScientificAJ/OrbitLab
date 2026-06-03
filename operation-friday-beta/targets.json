@@ -1,0 +1,37 @@
+[
+  {
+    "case_id": "tess_known_hot_jupiter",
+    "query": "TIC 307210830",
+    "mission": "TESS",
+    "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
+    "expected_context": "Known planet host context may appear through target/catalog matching, but OrbitLab must still report candidates as follow-up evidence rather than confirmations."
+  },
+  {
+    "case_id": "tess_multi_known",
+    "query": "TOI-700",
+    "mission": "TESS",
+    "purpose": "Known multi-planet TESS target and alias/catalog context check.",
+    "expected_context": "Multiple known planets may exist in external catalogs; OrbitLab should preserve TCE evidence and avoid overclaiming confirmation."
+  },
+  {
+    "case_id": "kepler_multi_known",
+    "query": "Kepler-10",
+    "mission": "Kepler",
+    "purpose": "Kepler known-system check.",
+    "expected_context": "Kepler target should exercise Kepler product retrieval, BLS preview, full analysis, and AstroNet readiness/result surfaces."
+  },
+  {
+    "case_id": "k2_multi_known",
+    "query": "EPIC 201367065",
+    "mission": "K2",
+    "purpose": "K2/ExoMAC model path and multi-planet system check.",
+    "expected_context": "K2 target should exercise K2 product retrieval and ExoMAC-KKT readiness/result surfaces."
+  },
+  {
+    "case_id": "tess_control_candidate",
+    "query": "TIC 25155310",
+    "mission": "TESS",
+    "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
+    "expected_context": "If no strong TCE appears, OrbitLab should show no candidates or low-confidence/rejected signals clearly."
+  }
+]

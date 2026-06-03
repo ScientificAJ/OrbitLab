@@ -1243,16 +1243,29 @@ def analyze_light_curve_arrays(
                     observed_depth=candidate.depth,
                     search_radius_arcsec=config.paper_catalog_radius_arcsec,
                 )
-                fpp = run_triceratops_fpp(
-                    target_id=target_id,
-                    product_uri=product_uri,
-                    time=clean_time,
-                    flux=clean_flux,
-                    candidate=candidate,
-                    aperture_mask=aperture_mask,
-                    samples=config.paper_triceratops_samples,
-                    parallel=False,
-                )
+                try:
+                    fpp = run_triceratops_fpp(
+                        target_id=target_id,
+                        product_uri=product_uri,
+                        time=clean_time,
+                        flux=clean_flux,
+                        candidate=candidate,
+                        aperture_mask=aperture_mask,
+                        samples=config.paper_triceratops_samples,
+                        parallel=False,
+                    )
+                except Exception as exc:
+                    fpp = {
+                        "status": "failed",
+                        "engine": "triceratops",
+                        "detail": str(exc),
+                        "source": "TRICERATOPS calc_probs",
+                        "samples": config.paper_triceratops_samples,
+                        "validation_thresholds": {
+                            "fpp_max": config.paper_triceratops_fpp_max,
+                            "nfpp_max": config.paper_triceratops_nfpp_max,
+                        },
+                    }
             paper_grade = _apply_paper_grade_vetting(
                 flags=flags,
                 candidate=candidate,
@@ -1309,6 +1322,13 @@ def analyze_light_curve_arrays(
             evidence["sweet"] = sweet
             evidence["paper_grade"] = paper_grade
         disposition, action_label, confidence_band, disposition_score = _disposition(candidate, flags, config, evidence)
+        if science_readiness.get("status") == "blocked" and disposition == "planet_candidate":
+            disposition = "borderline_tce"
+            action_label = "review_needed"
+            confidence_band = "medium"
+            disposition_score = min(disposition_score, 0.64)
+            evidence["explanation"] = list(evidence.get("explanation") or [])
+            evidence["explanation"].append("Science-readiness blockers prevent planet-candidate promotion.")
 
         duration_period_ratio = candidate.duration / candidate.period if candidate.period else None
         tce_payload = {

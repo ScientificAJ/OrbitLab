@@ -68,35 +68,80 @@ def _query_nasa_archive_context(tic_id: int | None) -> dict[str, Any]:
 
     from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive
 
-    toi_table = NasaExoplanetArchive.query_criteria(
-        table="toi",
-        select="toi,tid,tfopwg_disp,pl_orbper,pl_trandep,pl_trandurh,toi_created,rowupdate",
-        where=f"tid={tic_id}",
-        cache=False,
-    )
-    confirmed_table = NasaExoplanetArchive.query_criteria(
-        table="pscomppars",
-        select="pl_name,hostname,tic_id,gaia_id,discoverymethod,disc_year,pl_orbper,pl_rade",
-        where=f"tic_id like '%{tic_id}%'",
-        cache=False,
-    )
-    toi_rows = _table_rows(toi_table)
-    confirmed_rows = _table_rows(confirmed_table)
-    return {
-        "status": "complete",
-        "engine": "astroquery.ipac.nexsci.nasa_exoplanet_archive",
-        "exofop_toi": {
+    status = "complete"
+    errors: list[dict[str, str]] = []
+    try:
+        toi_table = NasaExoplanetArchive.query_criteria(
+            table="toi",
+            select="toi,tid,tfopwg_disp,pl_orbper,pl_trandep,pl_trandurh,toi_created,rowupdate",
+            where=f"tid={tic_id}",
+            cache=False,
+        )
+        toi_rows = _table_rows(toi_table)
+        toi_payload = {
             "status": "complete",
             "source": "NASA Exoplanet Archive TOI table, updated from ExoFOP-TESS",
             "match_count": len(toi_rows),
             "matches": toi_rows[:10],
-        },
-        "nasa_exoplanet_archive": {
-            "status": "complete",
-            "source": "NASA Exoplanet Archive pscomppars TAP table",
-            "confirmed_planet_count": len(confirmed_rows),
-            "confirmed_planets": confirmed_rows[:10],
-        },
+        }
+    except Exception as exc:  # pragma: no cover - exercised through monkeypatched archive failures.
+        status = "partial"
+        errors.append({"table": "toi", "detail": str(exc)})
+        toi_payload = {
+            "status": "unavailable",
+            "source": "NASA Exoplanet Archive TOI table, updated from ExoFOP-TESS",
+            "match_count": 0,
+            "matches": [],
+            "detail": str(exc),
+        }
+
+    confirmed_selects = [
+        ("pl_name,hostname,tic_id,gaia_id,discoverymethod,disc_year,pl_orbper,pl_rade", []),
+        ("pl_name,hostname,tic_id,discoverymethod,disc_year,pl_orbper,pl_rade", ["gaia_id"]),
+    ]
+    confirmed_rows: list[dict[str, Any]] = []
+    confirmed_detail = None
+    omitted_columns: list[str] = []
+    for select, omitted in confirmed_selects:
+        try:
+            confirmed_table = NasaExoplanetArchive.query_criteria(
+                table="pscomppars",
+                select=select,
+                where=f"tic_id like '%{tic_id}%'",
+                cache=False,
+            )
+            confirmed_rows = _table_rows(confirmed_table)
+            omitted_columns = omitted
+            break
+        except Exception as exc:  # pragma: no cover - exercised through monkeypatched archive failures.
+            confirmed_detail = str(exc)
+    else:
+        status = "partial"
+        errors.append({"table": "pscomppars", "detail": confirmed_detail or "query failed"})
+
+    confirmed_payload = {
+        "status": "complete" if confirmed_detail is None or confirmed_rows or omitted_columns else "unavailable",
+        "source": "NASA Exoplanet Archive pscomppars TAP table",
+        "confirmed_planet_count": len(confirmed_rows),
+        "confirmed_planets": confirmed_rows[:10],
+    }
+    if omitted_columns:
+        status = "partial"
+        confirmed_payload["status"] = "partial"
+        confirmed_payload["omitted_columns"] = omitted_columns
+        confirmed_payload["detail"] = (
+            "Primary pscomppars query rejected at least one requested column; "
+            "retried with a stable confirmed-planet column set."
+        )
+    elif confirmed_detail and not confirmed_rows:
+        confirmed_payload["detail"] = confirmed_detail
+
+    return {
+        "status": status,
+        "engine": "astroquery.ipac.nexsci.nasa_exoplanet_archive",
+        "errors": errors,
+        "exofop_toi": toi_payload,
+        "nasa_exoplanet_archive": confirmed_payload,
     }
 
 
@@ -109,21 +154,23 @@ def query_tic_catalog_context(
     from astropy import units as u
     from astroquery.mast import Catalogs
 
-    tic_id = parse_tic_id(target_id)
-    query = f"TIC {tic_id}" if tic_id is not None else str(target_id)
+    requested_tic_id = parse_tic_id(target_id)
+    query = f"TIC {requested_tic_id}" if requested_tic_id is not None else str(target_id)
     table = Catalogs.query_object(query, catalog="TIC", radius=search_radius_arcsec * u.arcsec)
     rows = _table_rows(table)
     if not rows:
         raise RuntimeError(f"TIC catalog returned no rows for {target_id}")
 
     target_row = None
-    if tic_id is not None:
+    if requested_tic_id is not None:
         for row in rows:
             row_id = _text(row, "ID", "TICID", "tic_id")
-            if row_id and row_id.isdigit() and int(row_id) == tic_id:
+            if row_id and row_id.isdigit() and int(row_id) == requested_tic_id:
                 target_row = row
                 break
     target_row = target_row or rows[0]
+    target_row_id = _text(target_row, "ID", "TICID", "tic_id")
+    resolved_tic_id = int(target_row_id) if target_row_id and target_row_id.isdigit() else requested_tic_id
     target_ra = _number(target_row, "ra", "RAJ2000", "RA")
     target_dec = _number(target_row, "dec", "DEJ2000", "DEC")
     target_tmag = _number(target_row, "Tmag", "tmag", "TESSmag")
@@ -143,7 +190,9 @@ def query_tic_catalog_context(
         delta_mag = tmag - target_tmag if tmag is not None and target_tmag is not None else None
         flux_ratio = 10 ** (-0.4 * delta_mag) if delta_mag is not None else None
         max_diluted_depth = flux_ratio / (1.0 + flux_ratio) if flux_ratio is not None else None
-        is_target = bool(tic_id is not None and row_tic and row_tic.isdigit() and int(row_tic) == tic_id)
+        is_target = bool(
+            resolved_tic_id is not None and row_tic and row_tic.isdigit() and int(row_tic) == resolved_tic_id
+        )
         capable = bool(not is_target and max_diluted_depth is not None and observed_depth <= max_diluted_depth)
         neighbor = {
             "tic_id": row_tic,
@@ -163,12 +212,19 @@ def query_tic_catalog_context(
             contaminant_capable.append(neighbor)
 
     neighbors.sort(key=lambda row: row["separation_arcsec"])
-    archive_context = _query_nasa_archive_context(tic_id)
+    archive_context = _query_nasa_archive_context(resolved_tic_id)
+    context_status = "complete" if archive_context.get("status") == "complete" else "partial"
     return {
-        "status": "complete",
+        "status": context_status,
         "engine": "astroquery.mast.Catalogs TIC",
+        "archive_context": {
+            "status": archive_context.get("status"),
+            "engine": archive_context.get("engine"),
+            "errors": archive_context.get("errors", []),
+        },
         "tic": {
-            "target_id": tic_id,
+            "target_id": resolved_tic_id,
+            "query_target_id": requested_tic_id,
             "ra": target_ra,
             "dec": target_dec,
             "tmag": target_tmag,
