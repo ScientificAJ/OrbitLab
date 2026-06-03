@@ -16,18 +16,18 @@
 | Step | HTTP | Elapsed s |
 | --- | ---: | ---: |
 | `health` | 200 | 0.003 |
-| `models` | 200 | 3.02 |
-| `search` | 200 | 2.74 |
-| `products` | 200 | 14.1 |
-| `tpf_preview` | 200 | 0.365 |
+| `models` | 200 | 3.59 |
+| `search` | 200 | 2.92 |
+| `products` | 200 | 4.89 |
+| `tpf_preview` | 200 | 0.388 |
 | `aperture_mask` | 201 | 0.012 |
-| `bls_preview` | 200 | 3.5 |
-| `analysis_job_create` | 201 | 0.013 |
-| `analysis_result` | 200 | 0.031 |
-| `report` | 200 | 0.027 |
-| `save_session` | 201 | 0.009 |
-| `sessions` | 200 | 0.004 |
-| `analysis_job_poll` | 200 | 35 polls, status `complete` |
+| `bls_preview` | 200 | 3.46 |
+| `analysis_job_create` | 201 | 0.014 |
+| `analysis_result` | 200 | 0.033 |
+| `report` | 200 | 0.034 |
+| `save_session` | 201 | 0.011 |
+| `sessions` | 200 | 0.006 |
+| `analysis_job_poll` | 200 | 39 polls, status `complete` |
 
 ## Science Snapshot
 
@@ -39,14 +39,13 @@
 
 ## Analysis Candidate Ledger
 
-| ID | Period d | Duration h | Depth ppm | SNR | Disposition | Action | Readiness | ML | Catalog |
-| --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- |
-| `tess-TIC 25155310-tce-1` | 3.29101 | 3.539 | 9.9323e+05 | 68.18 | rejected_signal | none | blocked | not-transit-like | - |
-| `tess-TIC 25155310-tce-2` | 0.101461 | 1.92 | 100.12 | 7.073 | rejected_signal | none | blocked | not-transit-like | - |
+| ID | Period d | Duration h | Depth ppm | Depth source | SNR | Disposition | Action | Readiness | ML | Catalog |
+| --- | ---: | ---: | ---: | --- | ---: | --- | --- | --- | --- | --- |
+| `tess-TIC 25155310-tce-1` | 3.29101 | 3.539 | 6403.7 | phase_window_median | 125.8 | rejected_signal | none | blocked | not-transit-like | - |
+| `tess-TIC 25155310-tce-2` | 0.101461 | 1.92 | 100.12 | astropy_box_least_squares | 7.073 | rejected_signal | none | blocked | not-transit-like | - |
 
 ## Quarantined Artifacts
 
-- `tess-TIC 25155310-tce-1` is quarantined as `rejected_signal`: implausibly deep signal (99.32% depth).
 - `tess-TIC 25155310-tce-2` is quarantined as `rejected_signal`: large duration/period ratio (0.7885).
 
 ## Findings

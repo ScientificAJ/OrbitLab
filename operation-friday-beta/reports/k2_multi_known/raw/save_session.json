@@ -1,7 +1,7 @@
 {
-  "elapsed_s": 0.01,
+  "elapsed_s": 0.012,
   "payload": {
-    "created_at": "2026-06-03T06:27:36.833685",
+    "created_at": "2026-06-03T11:12:22.384213",
     "name": "Operation Friday Beta - k2_multi_known",
     "payload": {
       "case": {
@@ -12,10 +12,10 @@
         "query": "EPIC 201367065"
       },
       "product_uri": "mast:K2/url/missions/k2/target_pixel_files/c1/201300000/67000/ktwo201367065-c01_lpd-targ.fits.gz",
-      "result_id": "66ef777a-ce18-495a-9504-0f296afe7531",
+      "result_id": "c8b88541-4b0a-499b-95e7-a7cfaab14bd7",
       "target_id": "EPIC 201367065"
     },
-    "session_id": "3270d751-4f69-41e4-9e7e-ab73451c5142"
+    "session_id": "499b2d60-e38e-4f39-88ef-1a55664df229"
   },
   "status": 201,
   "step": "save_session"

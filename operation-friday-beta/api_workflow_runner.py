@@ -203,6 +203,9 @@ def _candidate_health(candidates: list[dict[str, Any]], result_kind: str) -> lis
             findings.append(f"{candidate_id}: duration >= period")
         if not isinstance(depth, int | float) or not math.isfinite(float(depth)) or float(depth) <= 0:
             findings.append(f"{candidate_id}: invalid depth {depth}")
+        depth_source = candidate.get("depth_source") or (candidate.get("detection_metrics") or {}).get("depth_source")
+        if result_kind == "analysis" and not depth_source:
+            findings.append(f"{candidate_id}: missing depth_source provenance")
         if not isinstance(snr, int | float) or not math.isfinite(float(snr)):
             findings.append(f"{candidate_id}: invalid signal_to_noise {snr}")
         if disposition == "planet_candidate" and isinstance(snr, int | float) and float(snr) < 6:
@@ -275,11 +278,14 @@ def _step_rows(workflow: dict[str, Any]) -> list[str]:
 
 def _candidate_rows(candidates: list[dict[str, Any]]) -> list[str]:
     rows = [
-        "| ID | Period d | Duration h | Depth ppm | SNR | Disposition | Action | Readiness | ML | Catalog |",
-        "| --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- |",
+        (
+            "| ID | Period d | Duration h | Depth ppm | Depth source | SNR | Disposition | "
+            "Action | Readiness | ML | Catalog |"
+        ),
+        "| --- | ---: | ---: | ---: | --- | ---: | --- | --- | --- | --- | --- |",
     ]
     if not candidates:
-        rows.append("| - | - | - | - | - | - | - | - | - | - |")
+        rows.append("| - | - | - | - | - | - | - | - | - | - | - |")
         return rows
     for candidate in candidates:
         candidate_id = candidate.get("candidate_id") or candidate.get("tce_id") or "-"
@@ -293,6 +299,7 @@ def _candidate_rows(candidates: list[dict[str, Any]]) -> list[str]:
         if isinstance(catalog, dict):
             catalog_label = str(catalog.get("planet") or catalog.get("target") or "matched")
         readiness = candidate.get("science_readiness") if isinstance(candidate.get("science_readiness"), dict) else {}
+        depth_source = candidate.get("depth_source") or (candidate.get("detection_metrics") or {}).get("depth_source")
         rows.append(
             "| "
             + " | ".join(
@@ -301,6 +308,7 @@ def _candidate_rows(candidates: list[dict[str, Any]]) -> list[str]:
                     _format_float(candidate.get("period_days", candidate.get("period")), 6),
                     _format_float(duration_hours, 4),
                     _format_depth_ppm(candidate),
+                    str(depth_source or "-"),
                     _format_float(candidate.get("signal_to_noise"), 4),
                     str(candidate.get("disposition") or "-"),
                     str(candidate.get("action_label") or "-"),
@@ -619,7 +627,11 @@ def build_summary(workflows: list[dict[str, Any]]) -> str:
     lines.append("- `review_needed` means the automated audit found a possible scientific/API issue to inspect or fix.")
     lines.append(
         "- Per-case audits include API timing, candidate ledger semantics, folded/periodogram health, "
-        "and quarantined artifacts."
+        "depth provenance, and quarantined artifacts."
+    )
+    lines.append(
+        "- Automated `pass` means API/science payload consistency, not confirmed planet validation; "
+        "manual visual review lives in `reports/visual-audit/manual-visual-review.md`."
     )
     return "\n".join(lines) + "\n"
 

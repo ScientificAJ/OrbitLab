@@ -295,6 +295,31 @@ def _transit_detection_snr(
     return float(depth / scatter * np.sqrt(np.count_nonzero(in_transit)))
 
 
+def _measured_transit_depth(
+    time: np.ndarray,
+    flux: np.ndarray,
+    *,
+    period: float,
+    epoch: float,
+    duration: float,
+) -> float:
+    if period <= 0 or duration <= 0:
+        return 0.0
+
+    phase = ((time - epoch + 0.5 * period) % period) - 0.5 * period
+    in_transit = np.abs(phase) <= 0.5 * duration
+    out_of_transit = np.abs(phase) >= duration
+    if np.count_nonzero(in_transit) < 2 or np.count_nonzero(out_of_transit) < 16:
+        return 0.0
+
+    baseline = float(np.nanmedian(flux[out_of_transit]))
+    transit_level = float(np.nanmedian(flux[in_transit]))
+    depth = baseline - transit_level
+    if not np.isfinite(depth) or depth <= 0:
+        return 0.0
+    return float(depth)
+
+
 def run_bls(
     time: np.ndarray,
     flux: np.ndarray,
@@ -363,8 +388,16 @@ def run_bls(
     period = float(result.period[index])
     epoch = float(result.transit_time[index])
     duration = float(result.duration[index])
-    depth = float(max(result.depth[index], 0.0))
+    model_depth = float(max(result.depth[index], 0.0))
     power = float(result.power[index])
+    measured_depth = _measured_transit_depth(
+        clipped_time,
+        snr_flux,
+        period=period,
+        epoch=epoch,
+        duration=duration,
+    )
+    depth = measured_depth if measured_depth > 0 else model_depth
 
     snr = _transit_detection_snr(
         clipped_time,
@@ -388,6 +421,9 @@ def run_bls(
         "duration_count": int(durations.size),
         "min_duration_days": float(np.nanmin(durations)),
         "max_duration_days": float(np.nanmax(durations)),
+        "model_depth_fraction": model_depth,
+        "measured_depth_fraction": measured_depth,
+        "depth_source": "phase_window_median" if measured_depth > 0 else "astropy_box_least_squares",
         "sigma_clip_kept_cadences": int(clipped_time.size),
         "clean_cadences": int(clean_time.size),
         "search_binning": binning,
@@ -395,7 +431,7 @@ def run_bls(
     }
 
     return BlsResult(
-        candidate=TransitCandidate(period, epoch, duration, depth, power, snr),
+        candidate=TransitCandidate(period, epoch, duration, depth, power, snr, metadata=dict(metadata)),
         periodogram={
             "period": np.asarray(result.period, dtype=np.float32),
             "power": np.asarray(result.power, dtype=np.float32),

@@ -40,11 +40,13 @@ Chosen to cover known planet hosts, multi-planet systems, K2, Kepler, TESS, and 
 - `reports/<case>/workflow.json`
 - `reports/<case>/audit.md`
 - `reports/<case>/raw/*.json`
+- `reports/visual-audit/*.png`
+- `reports/visual-audit/manual-visual-review.md`
 
 ## Result
 
-The final API-only sweep completed all five cases with passing automated
-scientific/API audits:
+The final API sweep completed all five cases with passing automated
+scientific/API consistency audits:
 
 - TESS `TIC 307210830`
 - TESS `TOI-700`
@@ -57,6 +59,18 @@ ledger semantics, periodogram/folded-curve health, alias consistency, and
 quarantined artifacts. Quarantined artifacts are suspicious detections that
 remain blocked or rejected; they are documented because the numbers are
 science-facing even when the conclusion is safe.
+
+A follow-up manual visual review rendered every saved workflow as a board with
+the TPF aperture, periodogram, folded curves, candidate depth, SNR, disposition,
+readiness, and depth provenance. That review found one real reporting bug:
+TLS model depths could be scientifically misleading when used directly as
+candidate depths. Candidate depth reporting now uses measured transit-window
+depth when available and keeps the model depth as provenance.
+
+The visual review conclusion is stricter than the API pass label: Kepler-10 is
+the strongest transit-like recovery, but it remains blocked pending paper-grade
+readiness; the TESS and K2 cases do not visually justify automated planet
+promotion in this run.
 
 ## Fixes Made During The Operation
 
@@ -73,9 +87,18 @@ science-facing even when the conclusion is safe.
   payload shape.
 - Catalog-matched signals blocked by science-readiness gates cannot remain
   promoted as `planet_candidate`.
+- BLS/TLS candidate depth reporting now prefers measured phase-window depth and
+  records model depth, measured depth, and `depth_source` provenance.
+- Visual audit boards and a manual review now distinguish API consistency from
+  scientific visual confidence.
 - Operation reports now expose timing, science snapshots, candidate ledgers,
   and quarantined artifacts from the real run.
 
 ## Trust Boundary
 
-The operation can identify mismatches, weak evidence, broken API contracts, suspicious period/folded-curve behavior, misleading result semantics, or model/readiness problems. It does not convert API candidates into confirmed planets.
+The operation can identify mismatches, weak evidence, broken API contracts,
+suspicious period/folded-curve behavior, misleading result semantics, or
+model/readiness problems. It does not convert API candidates into confirmed
+planets. An automated `pass` means the API and payload contracts held together;
+manual visual/scientific review is still required before treating a candidate as
+planet-like.

@@ -1,5 +1,5 @@
 {
-  "elapsed_s": 3.52,
+  "elapsed_s": 3.461,
   "payload": {
     "bls_light_curve": {
       "flux": [
@@ -897,12 +897,12 @@
           "target": "Kepler-10"
         },
         "confidence_band": "high",
-        "depth": 0.00017685657090479786,
-        "depth_fraction": 0.00017685657090479786,
-        "depth_ppm": 176.85657090479785,
+        "depth": 0.00017774105072021484,
+        "depth_fraction": 0.00017774105072021484,
+        "depth_ppm": 177.74105072021484,
         "detection_metrics": {
           "alias_flags": [],
-          "bls_snr": 16.513227601945584,
+          "bls_snr": 16.5958121303382,
           "candidate_rank": 1,
           "catalog_match": {
             "allow_planetary_secondary": false,
@@ -916,7 +916,7 @@
           "is_residual": false,
           "observed_transit_count": 13,
           "period_source": "known_ephemeris",
-          "primary_signal_to_noise": 16.513227601945584,
+          "primary_signal_to_noise": 16.5958121303382,
           "sde": 5.473693167635663e-07,
           "signal_origin": "guided_known_period",
           "transit_count": 13
@@ -965,9 +965,9 @@
             "kopparapu_hz"
           ],
           "locked_reason": "preview_solar_like_fallback",
-          "planet_radius_earth": 1.4521952047729845,
+          "planet_radius_earth": 1.4558219726079484,
           "planet_radius_uncertainty_earth": null,
-          "radius_ratio": 0.013298743207716955,
+          "radius_ratio": 0.013331955997535202,
           "semi_major_axis_au": 0.01739784488300711,
           "semi_major_axis_uncertainty_au": null,
           "stellar_context_source": "solar_like_fallback",
@@ -997,7 +997,7 @@
           "secondary_depth_ratio": null
         },
         "signal_origin": "guided_known_period",
-        "signal_to_noise": 16.513227601945584,
+        "signal_to_noise": 16.5958121303382,
         "tce_id": "preview-tce-1",
         "validation": {
           "centroid_shift_flag": false,
@@ -1019,12 +1019,12 @@
         "candidate_id": "preview-tce-3",
         "catalog_match": null,
         "confidence_band": "medium",
-        "depth": 8.779465361678633e-05,
-        "depth_fraction": 8.779465361678633e-05,
-        "depth_ppm": 87.79465361678632,
+        "depth": 0.00010025501251220703,
+        "depth_fraction": 0.00010025501251220703,
+        "depth_ppm": 100.25501251220703,
         "detection_metrics": {
           "alias_flags": [],
-          "bls_snr": 7.9143685972826505,
+          "bls_snr": 9.037624616757778,
           "candidate_rank": 3,
           "catalog_match": null,
           "display_priority": 20,
@@ -1032,7 +1032,7 @@
           "is_residual": true,
           "observed_transit_count": 5,
           "period_source": "residual_bls",
-          "primary_signal_to_noise": 16.513227601945584,
+          "primary_signal_to_noise": 16.5958121303382,
           "sde": 1.1176456745352663e-07,
           "signal_origin": "residual_search",
           "transit_count": 5
@@ -1087,9 +1087,9 @@
             "kopparapu_hz"
           ],
           "locked_reason": "preview_solar_like_fallback",
-          "planet_radius_earth": 1.0231714966546617,
+          "planet_radius_earth": 1.0933707364848526,
           "planet_radius_uncertainty_earth": null,
-          "radius_ratio": 0.009369880128197283,
+          "radius_ratio": 0.010012742507036073,
           "semi_major_axis_au": 0.04075954461171617,
           "semi_major_axis_uncertainty_au": null,
           "stellar_context_source": "solar_like_fallback",
@@ -1120,7 +1120,7 @@
           "secondary_depth_ratio": null
         },
         "signal_origin": "residual_search",
-        "signal_to_noise": 7.9143685972826505,
+        "signal_to_noise": 9.037624616757778,
         "tce_id": "preview-tce-3",
         "validation": {
           "centroid_shift_flag": false,
@@ -1142,12 +1142,12 @@
         "candidate_id": "preview-tce-4",
         "catalog_match": null,
         "confidence_band": "medium",
-        "depth": 0.00011709041930922312,
-        "depth_fraction": 0.00011709041930922312,
-        "depth_ppm": 117.09041930922312,
+        "depth": 0.00010943412780761719,
+        "depth_fraction": 0.00010943412780761719,
+        "depth_ppm": 109.43412780761719,
         "detection_metrics": {
           "alias_flags": [],
-          "bls_snr": 9.003210434747592,
+          "bls_snr": 8.414509805393042,
           "candidate_rank": 4,
           "catalog_match": null,
           "display_priority": 20,
@@ -1155,7 +1155,7 @@
           "is_residual": true,
           "observed_transit_count": 5,
           "period_source": "residual_bls",
-          "primary_signal_to_noise": 16.513227601945584,
+          "primary_signal_to_noise": 16.5958121303382,
           "sde": 1.371016629400969e-07,
           "signal_origin": "residual_search",
           "transit_count": 5
@@ -1210,9 +1210,9 @@
             "kopparapu_hz"
           ],
           "locked_reason": "preview_solar_like_fallback",
-          "planet_radius_earth": 1.181612506176829,
+          "planet_radius_earth": 1.1423279123368295,
           "planet_radius_uncertainty_earth": null,
-          "radius_ratio": 0.01082083265323067,
+          "radius_ratio": 0.010461076799623315,
           "semi_major_axis_au": 0.0412065864035458,
           "semi_major_axis_uncertainty_au": null,
           "stellar_context_source": "solar_like_fallback",
@@ -1243,7 +1243,7 @@
           "secondary_depth_ratio": null
         },
         "signal_origin": "residual_search",
-        "signal_to_noise": 9.003210434747592,
+        "signal_to_noise": 8.414509805393042,
         "tce_id": "preview-tce-4",
         "validation": {
           "centroid_shift_flag": false,
@@ -16803,12 +16803,12 @@
           "target": "Kepler-10"
         },
         "confidence_band": "high",
-        "depth": 0.00017685657090479786,
-        "depth_fraction": 0.00017685657090479786,
-        "depth_ppm": 176.85657090479785,
+        "depth": 0.00017774105072021484,
+        "depth_fraction": 0.00017774105072021484,
+        "depth_ppm": 177.74105072021484,
         "detection_metrics": {
           "alias_flags": [],
-          "bls_snr": 16.513227601945584,
+          "bls_snr": 16.5958121303382,
           "candidate_rank": 1,
           "catalog_match": {
             "allow_planetary_secondary": false,
@@ -16822,7 +16822,7 @@
           "is_residual": false,
           "observed_transit_count": 13,
           "period_source": "known_ephemeris",
-          "primary_signal_to_noise": 16.513227601945584,
+          "primary_signal_to_noise": 16.5958121303382,
           "sde": 5.473693167635663e-07,
           "signal_origin": "guided_known_period",
           "transit_count": 13
@@ -16871,9 +16871,9 @@
             "kopparapu_hz"
           ],
           "locked_reason": "preview_solar_like_fallback",
-          "planet_radius_earth": 1.4521952047729845,
+          "planet_radius_earth": 1.4558219726079484,
           "planet_radius_uncertainty_earth": null,
-          "radius_ratio": 0.013298743207716955,
+          "radius_ratio": 0.013331955997535202,
           "semi_major_axis_au": 0.01739784488300711,
           "semi_major_axis_uncertainty_au": null,
           "stellar_context_source": "solar_like_fallback",
@@ -16903,7 +16903,7 @@
           "secondary_depth_ratio": null
         },
         "signal_origin": "guided_known_period",
-        "signal_to_noise": 16.513227601945584,
+        "signal_to_noise": 16.5958121303382,
         "tce_id": "preview-tce-1",
         "validation": {
           "centroid_shift_flag": false,
@@ -16925,12 +16925,12 @@
         "candidate_id": "preview-tce-3",
         "catalog_match": null,
         "confidence_band": "medium",
-        "depth": 8.779465361678633e-05,
-        "depth_fraction": 8.779465361678633e-05,
-        "depth_ppm": 87.79465361678632,
+        "depth": 0.00010025501251220703,
+        "depth_fraction": 0.00010025501251220703,
+        "depth_ppm": 100.25501251220703,
         "detection_metrics": {
           "alias_flags": [],
-          "bls_snr": 7.9143685972826505,
+          "bls_snr": 9.037624616757778,
           "candidate_rank": 3,
           "catalog_match": null,
           "display_priority": 20,
@@ -16938,7 +16938,7 @@
           "is_residual": true,
           "observed_transit_count": 5,
           "period_source": "residual_bls",
-          "primary_signal_to_noise": 16.513227601945584,
+          "primary_signal_to_noise": 16.5958121303382,
           "sde": 1.1176456745352663e-07,
           "signal_origin": "residual_search",
           "transit_count": 5
@@ -16993,9 +16993,9 @@
             "kopparapu_hz"
           ],
           "locked_reason": "preview_solar_like_fallback",
-          "planet_radius_earth": 1.0231714966546617,
+          "planet_radius_earth": 1.0933707364848526,
           "planet_radius_uncertainty_earth": null,
-          "radius_ratio": 0.009369880128197283,
+          "radius_ratio": 0.010012742507036073,
           "semi_major_axis_au": 0.04075954461171617,
           "semi_major_axis_uncertainty_au": null,
           "stellar_context_source": "solar_like_fallback",
@@ -17026,7 +17026,7 @@
           "secondary_depth_ratio": null
         },
         "signal_origin": "residual_search",
-        "signal_to_noise": 7.9143685972826505,
+        "signal_to_noise": 9.037624616757778,
         "tce_id": "preview-tce-3",
         "validation": {
           "centroid_shift_flag": false,
@@ -17048,12 +17048,12 @@
         "candidate_id": "preview-tce-4",
         "catalog_match": null,
         "confidence_band": "medium",
-        "depth": 0.00011709041930922312,
-        "depth_fraction": 0.00011709041930922312,
-        "depth_ppm": 117.09041930922312,
+        "depth": 0.00010943412780761719,
+        "depth_fraction": 0.00010943412780761719,
+        "depth_ppm": 109.43412780761719,
         "detection_metrics": {
           "alias_flags": [],
-          "bls_snr": 9.003210434747592,
+          "bls_snr": 8.414509805393042,
           "candidate_rank": 4,
           "catalog_match": null,
           "display_priority": 20,
@@ -17061,7 +17061,7 @@
           "is_residual": true,
           "observed_transit_count": 5,
           "period_source": "residual_bls",
-          "primary_signal_to_noise": 16.513227601945584,
+          "primary_signal_to_noise": 16.5958121303382,
           "sde": 1.371016629400969e-07,
           "signal_origin": "residual_search",
           "transit_count": 5
@@ -17116,9 +17116,9 @@
             "kopparapu_hz"
           ],
           "locked_reason": "preview_solar_like_fallback",
-          "planet_radius_earth": 1.181612506176829,
+          "planet_radius_earth": 1.1423279123368295,
           "planet_radius_uncertainty_earth": null,
-          "radius_ratio": 0.01082083265323067,
+          "radius_ratio": 0.010461076799623315,
           "semi_major_axis_au": 0.0412065864035458,
           "semi_major_axis_uncertainty_au": null,
           "stellar_context_source": "solar_like_fallback",
@@ -17149,7 +17149,7 @@
           "secondary_depth_ratio": null
         },
         "signal_origin": "residual_search",
-        "signal_to_noise": 9.003210434747592,
+        "signal_to_noise": 8.414509805393042,
         "tce_id": "preview-tce-4",
         "validation": {
           "centroid_shift_flag": false,
@@ -17171,6 +17171,7 @@
       "baseline_days": 9.706245422363281,
       "cadence_days": 0.0204315185546875,
       "clean_cadences": 439,
+      "depth_source": "phase_window_median",
       "duration_count": 16,
       "guided_known_candidates": 1,
       "known_target": {
@@ -17186,9 +17187,11 @@
       "max_period_days": 4.853122711181641,
       "max_period_samples_effective": 4096,
       "max_period_samples_requested": 50000,
+      "measured_depth_fraction": 0.00017774105072021484,
       "min_duration_days": 0.040863037109375,
       "min_period_days": 0.5,
       "min_transits_required": 2.0,
+      "model_depth_fraction": 0.00017685657090479786,
       "period_count": 4096,
       "period_grid_source": "astropy_autoperiod_plus_geomspace_and_frequency_floor_capped",
       "period_samples_requested": 4096,
@@ -17237,12 +17240,12 @@
           "target": "Kepler-10"
         },
         "confidence_band": "high",
-        "depth": 0.00017685657090479786,
-        "depth_fraction": 0.00017685657090479786,
-        "depth_ppm": 176.85657090479785,
+        "depth": 0.00017774105072021484,
+        "depth_fraction": 0.00017774105072021484,
+        "depth_ppm": 177.74105072021484,
         "detection_metrics": {
           "alias_flags": [],
-          "bls_snr": 16.513227601945584,
+          "bls_snr": 16.5958121303382,
           "candidate_rank": 1,
           "catalog_match": {
             "allow_planetary_secondary": false,
@@ -17256,7 +17259,7 @@
           "is_residual": false,
           "observed_transit_count": 13,
           "period_source": "known_ephemeris",
-          "primary_signal_to_noise": 16.513227601945584,
+          "primary_signal_to_noise": 16.5958121303382,
           "sde": 5.473693167635663e-07,
           "signal_origin": "guided_known_period",
           "transit_count": 13
@@ -17305,9 +17308,9 @@
             "kopparapu_hz"
           ],
           "locked_reason": "preview_solar_like_fallback",
-          "planet_radius_earth": 1.4521952047729845,
+          "planet_radius_earth": 1.4558219726079484,
           "planet_radius_uncertainty_earth": null,
-          "radius_ratio": 0.013298743207716955,
+          "radius_ratio": 0.013331955997535202,
           "semi_major_axis_au": 0.01739784488300711,
           "semi_major_axis_uncertainty_au": null,
           "stellar_context_source": "solar_like_fallback",
@@ -17337,7 +17340,7 @@
           "secondary_depth_ratio": null
         },
         "signal_origin": "guided_known_period",
-        "signal_to_noise": 16.513227601945584,
+        "signal_to_noise": 16.5958121303382,
         "tce_id": "preview-tce-1",
         "validation": {
           "centroid_shift_flag": false,
@@ -17359,12 +17362,12 @@
         "candidate_id": "preview-tce-2",
         "catalog_match": null,
         "confidence_band": "low",
-        "depth": 9.44369725791144e-05,
-        "depth_fraction": 9.44369725791144e-05,
-        "depth_ppm": 94.4369725791144,
+        "depth": 0.00010132789611816406,
+        "depth_fraction": 0.00010132789611816406,
+        "depth_ppm": 101.32789611816406,
         "detection_metrics": {
           "alias_flags": [],
-          "bls_snr": 7.406205869218432,
+          "bls_snr": 7.94662554771342,
           "candidate_rank": 2,
           "catalog_match": null,
           "display_priority": 20,
@@ -17372,7 +17375,7 @@
           "is_residual": true,
           "observed_transit_count": 3,
           "period_source": "residual_bls",
-          "primary_signal_to_noise": 16.513227601945584,
+          "primary_signal_to_noise": 16.5958121303382,
           "sde": 1.0256093058394667e-07,
           "signal_origin": "residual_search",
           "transit_count": 3
@@ -17432,9 +17435,9 @@
             "kopparapu_hz"
           ],
           "locked_reason": "preview_solar_like_fallback",
-          "planet_radius_earth": 1.0611711305600304,
+          "planet_radius_earth": 1.0992055461508197,
           "planet_radius_uncertainty_earth": null,
-          "radius_ratio": 0.009717868726172134,
+          "radius_ratio": 0.010066175843793117,
           "semi_major_axis_au": 0.056098718613474756,
           "semi_major_axis_uncertainty_au": null,
           "stellar_context_source": "solar_like_fallback",
@@ -17466,7 +17469,7 @@
           "secondary_depth_ratio": null
         },
         "signal_origin": "residual_search",
-        "signal_to_noise": 7.406205869218432,
+        "signal_to_noise": 7.94662554771342,
         "tce_id": "preview-tce-2",
         "validation": {
           "centroid_shift_flag": false,
@@ -17490,12 +17493,12 @@
         "candidate_id": "preview-tce-3",
         "catalog_match": null,
         "confidence_band": "medium",
-        "depth": 8.779465361678633e-05,
-        "depth_fraction": 8.779465361678633e-05,
-        "depth_ppm": 87.79465361678632,
+        "depth": 0.00010025501251220703,
+        "depth_fraction": 0.00010025501251220703,
+        "depth_ppm": 100.25501251220703,
         "detection_metrics": {
           "alias_flags": [],
-          "bls_snr": 7.9143685972826505,
+          "bls_snr": 9.037624616757778,
           "candidate_rank": 3,
           "catalog_match": null,
           "display_priority": 20,
@@ -17503,7 +17506,7 @@
           "is_residual": true,
           "observed_transit_count": 5,
           "period_source": "residual_bls",
-          "primary_signal_to_noise": 16.513227601945584,
+          "primary_signal_to_noise": 16.5958121303382,
           "sde": 1.1176456745352663e-07,
           "signal_origin": "residual_search",
           "transit_count": 5
@@ -17558,9 +17561,9 @@
             "kopparapu_hz"
           ],
           "locked_reason": "preview_solar_like_fallback",
-          "planet_radius_earth": 1.0231714966546617,
+          "planet_radius_earth": 1.0933707364848526,
           "planet_radius_uncertainty_earth": null,
-          "radius_ratio": 0.009369880128197283,
+          "radius_ratio": 0.010012742507036073,
           "semi_major_axis_au": 0.04075954461171617,
           "semi_major_axis_uncertainty_au": null,
           "stellar_context_source": "solar_like_fallback",
@@ -17591,7 +17594,7 @@
           "secondary_depth_ratio": null
         },
         "signal_origin": "residual_search",
-        "signal_to_noise": 7.9143685972826505,
+        "signal_to_noise": 9.037624616757778,
         "tce_id": "preview-tce-3",
         "validation": {
           "centroid_shift_flag": false,
@@ -17613,12 +17616,12 @@
         "candidate_id": "preview-tce-4",
         "catalog_match": null,
         "confidence_band": "medium",
-        "depth": 0.00011709041930922312,
-        "depth_fraction": 0.00011709041930922312,
-        "depth_ppm": 117.09041930922312,
+        "depth": 0.00010943412780761719,
+        "depth_fraction": 0.00010943412780761719,
+        "depth_ppm": 109.43412780761719,
         "detection_metrics": {
           "alias_flags": [],
-          "bls_snr": 9.003210434747592,
+          "bls_snr": 8.414509805393042,
           "candidate_rank": 4,
           "catalog_match": null,
           "display_priority": 20,
@@ -17626,7 +17629,7 @@
           "is_residual": true,
           "observed_transit_count": 5,
           "period_source": "residual_bls",
-          "primary_signal_to_noise": 16.513227601945584,
+          "primary_signal_to_noise": 16.5958121303382,
           "sde": 1.371016629400969e-07,
           "signal_origin": "residual_search",
           "transit_count": 5
@@ -17681,9 +17684,9 @@
             "kopparapu_hz"
           ],
           "locked_reason": "preview_solar_like_fallback",
-          "planet_radius_earth": 1.181612506176829,
+          "planet_radius_earth": 1.1423279123368295,
           "planet_radius_uncertainty_earth": null,
-          "radius_ratio": 0.01082083265323067,
+          "radius_ratio": 0.010461076799623315,
           "semi_major_axis_au": 0.0412065864035458,
           "semi_major_axis_uncertainty_au": null,
           "stellar_context_source": "solar_like_fallback",
@@ -17714,7 +17717,7 @@
           "secondary_depth_ratio": null
         },
         "signal_origin": "residual_search",
-        "signal_to_noise": 9.003210434747592,
+        "signal_to_noise": 8.414509805393042,
         "tce_id": "preview-tce-4",
         "validation": {
           "centroid_shift_flag": false,

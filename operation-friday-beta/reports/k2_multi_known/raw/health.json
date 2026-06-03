@@ -1,10 +1,10 @@
 {
-  "elapsed_s": 0.003,
+  "elapsed_s": 0.002,
   "payload": {
     "api": "ok",
     "database": "ok",
     "frontend": "served separately",
-    "generated_at": "2026-06-03T06:19:33.040007+00:00",
+    "generated_at": "2026-06-03T11:03:02.012902+00:00",
     "redis_configured": true,
     "status": "ok",
     "worker_mode": "inline"

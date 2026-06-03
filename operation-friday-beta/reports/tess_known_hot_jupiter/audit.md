@@ -15,19 +15,19 @@
 
 | Step | HTTP | Elapsed s |
 | --- | ---: | ---: |
-| `health` | 200 | 0.062 |
-| `models` | 200 | 4.15 |
-| `search` | 200 | 3.04 |
-| `products` | 200 | 4.58 |
-| `tpf_preview` | 200 | 0.378 |
-| `aperture_mask` | 201 | 0.012 |
-| `bls_preview` | 200 | 5.22 |
-| `analysis_job_create` | 201 | 0.012 |
-| `analysis_result` | 200 | 0.061 |
-| `report` | 200 | 0.081 |
-| `save_session` | 201 | 0.016 |
+| `health` | 200 | 0.06 |
+| `models` | 200 | 3.03 |
+| `search` | 200 | 10.1 |
+| `products` | 200 | 7.51 |
+| `tpf_preview` | 200 | 0.369 |
+| `aperture_mask` | 201 | 0.025 |
+| `bls_preview` | 200 | 4.64 |
+| `analysis_job_create` | 201 | 0.026 |
+| `analysis_result` | 200 | 0.04 |
+| `report` | 200 | 0.037 |
+| `save_session` | 201 | 0.012 |
 | `sessions` | 200 | 0.005 |
-| `analysis_job_poll` | 200 | 58 polls, status `complete` |
+| `analysis_job_poll` | 200 | 51 polls, status `complete` |
 
 ## Science Snapshot
 
@@ -39,16 +39,15 @@
 
 ## Analysis Candidate Ledger
 
-| ID | Period d | Duration h | Depth ppm | SNR | Disposition | Action | Readiness | ML | Catalog |
-| --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- |
-| `tess-TIC 307210830-tce-1` | 3.68956 | 0.9714 | 9.9848e+05 | 12.03 | rejected_signal | none | blocked | not-transit-like | - |
-| `tess-TIC 307210830-tce-2` | 9.31022 | 1.536 | 1072.7 | 11.29 | rejected_signal | none | blocked | not-transit-like | - |
-| `tess-TIC 307210830-tce-3` | 5.29476 | 1.536 | 917.85 | 9.921 | rejected_signal | none | blocked | not-transit-like | - |
-| `tess-TIC 307210830-tce-4` | 0.100783 | 1.92 | 96.069 | 9.582 | rejected_signal | none | blocked | not-transit-like | - |
+| ID | Period d | Duration h | Depth ppm | Depth source | SNR | Disposition | Action | Readiness | ML | Catalog |
+| --- | ---: | ---: | ---: | --- | ---: | --- | --- | --- | --- | --- |
+| `tess-TIC 307210830-tce-1` | 3.68956 | 0.9714 | 1508.3 | phase_window_median | 16.54 | rejected_signal | none | blocked | not-transit-like | - |
+| `tess-TIC 307210830-tce-2` | 9.31022 | 1.536 | 1031 | phase_window_median | 10.85 | rejected_signal | none | blocked | not-transit-like | - |
+| `tess-TIC 307210830-tce-3` | 5.29476 | 1.536 | 1036.1 | phase_window_median | 11.2 | rejected_signal | none | blocked | not-transit-like | - |
+| `tess-TIC 307210830-tce-4` | 0.100783 | 1.92 | 96.069 | astropy_box_least_squares | 9.582 | rejected_signal | none | blocked | not-transit-like | - |
 
 ## Quarantined Artifacts
 
-- `tess-TIC 307210830-tce-1` is quarantined as `rejected_signal`: implausibly deep signal (99.85% depth).
 - `tess-TIC 307210830-tce-4` is quarantined as `rejected_signal`: large duration/period ratio (0.7938).
 
 ## Findings

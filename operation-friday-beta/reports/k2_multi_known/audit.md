@@ -15,19 +15,19 @@
 
 | Step | HTTP | Elapsed s |
 | --- | ---: | ---: |
-| `health` | 200 | 0.003 |
-| `models` | 200 | 4.17 |
-| `search` | 200 | 2.67 |
-| `products` | 200 | 1.84 |
-| `tpf_preview` | 200 | 1.03 |
-| `aperture_mask` | 201 | 0.02 |
-| `bls_preview` | 200 | 7.82 |
-| `analysis_job_create` | 201 | 0.012 |
-| `analysis_result` | 200 | 0.046 |
-| `report` | 200 | 0.047 |
-| `save_session` | 201 | 0.01 |
-| `sessions` | 200 | 0.003 |
-| `analysis_job_poll` | 200 | 94 polls, status `complete` |
+| `health` | 200 | 0.002 |
+| `models` | 200 | 3.05 |
+| `search` | 200 | 2.91 |
+| `products` | 200 | 2.93 |
+| `tpf_preview` | 200 | 1.74 |
+| `aperture_mask` | 201 | 0.023 |
+| `bls_preview` | 200 | 7.35 |
+| `analysis_job_create` | 201 | 0.01 |
+| `analysis_result` | 200 | 0.056 |
+| `report` | 200 | 0.049 |
+| `save_session` | 201 | 0.012 |
+| `sessions` | 200 | 0.006 |
+| `analysis_job_poll` | 200 | 109 polls, status `complete` |
 
 ## Science Snapshot
 
@@ -39,14 +39,13 @@
 
 ## Analysis Candidate Ledger
 
-| ID | Period d | Duration h | Depth ppm | SNR | Disposition | Action | Readiness | ML | Catalog |
-| --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- |
-| `k2-EPIC 201367065-tce-1` | 10.0552 | 2.496 | 9.9872e+05 | 14.02 | borderline_tce | review_needed | blocked | low-confidence | - |
-| `k2-EPIC 201367065-tce-2` | 0.245543 | 1.92 | 210.16 | 28.68 | rejected_signal | none | blocked | false-positive | - |
+| ID | Period d | Duration h | Depth ppm | Depth source | SNR | Disposition | Action | Readiness | ML | Catalog |
+| --- | ---: | ---: | ---: | --- | ---: | --- | --- | --- | --- | --- |
+| `k2-EPIC 201367065-tce-1` | 10.0552 | 2.496 | 1264.5 | phase_window_median | 32.67 | borderline_tce | review_needed | blocked | confirmed | - |
+| `k2-EPIC 201367065-tce-2` | 0.245543 | 1.92 | 53.883 | phase_window_median | 7.353 | rejected_signal | none | blocked | false-positive | - |
 
 ## Quarantined Artifacts
 
-- `k2-EPIC 201367065-tce-1` is quarantined as `borderline_tce`: implausibly deep signal (99.87% depth).
 - `k2-EPIC 201367065-tce-2` is quarantined as `rejected_signal`: large duration/period ratio (0.3258).
 
 ## Findings

@@ -4,7 +4,7 @@ from dataclasses import asdict, dataclass
 
 import numpy as np
 
-from orbitlab.science.bls import TransitCandidate
+from orbitlab.science.bls import TransitCandidate, _measured_transit_depth, _transit_detection_snr
 
 
 @dataclass(frozen=True)
@@ -14,6 +14,9 @@ class TlsRefinement:
     duration_days: float | None = None
     epoch_days: float | None = None
     depth_fraction: float | None = None
+    model_depth_fraction: float | None = None
+    measured_depth_fraction: float | None = None
+    depth_source: str | None = None
     snr: float | None = None
     period_agreement_fraction: float | None = None
     model_shape_score: str | None = None
@@ -46,16 +49,41 @@ def refine_with_tls(time: np.ndarray, flux: np.ndarray, candidate: TransitCandid
         model = transitleastsquares(np.asarray(time, dtype=float), np.asarray(flux, dtype=float))
         results = model.power(period_min=max(0.05, candidate.period * 0.8), period_max=candidate.period * 1.2)
         period = float(results.period)
+        duration = float(getattr(results, "duration", np.nan))
+        epoch = float(getattr(results, "T0", np.nan))
+        model_depth = _finite_float(getattr(results, "depth", None))
+        measured_depth = _measured_transit_depth(
+            np.asarray(time, dtype=float),
+            np.asarray(flux, dtype=float),
+            period=period,
+            epoch=epoch,
+            duration=duration,
+        )
+        depth = measured_depth if measured_depth > 0 else model_depth
         agreement = abs(period - candidate.period) / candidate.period if candidate.period > 0 else None
-        snr = float(getattr(results, "snr", np.nan))
+        snr = (
+            _transit_detection_snr(
+                np.asarray(time, dtype=float),
+                np.asarray(flux, dtype=float),
+                period=period,
+                epoch=epoch,
+                duration=duration,
+                depth=depth,
+            )
+            if depth is not None
+            else _finite_float(getattr(results, "snr", None))
+        )
         return asdict(
             TlsRefinement(
                 status="complete",
                 period_days=period,
-                duration_days=float(getattr(results, "duration", np.nan)),
-                epoch_days=float(getattr(results, "T0", np.nan)),
-                depth_fraction=float(getattr(results, "depth", np.nan)),
-                snr=snr if np.isfinite(snr) else None,
+                duration_days=duration,
+                epoch_days=epoch,
+                depth_fraction=depth,
+                model_depth_fraction=model_depth,
+                measured_depth_fraction=measured_depth,
+                depth_source="phase_window_median" if measured_depth > 0 else "transitleastsquares_model",
+                snr=snr if snr is not None and np.isfinite(snr) else None,
                 period_agreement_fraction=agreement,
                 model_shape_score="planet_like" if agreement is not None and agreement <= 0.01 else "mismatch",
             )
@@ -110,14 +138,32 @@ def search_with_tls(
             parameters["M_star"] = float(stellar_mass_solar)
         results = model.power(**parameters)
         periods = getattr(results, "periods", None)
+        period = _finite_float(getattr(results, "period", None))
+        duration = _finite_float(getattr(results, "duration", None))
+        epoch = _finite_float(getattr(results, "T0", None))
+        model_depth = _finite_float(getattr(results, "depth", None))
+        measured_depth = (
+            _measured_transit_depth(clean_time, clean_flux, period=period, epoch=epoch, duration=duration)
+            if period is not None and duration is not None and epoch is not None
+            else 0.0
+        )
+        depth = measured_depth if measured_depth > 0 else model_depth
+        snr = (
+            _transit_detection_snr(clean_time, clean_flux, period=period, epoch=epoch, duration=duration, depth=depth)
+            if period is not None and duration is not None and epoch is not None and depth is not None
+            else _finite_float(getattr(results, "snr", None))
+        )
         return {
             "status": "complete",
             "engine": "transitleastsquares",
-            "period_days": _finite_float(getattr(results, "period", None)),
-            "duration_days": _finite_float(getattr(results, "duration", None)),
-            "epoch_days": _finite_float(getattr(results, "T0", None)),
-            "depth_fraction": _finite_float(getattr(results, "depth", None)),
-            "snr": _finite_float(getattr(results, "snr", None)),
+            "period_days": period,
+            "duration_days": duration,
+            "epoch_days": epoch,
+            "depth_fraction": depth,
+            "model_depth_fraction": model_depth,
+            "measured_depth_fraction": measured_depth,
+            "depth_source": "phase_window_median" if measured_depth > 0 else "transitleastsquares_model",
+            "snr": snr,
             "sde": _finite_float(getattr(results, "SDE", None)),
             "sde_raw": _finite_float(getattr(results, "SDE_raw", None)),
             "fap": _finite_float(getattr(results, "FAP", None)),

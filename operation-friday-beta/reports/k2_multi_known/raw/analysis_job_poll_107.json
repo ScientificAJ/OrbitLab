@@ -1,0 +1,12 @@
+{
+  "elapsed_s": 0.005,
+  "payload": {
+    "created_at": "2026-06-03T11:03:20.081825",
+    "error": null,
+    "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+    "result_id": null,
+    "status": "running"
+  },
+  "status": 200,
+  "step": "analysis_job_poll_107"
+}

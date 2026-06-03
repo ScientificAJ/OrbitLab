@@ -1,7 +1,7 @@
 {
-  "elapsed_s": 0.011,
+  "elapsed_s": 0.012,
   "payload": {
-    "created_at": "2026-06-03T06:19:32.888479",
+    "created_at": "2026-06-03T11:03:01.871928",
     "name": "Operation Friday Beta - kepler_multi_known",
     "payload": {
       "case": {
@@ -12,10 +12,10 @@
         "query": "Kepler-10"
       },
       "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
-      "result_id": "7cfc3f21-d21b-4654-a9b4-06fc7ceab8cd",
+      "result_id": "3c3a2fb0-0567-404a-ad13-53ab28109ae8",
       "target_id": "Kepler-10"
     },
-    "session_id": "adaadae2-db12-4844-ab00-25e61bd3b0dc"
+    "session_id": "f7729bff-da3b-40a6-843a-ecb58c998e11"
   },
   "status": 201,
   "step": "save_session"

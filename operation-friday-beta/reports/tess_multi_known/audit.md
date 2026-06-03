@@ -16,17 +16,17 @@
 | Step | HTTP | Elapsed s |
 | --- | ---: | ---: |
 | `health` | 200 | 0.005 |
-| `models` | 200 | 4.06 |
-| `search` | 200 | 3.77 |
-| `products` | 200 | 24.7 |
-| `tpf_preview` | 200 | 0.394 |
-| `aperture_mask` | 201 | 0.015 |
-| `bls_preview` | 200 | 3.92 |
-| `analysis_job_create` | 201 | 0.01 |
-| `analysis_result` | 200 | 0.039 |
-| `report` | 200 | 0.036 |
-| `save_session` | 201 | 0.012 |
-| `sessions` | 200 | 0.003 |
+| `models` | 200 | 2.97 |
+| `search` | 200 | 4.84 |
+| `products` | 200 | 40.1 |
+| `tpf_preview` | 200 | 0.384 |
+| `aperture_mask` | 201 | 0.01 |
+| `bls_preview` | 200 | 4.19 |
+| `analysis_job_create` | 201 | 0.011 |
+| `analysis_result` | 200 | 0.025 |
+| `report` | 200 | 0.03 |
+| `save_session` | 201 | 0.011 |
+| `sessions` | 200 | 0.004 |
 | `analysis_job_poll` | 200 | 35 polls, status `complete` |
 
 ## Science Snapshot
@@ -39,14 +39,13 @@
 
 ## Analysis Candidate Ledger
 
-| ID | Period d | Duration h | Depth ppm | SNR | Disposition | Action | Readiness | ML | Catalog |
-| --- | ---: | ---: | ---: | ---: | --- | --- | --- | --- | --- |
-| `tess-TOI-700-tce-1` | 3.12649 | 2.209 | 9.9924e+05 | 6.198 | rejected_signal | none | blocked | not-transit-like | - |
-| `tess-TOI-700-tce-2` | 0.116755 | 1.92 | 142.7 | 6.735 | rejected_signal | none | blocked | not-transit-like | - |
+| ID | Period d | Duration h | Depth ppm | Depth source | SNR | Disposition | Action | Readiness | ML | Catalog |
+| --- | ---: | ---: | ---: | --- | ---: | --- | --- | --- | --- | --- |
+| `tess-TOI-700-tce-1` | 3.12649 | 2.209 | 536.2 | phase_window_median | 4.941 | rejected_signal | none | blocked | not-transit-like | - |
+| `tess-TOI-700-tce-2` | 0.116755 | 1.92 | 142.7 | astropy_box_least_squares | 6.735 | rejected_signal | none | blocked | not-transit-like | - |
 
 ## Quarantined Artifacts
 
-- `tess-TOI-700-tce-1` is quarantined as `rejected_signal`: implausibly deep signal (99.92% depth).
 - `tess-TOI-700-tce-2` is quarantined as `rejected_signal`: large duration/period ratio (0.6852).
 
 ## Findings
