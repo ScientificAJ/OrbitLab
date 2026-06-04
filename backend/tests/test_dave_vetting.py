@@ -4,7 +4,6 @@ import math
 
 import numpy as np
 import pytest
-
 from orbitlab.science.bls import TransitCandidate
 from orbitlab.science.dave_vetting import (
     _box_model_for_modshift,

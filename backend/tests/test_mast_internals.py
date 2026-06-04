@@ -6,7 +6,6 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
-
 from orbitlab.science.mast import (
     ProductSummary,
     _mask_from_tpf,
@@ -223,7 +222,11 @@ def test_mask_from_tpf_pipeline_no_pixels_raises():
 def test_search_targets_trappist_alias_always_returned(monkeypatch):
     import astroquery.mast as mast_module
 
-    monkeypatch.setattr(mast_module.Catalogs, "query_object", staticmethod(lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("MAST unreachable"))))
+    monkeypatch.setattr(
+        mast_module.Catalogs,
+        "query_object",
+        staticmethod(lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("MAST unreachable"))),
+    )
 
     results = search_targets("trappist", mission="TESS")
     ids = [r["target_id"] for r in results]

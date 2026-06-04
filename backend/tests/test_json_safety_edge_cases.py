@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import json
-import math
 
 import numpy as np
 import pytest
-
 from orbitlab.storage.json_safety import to_jsonable
 
 

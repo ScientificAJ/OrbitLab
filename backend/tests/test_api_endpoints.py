@@ -4,7 +4,6 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-
 from orbitlab.api.main import app
 from orbitlab.storage.database import SessionLocal, init_db
 from orbitlab.storage.orm import (
@@ -12,7 +11,6 @@ from orbitlab.storage.orm import (
     AnalysisResultRecord,
     ApertureMaskRecord,
     ArtifactMaskRecord,
-    SavedSessionRecord,
 )
 
 init_db()

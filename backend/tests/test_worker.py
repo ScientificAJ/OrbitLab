@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import numpy as np
 import pytest
-
 from orbitlab.storage.database import SessionLocal, init_db
 from orbitlab.storage.orm import (
     AnalysisJobRecord,

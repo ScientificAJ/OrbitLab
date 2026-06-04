@@ -98,9 +98,7 @@ describe('searchTargets', () => {
   });
 
   it('returns list of search results', async () => {
-    const results = [
-      { target_id: '307210830', catalog: 'TIC', match_type: 'catalog', ra: 12.0, dec: -5.0 },
-    ];
+    const results = [{ target_id: '307210830', catalog: 'TIC', match_type: 'catalog', ra: 12.0, dec: -5.0 }];
     mockFetch.mockResolvedValueOnce(okJson(results));
     const out = await searchTargets('307210830', 'TESS');
     expect(out).toHaveLength(1);
