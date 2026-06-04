@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "format:check": "prettier --check .",
     "capture:demo-assets": "node scripts/capture-demo-assets.mjs",
-    "test:unit": "vitest run src/lib/uiState.test.ts",
+    "test:unit": "vitest run src/lib/uiState.test.ts src/lib/api.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:live": "LIVE_ORBITLAB=1 playwright test e2e/orbitlab-live.spec.ts --project=chromium",
     "test:e2e:ui": "playwright test --ui",
