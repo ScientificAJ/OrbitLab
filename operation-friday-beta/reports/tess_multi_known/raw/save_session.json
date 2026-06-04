@@ -1,7 +1,7 @@
 {
-  "elapsed_s": 0.011,
+  "elapsed_s": 0.009,
   "payload": {
-    "created_at": "2026-06-03T11:01:34.061431",
+    "created_at": "2026-06-04T17:01:48.296477",
     "name": "Operation Friday Beta - tess_multi_known",
     "payload": {
       "case": {
@@ -12,10 +12,10 @@
         "query": "TOI-700"
       },
       "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0001/5042/8135/hlsp_tess-spoc_tess_phot_0000000150428135-s0006_tess_v1_tp.fits",
-      "result_id": "0caa54a3-0836-4324-a750-437adeee1263",
+      "result_id": "0e394d71-0074-42ed-9605-cc5a83628789",
       "target_id": "TOI-700"
     },
-    "session_id": "2c71d565-c178-49aa-b482-59d5131f5bd8"
+    "session_id": "88ce8e5a-cfcc-4c70-81be-0244c658268f"
   },
   "status": 201,
   "step": "save_session"

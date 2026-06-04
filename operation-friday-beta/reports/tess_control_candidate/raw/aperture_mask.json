@@ -1,8 +1,8 @@
 {
-  "elapsed_s": 0.012,
+  "elapsed_s": 0.009,
   "payload": {
-    "aperture_mask_id": "bdd46d3f-880e-4b85-80aa-69b8fe2ea55b",
-    "created_at": "2026-06-03T11:12:34.454882",
+    "aperture_mask_id": "79c6a768-ed80-48ff-9a3a-93055cb1b3cd",
+    "created_at": "2026-06-04T17:12:24.915395",
     "mask": [
       [
         false,

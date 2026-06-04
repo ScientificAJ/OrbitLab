@@ -1,5 +1,5 @@
 {
-  "elapsed_s": 0.028,
+  "elapsed_s": 0.026,
   "payload": {
     "active_science_config_keys": [
       "aperture_percentiles",
@@ -16450,7 +16450,7 @@
       "sigma_clip_kept_cadences": 439,
       "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
     },
-    "result_id": "3c3a2fb0-0567-404a-ad13-53ab28109ae8",
+    "result_id": "e978f73d-55e1-4b6d-bfd6-195cf200eb48",
     "schema_version": "orbitlab.analysis_result.v2",
     "science_config_hash": "95e37340cf6541a40d6db7a0be1ef167f3609db11ce8dc1b316a8abed4609edb",
     "science_readiness": {
@@ -16469,6 +16469,7 @@
       "tce_count": 2,
       "vetting_mode": "paper",
       "warnings": [
+        "ml_low_score_without_hard_vetting_failure",
         "single_sector_only"
       ]
     },
@@ -16654,8 +16655,8 @@
             "Habitability is limited by fallback stellar parameters",
             "Science-readiness blockers prevent planet-candidate promotion."
           ],
-          "final_score": 0.8534355179704017,
-          "ml_score": null,
+          "final_score": 0.7784507191304468,
+          "ml_score": 0.00010134106696690695,
           "model_shift": {
             "dmm": 0.9999996667,
             "engine": "dave_model_shift",
@@ -16815,7 +16816,7 @@
           "centroid": 1.0,
           "data_quality": 0.8562367864693446,
           "detection": 0.9999999999999999,
-          "ml": null,
+          "ml": 0.00010134106696690695,
           "physics_plausibility": 0.5,
           "vetting": 1.0
         },
@@ -16827,7 +16828,7 @@
           "Habitability is limited by fallback stellar parameters",
           "Science-readiness blockers prevent planet-candidate promotion."
         ],
-        "final_score": 0.8534355179704017,
+        "final_score": 0.7784507191304468,
         "flags": [],
         "fpp": {
           "engine": "triceratops",
@@ -16835,40 +16836,39 @@
         },
         "is_residual": false,
         "ml": {
-          "calibrated_ml_probability": null,
-          "calibration_checksum": null,
-          "calibration_method": null,
-          "calibration_source": null,
-          "citation": "Model artifact unavailable; OrbitLab preserved BLS, physics, and validation outputs.",
-          "detail": "Kepler TensorFlow Docker inference failed: File \"scripts/predict_kepler_astronet_tf.py\", line 126\n    copied.input[index] = f\"{control}orbitlab_global_view\"\n                                                         ^\nSyntaxError: invalid syntax",
+          "calibrated_ml_probability": 0.00010134106696690695,
+          "calibration_checksum": "40431bba4dcc3aaff86a23a9545b75aff1fd12366a4f2e86308292fd7ceda860",
+          "calibration_method": "isotonic_bins",
+          "calibration_source": ".orbitlab/calibration/raw/kepler-calibration-source.csv",
+          "citation": "Google Research exoplanet-ml AstroNet; AstroNet-Triage/Vetting family where mission-compatible.",
           "domain_awareness": {
             "artifact_checksum": null,
-            "calibrated_score": null,
-            "model_score": null,
+            "calibrated_score": 0.00010134106696690695,
+            "model_score": 0.004536026157438755,
             "model_training_domain": "AstroNet-style Kepler global and local folded light-curve views",
             "out_of_distribution_reasons": [
-              "preprocessing_incompatible",
-              "no_model_score",
               "fallback_stellar_context"
             ],
-            "out_of_distribution_score": 0.75,
+            "out_of_distribution_score": 0.25,
             "status": "inconclusive",
-            "tensor_checksum": null
+            "tensor_checksum": "0bc11e6179e7b93615a31fe547a16d45450f43d0737acaedeb59f7f1537194f6"
           },
           "evidence_conflicts": {
-            "conflicts": [],
+            "conflicts": [
+              "ml_low_score_without_hard_vetting_failure"
+            ],
             "hard_vetting_flags": [],
-            "status": "passed",
+            "status": "inconclusive",
             "warning_vetting_flags": []
           },
-          "input_tensor_checksum": null,
-          "label": "ml-unavailable",
-          "model_source": "KEPLER model artifact unavailable",
-          "model_version": "unavailable",
-          "preprocessing_compatible": false,
-          "probability": null,
-          "raw_ml_probability": null,
-          "threshold": null
+          "input_tensor_checksum": "0bc11e6179e7b93615a31fe547a16d45450f43d0737acaedeb59f7f1537194f6",
+          "label": "not-transit-like",
+          "model_source": "bibinthomas123/Astronet TensorFlow checkpoint at 9809ce92306f11fbdc96f9830b522026710a3883",
+          "model_version": "9809ce92306f11fbdc96f9830b522026710a3883",
+          "preprocessing_compatible": true,
+          "probability": 0.004536026157438755,
+          "raw_ml_probability": 0.004536026157438755,
+          "threshold": 0.5
         },
         "period": 0.8359916326865486,
         "period_days": 0.8359916326865486,
@@ -16930,6 +16930,7 @@
           "status": "blocked",
           "vetting_mode": "paper",
           "warnings": [
+            "ml_low_score_without_hard_vetting_failure",
             "single_sector_only"
           ]
         },
@@ -17375,8 +17376,8 @@
             "Centroid evidence is below rejection threshold",
             "Habitability is limited by fallback stellar parameters"
           ],
-          "final_score": 0.5183190500529107,
-          "ml_score": null,
+          "final_score": 0.443319057020444,
+          "ml_score": 4.645022200261065e-08,
           "model_shift": {
             "dmm": null,
             "engine": "dave_model_shift",
@@ -17508,7 +17509,7 @@
           "centroid": 1.0,
           "data_quality": 0.8562367864693446,
           "detection": 0.45953412833003604,
-          "ml": null,
+          "ml": 4.645022200261065e-08,
           "physics_plausibility": 0.5,
           "vetting": 0.0
         },
@@ -17518,7 +17519,7 @@
           "Centroid evidence is below rejection threshold",
           "Habitability is limited by fallback stellar parameters"
         ],
-        "final_score": 0.5183190500529107,
+        "final_score": 0.443319057020444,
         "flags": [
           {
             "code": "implausible_duration",
@@ -17547,25 +17548,22 @@
         },
         "is_residual": true,
         "ml": {
-          "calibrated_ml_probability": null,
-          "calibration_checksum": null,
-          "calibration_method": null,
-          "calibration_source": null,
-          "citation": "Model artifact unavailable; OrbitLab preserved BLS, physics, and validation outputs.",
-          "detail": "Kepler TensorFlow Docker inference failed: File \"scripts/predict_kepler_astronet_tf.py\", line 126\n    copied.input[index] = f\"{control}orbitlab_global_view\"\n                                                         ^\nSyntaxError: invalid syntax",
+          "calibrated_ml_probability": 4.645022200261065e-08,
+          "calibration_checksum": "40431bba4dcc3aaff86a23a9545b75aff1fd12366a4f2e86308292fd7ceda860",
+          "calibration_method": "isotonic_bins",
+          "calibration_source": ".orbitlab/calibration/raw/kepler-calibration-source.csv",
+          "citation": "Google Research exoplanet-ml AstroNet; AstroNet-Triage/Vetting family where mission-compatible.",
           "domain_awareness": {
             "artifact_checksum": null,
-            "calibrated_score": null,
-            "model_score": null,
+            "calibrated_score": 4.645022200261065e-08,
+            "model_score": 2.0791119368368527e-06,
             "model_training_domain": "AstroNet-style Kepler global and local folded light-curve views",
             "out_of_distribution_reasons": [
-              "preprocessing_incompatible",
-              "no_model_score",
               "fallback_stellar_context"
             ],
-            "out_of_distribution_score": 0.75,
+            "out_of_distribution_score": 0.25,
             "status": "inconclusive",
-            "tensor_checksum": null
+            "tensor_checksum": "9b2bdf384535042c23ae51b1a624d0363470e54a8e9aeaace1e934f4891f9502"
           },
           "evidence_conflicts": {
             "conflicts": [],
@@ -17578,14 +17576,14 @@
             "status": "passed",
             "warning_vetting_flags": []
           },
-          "input_tensor_checksum": null,
-          "label": "ml-unavailable",
-          "model_source": "KEPLER model artifact unavailable",
-          "model_version": "unavailable",
-          "preprocessing_compatible": false,
-          "probability": null,
-          "raw_ml_probability": null,
-          "threshold": null
+          "input_tensor_checksum": "9b2bdf384535042c23ae51b1a624d0363470e54a8e9aeaace1e934f4891f9502",
+          "label": "not-transit-like",
+          "model_source": "bibinthomas123/Astronet TensorFlow checkpoint at 9809ce92306f11fbdc96f9830b522026710a3883",
+          "model_version": "9809ce92306f11fbdc96f9830b522026710a3883",
+          "preprocessing_compatible": true,
+          "probability": 2.0791119368368527e-06,
+          "raw_ml_probability": 2.0791119368368527e-06,
+          "threshold": 0.5
         },
         "period": 0.11290819486727502,
         "period_days": 0.11290819486727502,

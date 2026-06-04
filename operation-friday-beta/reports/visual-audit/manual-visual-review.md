@@ -117,3 +117,69 @@ K2 was the clear runtime bottleneck. That is not a correctness failure, but it
 is a product/reliability risk for user-facing wait time and should be optimized
 with cached intermediate evidence, narrower known-target windows, or an
 explicit long-running analysis UX if this path remains part of the main flow.
+
+## 2026-06-04 Live Re-run + Manual Science Cross-Check
+
+The full API sweep was re-run live against real MAST so the API freshly
+generated every product (search, products, TPF preview, aperture mask, BLS
+preview, analysis, periodogram, folded curves, candidate ledger, report,
+session). Each product was then manually cross-checked against published
+literature values. New findings:
+
+### Finding 1 (fixed): Kepler AstroNet ML never executed
+The `/models` endpoint advertised `kepler_astronet: ready`, but every Kepler ML
+inference failed and silently fell back to `ml-unavailable`. Root cause: the
+Docker runtime pins `tensorflow/tensorflow:1.5.0-py3` (Python 3.5.2), while
+`scripts/predict_kepler_astronet_tf.py` used f-strings (Python 3.6+). The
+helper raised `SyntaxError` on first parse inside the container even though it
+was valid on the host. Fix: the three f-strings were rewritten with
+`str.format()`. Verified the script now parses under Python 3.5.2 inside the
+pinned image, and a live Kepler re-run produced real, distinct AstroNet
+probabilities (no more `ml-unavailable`). Net effect: AstroNet had never scored
+anything on this pinned image until this fix.
+
+### Finding 2 (open): Nigraha TESS probability pinned at 0.3
+Nigraha returned `raw_ml_probability == 0.3` for every TESS candidate across all
+TESS cases (8 distinct input-tensor checksums, identical output). The service
+has no 0.3 default, so the ensemble itself is collapsing to a fixed point —
+most likely because the stellar features (Teff/Radius/logg/Mass/lum/rho) are
+fully imputed when catalog context is missing. Conservative impact only (all
+affected candidates were rejected, threshold 0.4), but the TESS ML surface is
+not providing real discrimination in this run. Needs an isolated investigation
+before any model-code change.
+
+### Finding 3 (minor): top-level depth provenance fields null
+`depth_source` / `model_depth_fraction` / `measured_depth_fraction` are null at
+the top level of each candidate but populated inside `detection_metrics`. The
+audit checks both, but a UI reading the top-level field would see null
+provenance.
+
+### Method limitation: TOI-700 planets unrecoverable as configured
+TOI-700's known planets are at ~9.98, ~16.05, ~27.8 and ~37.4 days. The sweep
+used a single-sector SPOC TPF with `max_period=30`, so planet d (37.4 d) is
+outside the search window and the others need multi-sector SNR. The rejection
+is correct for this product, but the operation cannot recover TOI-700's real
+planets with these settings.
+
+### Literature cross-check (this run)
+- Kepler-10 b: published P=0.8375 d, depth ~152 ppm, dur ~1.8 h. OrbitLab:
+  P=0.83599 d, depth 159 ppm, dur 1.91 h. Accurate recovery; correctly held as
+  `borderline_tce / blocked` with catalog match "Kepler-10 b". Post-fix AstroNet
+  scores it low and self-flags `domain_awareness: inconclusive`
+  (`fallback_stellar_context`); the system correctly does not let the OOD ML
+  score override the strong BLS/physics + catalog evidence.
+- EPIC 201367065 (K2-3): published K2-3 b P~10.05 d, depth ~1100 ppm. OrbitLab:
+  P=10.055 d, depth 1265 ppm, SNR 32.7 — the strongest recovery in the
+  operation. ExoMAC-KKT ML ran normally (the K2 path is RandomForest, not the
+  Kepler TF path). Correctly held, not over-promoted.
+- TIC 25155310 (control): TCE-1 has SNR 125.8 and a 6400 ppm dip but is
+  correctly rejected as `not-transit-like`. This is the key control success: a
+  naive SNR cut would falsely promote a deceptive non-transit signal; OrbitLab
+  rejects it.
+
+### Verdict
+All five products are internally consistent and, where a known planet exists,
+the recovered period/depth/duration match published values. No false planet
+promotions occurred. The one real defect (Kepler AstroNet never running) is
+fixed and verified live. Two issues remain open for follow-up (Nigraha pinned
+probability; top-level depth provenance fields).

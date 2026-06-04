@@ -1,10 +1,10 @@
 {
   "analysis_job_create": {
-    "elapsed_s": 0.01,
+    "elapsed_s": 0.011,
     "payload": {
-      "created_at": "2026-06-03T11:03:20.081825",
+      "created_at": "2026-06-04T17:03:36.442977",
       "error": null,
-      "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+      "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
       "result_id": null,
       "status": "queued"
     },
@@ -14,11 +14,11 @@
   "analysis_job_poll": {
     "attempts": [
       {
-        "elapsed_s": 0.02,
+        "elapsed_s": 0.01,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -26,11 +26,11 @@
         "step": "analysis_job_poll_001"
       },
       {
-        "elapsed_s": 0.03,
+        "elapsed_s": 0.032,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -38,11 +38,11 @@
         "step": "analysis_job_poll_002"
       },
       {
-        "elapsed_s": 0.028,
+        "elapsed_s": 0.009,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -50,11 +50,11 @@
         "step": "analysis_job_poll_003"
       },
       {
-        "elapsed_s": 0.013,
+        "elapsed_s": 0.021,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -62,11 +62,11 @@
         "step": "analysis_job_poll_004"
       },
       {
-        "elapsed_s": 0.033,
+        "elapsed_s": 0.016,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -74,11 +74,11 @@
         "step": "analysis_job_poll_005"
       },
       {
-        "elapsed_s": 0.035,
+        "elapsed_s": 0.012,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -86,11 +86,11 @@
         "step": "analysis_job_poll_006"
       },
       {
-        "elapsed_s": 0.031,
+        "elapsed_s": 0.012,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -98,11 +98,11 @@
         "step": "analysis_job_poll_007"
       },
       {
-        "elapsed_s": 0.024,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -110,11 +110,11 @@
         "step": "analysis_job_poll_008"
       },
       {
-        "elapsed_s": 0.011,
+        "elapsed_s": 0.012,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -122,11 +122,11 @@
         "step": "analysis_job_poll_009"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.026,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -134,11 +134,11 @@
         "step": "analysis_job_poll_010"
       },
       {
-        "elapsed_s": 0.007,
+        "elapsed_s": 0.072,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -146,11 +146,11 @@
         "step": "analysis_job_poll_011"
       },
       {
-        "elapsed_s": 0.059,
+        "elapsed_s": 0.012,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -158,11 +158,11 @@
         "step": "analysis_job_poll_012"
       },
       {
-        "elapsed_s": 0.012,
+        "elapsed_s": 0.011,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -170,11 +170,11 @@
         "step": "analysis_job_poll_013"
       },
       {
-        "elapsed_s": 0.009,
+        "elapsed_s": 0.006,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -182,11 +182,11 @@
         "step": "analysis_job_poll_014"
       },
       {
-        "elapsed_s": 0.027,
+        "elapsed_s": 0.008,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -194,11 +194,11 @@
         "step": "analysis_job_poll_015"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.016,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -206,11 +206,11 @@
         "step": "analysis_job_poll_016"
       },
       {
-        "elapsed_s": 0.044,
+        "elapsed_s": 0.009,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -218,11 +218,11 @@
         "step": "analysis_job_poll_017"
       },
       {
-        "elapsed_s": 0.022,
+        "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -232,9 +232,9 @@
       {
         "elapsed_s": 0.008,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -242,11 +242,11 @@
         "step": "analysis_job_poll_019"
       },
       {
-        "elapsed_s": 0.01,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -254,11 +254,11 @@
         "step": "analysis_job_poll_020"
       },
       {
-        "elapsed_s": 0.016,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -266,11 +266,11 @@
         "step": "analysis_job_poll_021"
       },
       {
-        "elapsed_s": 0.014,
+        "elapsed_s": 0.027,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -278,11 +278,11 @@
         "step": "analysis_job_poll_022"
       },
       {
-        "elapsed_s": 0.137,
+        "elapsed_s": 0.013,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -290,11 +290,11 @@
         "step": "analysis_job_poll_023"
       },
       {
-        "elapsed_s": 0.044,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -304,9 +304,9 @@
       {
         "elapsed_s": 0.026,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -314,11 +314,11 @@
         "step": "analysis_job_poll_025"
       },
       {
-        "elapsed_s": 0.054,
+        "elapsed_s": 0.014,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -326,11 +326,11 @@
         "step": "analysis_job_poll_026"
       },
       {
-        "elapsed_s": 0.013,
+        "elapsed_s": 0.035,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -338,11 +338,11 @@
         "step": "analysis_job_poll_027"
       },
       {
-        "elapsed_s": 0.109,
+        "elapsed_s": 0.018,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -350,11 +350,11 @@
         "step": "analysis_job_poll_028"
       },
       {
-        "elapsed_s": 0.067,
+        "elapsed_s": 0.057,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -362,11 +362,11 @@
         "step": "analysis_job_poll_029"
       },
       {
-        "elapsed_s": 0.048,
+        "elapsed_s": 0.075,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -374,11 +374,11 @@
         "step": "analysis_job_poll_030"
       },
       {
-        "elapsed_s": 0.049,
+        "elapsed_s": 0.008,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -386,11 +386,11 @@
         "step": "analysis_job_poll_031"
       },
       {
-        "elapsed_s": 0.039,
+        "elapsed_s": 0.027,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -398,11 +398,11 @@
         "step": "analysis_job_poll_032"
       },
       {
-        "elapsed_s": 0.033,
+        "elapsed_s": 0.011,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -410,11 +410,11 @@
         "step": "analysis_job_poll_033"
       },
       {
-        "elapsed_s": 0.054,
+        "elapsed_s": 0.014,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -422,11 +422,11 @@
         "step": "analysis_job_poll_034"
       },
       {
-        "elapsed_s": 0.021,
+        "elapsed_s": 0.022,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -434,11 +434,11 @@
         "step": "analysis_job_poll_035"
       },
       {
-        "elapsed_s": 0.013,
+        "elapsed_s": 0.012,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -446,11 +446,11 @@
         "step": "analysis_job_poll_036"
       },
       {
-        "elapsed_s": 0.009,
+        "elapsed_s": 0.016,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -458,11 +458,11 @@
         "step": "analysis_job_poll_037"
       },
       {
-        "elapsed_s": 0.034,
+        "elapsed_s": 0.016,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -470,11 +470,11 @@
         "step": "analysis_job_poll_038"
       },
       {
-        "elapsed_s": 0.012,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -482,11 +482,11 @@
         "step": "analysis_job_poll_039"
       },
       {
-        "elapsed_s": 0.02,
+        "elapsed_s": 0.011,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -494,11 +494,11 @@
         "step": "analysis_job_poll_040"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.006,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -506,11 +506,11 @@
         "step": "analysis_job_poll_041"
       },
       {
-        "elapsed_s": 0.007,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -518,11 +518,11 @@
         "step": "analysis_job_poll_042"
       },
       {
-        "elapsed_s": 0.017,
+        "elapsed_s": 0.013,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -530,11 +530,11 @@
         "step": "analysis_job_poll_043"
       },
       {
-        "elapsed_s": 0.025,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -542,11 +542,11 @@
         "step": "analysis_job_poll_044"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -556,9 +556,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -566,11 +566,11 @@
         "step": "analysis_job_poll_046"
       },
       {
-        "elapsed_s": 0.012,
+        "elapsed_s": 0.013,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -578,11 +578,11 @@
         "step": "analysis_job_poll_047"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -590,11 +590,11 @@
         "step": "analysis_job_poll_048"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.009,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -602,11 +602,11 @@
         "step": "analysis_job_poll_049"
       },
       {
-        "elapsed_s": 0.011,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -616,9 +616,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -626,11 +626,11 @@
         "step": "analysis_job_poll_051"
       },
       {
-        "elapsed_s": 0.008,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -638,11 +638,11 @@
         "step": "analysis_job_poll_052"
       },
       {
-        "elapsed_s": 0.009,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -652,9 +652,9 @@
       {
         "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -662,11 +662,11 @@
         "step": "analysis_job_poll_054"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.008,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -674,11 +674,11 @@
         "step": "analysis_job_poll_055"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.006,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -686,11 +686,11 @@
         "step": "analysis_job_poll_056"
       },
       {
-        "elapsed_s": 0.038,
+        "elapsed_s": 0.013,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -698,11 +698,11 @@
         "step": "analysis_job_poll_057"
       },
       {
-        "elapsed_s": 0.008,
+        "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -712,9 +712,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -722,11 +722,11 @@
         "step": "analysis_job_poll_059"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.009,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -734,11 +734,11 @@
         "step": "analysis_job_poll_060"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -746,11 +746,11 @@
         "step": "analysis_job_poll_061"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.006,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -758,11 +758,11 @@
         "step": "analysis_job_poll_062"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -770,11 +770,11 @@
         "step": "analysis_job_poll_063"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.008,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -782,11 +782,11 @@
         "step": "analysis_job_poll_064"
       },
       {
-        "elapsed_s": 0.013,
+        "elapsed_s": 0.01,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -794,11 +794,11 @@
         "step": "analysis_job_poll_065"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.009,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -806,11 +806,11 @@
         "step": "analysis_job_poll_066"
       },
       {
-        "elapsed_s": 0.008,
+        "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -818,11 +818,11 @@
         "step": "analysis_job_poll_067"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.01,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -830,11 +830,11 @@
         "step": "analysis_job_poll_068"
       },
       {
-        "elapsed_s": 0.007,
+        "elapsed_s": 0.006,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -842,11 +842,11 @@
         "step": "analysis_job_poll_069"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.01,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -854,11 +854,11 @@
         "step": "analysis_job_poll_070"
       },
       {
-        "elapsed_s": 0.008,
+        "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -868,9 +868,9 @@
       {
         "elapsed_s": 0.006,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -878,11 +878,11 @@
         "step": "analysis_job_poll_072"
       },
       {
-        "elapsed_s": 0.01,
+        "elapsed_s": 0.008,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -890,11 +890,11 @@
         "step": "analysis_job_poll_073"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.009,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -902,11 +902,11 @@
         "step": "analysis_job_poll_074"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.011,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -914,11 +914,11 @@
         "step": "analysis_job_poll_075"
       },
       {
-        "elapsed_s": 0.015,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -926,11 +926,11 @@
         "step": "analysis_job_poll_076"
       },
       {
-        "elapsed_s": 0.003,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -938,11 +938,11 @@
         "step": "analysis_job_poll_077"
       },
       {
-        "elapsed_s": 0.009,
+        "elapsed_s": 0.006,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -950,11 +950,11 @@
         "step": "analysis_job_poll_078"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.009,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -962,11 +962,11 @@
         "step": "analysis_job_poll_079"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.009,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -974,11 +974,11 @@
         "step": "analysis_job_poll_080"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -988,9 +988,9 @@
       {
         "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -998,11 +998,11 @@
         "step": "analysis_job_poll_082"
       },
       {
-        "elapsed_s": 0.008,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1010,11 +1010,11 @@
         "step": "analysis_job_poll_083"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1022,11 +1022,11 @@
         "step": "analysis_job_poll_084"
       },
       {
-        "elapsed_s": 0.008,
+        "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1034,11 +1034,11 @@
         "step": "analysis_job_poll_085"
       },
       {
-        "elapsed_s": 0.007,
+        "elapsed_s": 0.009,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1046,11 +1046,11 @@
         "step": "analysis_job_poll_086"
       },
       {
-        "elapsed_s": 0.008,
+        "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1058,11 +1058,11 @@
         "step": "analysis_job_poll_087"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.006,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1070,11 +1070,11 @@
         "step": "analysis_job_poll_088"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1084,9 +1084,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1094,11 +1094,11 @@
         "step": "analysis_job_poll_090"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.008,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1106,11 +1106,11 @@
         "step": "analysis_job_poll_091"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1118,11 +1118,11 @@
         "step": "analysis_job_poll_092"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1130,11 +1130,11 @@
         "step": "analysis_job_poll_093"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.019,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1142,11 +1142,11 @@
         "step": "analysis_job_poll_094"
       },
       {
-        "elapsed_s": 0.008,
+        "elapsed_s": 0.003,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1154,11 +1154,11 @@
         "step": "analysis_job_poll_095"
       },
       {
-        "elapsed_s": 0.008,
+        "elapsed_s": 0.006,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1168,9 +1168,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1178,11 +1178,11 @@
         "step": "analysis_job_poll_097"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1190,11 +1190,11 @@
         "step": "analysis_job_poll_098"
       },
       {
-        "elapsed_s": 0.007,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1204,9 +1204,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1214,11 +1214,11 @@
         "step": "analysis_job_poll_100"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.006,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1226,11 +1226,11 @@
         "step": "analysis_job_poll_101"
       },
       {
-        "elapsed_s": 0.007,
+        "elapsed_s": 0.027,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1238,11 +1238,11 @@
         "step": "analysis_job_poll_102"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
           "result_id": null,
           "status": "running"
         },
@@ -1250,93 +1250,33 @@
         "step": "analysis_job_poll_103"
       },
       {
-        "elapsed_s": 0.009,
+        "elapsed_s": 0.021,
         "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
+          "created_at": "2026-06-04T17:03:36.442977",
           "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_104"
-      },
-      {
-        "elapsed_s": 0.005,
-        "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
-          "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_105"
-      },
-      {
-        "elapsed_s": 0.004,
-        "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
-          "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_106"
-      },
-      {
-        "elapsed_s": 0.005,
-        "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
-          "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_107"
-      },
-      {
-        "elapsed_s": 0.005,
-        "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
-          "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_108"
-      },
-      {
-        "elapsed_s": 0.028,
-        "payload": {
-          "created_at": "2026-06-03T11:03:20.081825",
-          "error": null,
-          "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
-          "result_id": "c8b88541-4b0a-499b-95e7-a7cfaab14bd7",
+          "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
+          "result_id": "d554731c-56f8-478f-8563-471f1481a208",
           "status": "complete"
         },
         "status": 200,
-        "step": "analysis_job_poll_109"
+        "step": "analysis_job_poll_104"
       }
     ],
     "final": {
-      "elapsed_s": 0.028,
+      "elapsed_s": 0.021,
       "payload": {
-        "created_at": "2026-06-03T11:03:20.081825",
+        "created_at": "2026-06-04T17:03:36.442977",
         "error": null,
-        "job_id": "89dd6b56-5cb5-46c1-9b8a-5711d91f29a2",
-        "result_id": "c8b88541-4b0a-499b-95e7-a7cfaab14bd7",
+        "job_id": "391f41fd-cbf4-47a3-b02f-18cf63eac49e",
+        "result_id": "d554731c-56f8-478f-8563-471f1481a208",
         "status": "complete"
       },
       "status": 200,
-      "step": "analysis_job_poll_109"
+      "step": "analysis_job_poll_104"
     }
   },
   "analysis_result": {
-    "elapsed_s": 0.056,
+    "elapsed_s": 0.041,
     "payload": {
       "active_science_config_keys": [
         "aperture_percentiles",
@@ -37601,7 +37541,7 @@
         "sigma_clip_kept_cadences": 3326,
         "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
       },
-      "result_id": "c8b88541-4b0a-499b-95e7-a7cfaab14bd7",
+      "result_id": "d554731c-56f8-478f-8563-471f1481a208",
       "schema_version": "orbitlab.analysis_result.v2",
       "science_config_hash": "95e37340cf6541a40d6db7a0be1ef167f3609db11ce8dc1b316a8abed4609edb",
       "science_readiness": {
@@ -39158,10 +39098,10 @@
     "step": "analysis_result"
   },
   "aperture_mask": {
-    "elapsed_s": 0.023,
+    "elapsed_s": 0.012,
     "payload": {
-      "aperture_mask_id": "5456bce9-1fae-44e0-82a7-069cc99c0122",
-      "created_at": "2026-06-03T11:03:12.651258",
+      "aperture_mask_id": "d8e6291e-ce6d-4d80-8ec1-b06fe8437abb",
+      "created_at": "2026-06-04T17:03:29.352074",
       "mask": [
         [
           false,
@@ -39494,7 +39434,7 @@
   "audit_findings": [],
   "audit_status": "pass",
   "bls_preview": {
-    "elapsed_s": 7.348,
+    "elapsed_s": 7.024,
     "payload": {
       "bls_light_curve": {
         "flux": [
@@ -69667,12 +69607,12 @@
     "query": "EPIC 201367065"
   },
   "health": {
-    "elapsed_s": 0.002,
+    "elapsed_s": 0.004,
     "payload": {
       "api": "ok",
       "database": "ok",
       "frontend": "served separately",
-      "generated_at": "2026-06-03T11:03:02.012902+00:00",
+      "generated_at": "2026-06-04T17:03:19.969102+00:00",
       "redis_configured": true,
       "status": "ok",
       "worker_mode": "inline"
@@ -69681,7 +69621,7 @@
     "step": "health"
   },
   "models": {
-    "elapsed_s": 3.051,
+    "elapsed_s": 3.524,
     "payload": {
       "k2_exomac_kkt": {
         "checksum": "d8a28d99cb29be8cfd0870d964bdde0bb3e97ee8d0aee9fded946ad5a54b2c2c",
@@ -69712,7 +69652,7 @@
     "step": "models"
   },
   "products": {
-    "elapsed_s": 2.926,
+    "elapsed_s": 2.208,
     "payload": [
       {
         "description": "Target Pixel Long Cadence (KTL) - C01",
@@ -69726,11 +69666,11 @@
     "step": "products"
   },
   "report": {
-    "elapsed_s": 0.049,
+    "elapsed_s": 0.047,
     "payload": {
       "format": "json",
-      "generated_at": "2026-06-03T11:12:22.266534+00:00",
-      "report_id": "c8b88541-4b0a-499b-95e7-a7cfaab14bd7",
+      "generated_at": "2026-06-04T17:12:12.964322+00:00",
+      "report_id": "d554731c-56f8-478f-8563-471f1481a208",
       "result": {
         "active_science_config_keys": [
           "aperture_percentiles",
@@ -105995,7 +105935,7 @@
           "sigma_clip_kept_cadences": 3326,
           "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
         },
-        "result_id": "c8b88541-4b0a-499b-95e7-a7cfaab14bd7",
+        "result_id": "d554731c-56f8-478f-8563-471f1481a208",
         "schema_version": "orbitlab.analysis_result.v2",
         "science_config_hash": "95e37340cf6541a40d6db7a0be1ef167f3609db11ce8dc1b316a8abed4609edb",
         "science_readiness": {
@@ -107575,9 +107515,9 @@
     "step": "report"
   },
   "save_session": {
-    "elapsed_s": 0.012,
+    "elapsed_s": 0.008,
     "payload": {
-      "created_at": "2026-06-03T11:12:22.384213",
+      "created_at": "2026-06-04T17:12:13.063104",
       "name": "Operation Friday Beta - k2_multi_known",
       "payload": {
         "case": {
@@ -107588,16 +107528,16 @@
           "query": "EPIC 201367065"
         },
         "product_uri": "mast:K2/url/missions/k2/target_pixel_files/c1/201300000/67000/ktwo201367065-c01_lpd-targ.fits.gz",
-        "result_id": "c8b88541-4b0a-499b-95e7-a7cfaab14bd7",
+        "result_id": "d554731c-56f8-478f-8563-471f1481a208",
         "target_id": "EPIC 201367065"
       },
-      "session_id": "499b2d60-e38e-4f39-88ef-1a55664df229"
+      "session_id": "cbe18a10-9fbe-4d39-88ff-95b8ff891d50"
     },
     "status": 201,
     "step": "save_session"
   },
   "search": {
-    "elapsed_s": 2.906,
+    "elapsed_s": 2.642,
     "payload": [
       {
         "catalog": "NAME",
@@ -107625,8 +107565,223 @@
   },
   "selected_target": "EPIC 201367065",
   "sessions": {
-    "elapsed_s": 0.006,
+    "elapsed_s": 0.005,
     "payload": [
+      {
+        "created_at": "2026-06-04T17:12:13.063104",
+        "name": "Operation Friday Beta - k2_multi_known",
+        "payload": {
+          "case": {
+            "case_id": "k2_multi_known",
+            "expected_context": "K2 target should exercise K2 product retrieval and ExoMAC-KKT readiness/result surfaces.",
+            "mission": "K2",
+            "purpose": "K2/ExoMAC model path and multi-planet system check.",
+            "query": "EPIC 201367065"
+          },
+          "product_uri": "mast:K2/url/missions/k2/target_pixel_files/c1/201300000/67000/ktwo201367065-c01_lpd-targ.fits.gz",
+          "result_id": "d554731c-56f8-478f-8563-471f1481a208",
+          "target_id": "EPIC 201367065"
+        },
+        "session_id": "cbe18a10-9fbe-4d39-88ff-95b8ff891d50"
+      },
+      {
+        "created_at": "2026-06-04T17:03:19.808862",
+        "name": "Operation Friday Beta - kepler_multi_known",
+        "payload": {
+          "case": {
+            "case_id": "kepler_multi_known",
+            "expected_context": "Kepler target should exercise Kepler product retrieval, BLS preview, full analysis, and AstroNet readiness/result surfaces.",
+            "mission": "Kepler",
+            "purpose": "Kepler known-system check.",
+            "query": "Kepler-10"
+          },
+          "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
+          "result_id": "f336859c-da4e-4c8d-9002-e6089f55ba5a",
+          "target_id": "Kepler-10"
+        },
+        "session_id": "eba7ef7f-4e4c-4c2b-ad58-0274467b6172"
+      },
+      {
+        "created_at": "2026-06-04T17:01:48.296477",
+        "name": "Operation Friday Beta - tess_multi_known",
+        "payload": {
+          "case": {
+            "case_id": "tess_multi_known",
+            "expected_context": "Multiple known planets may exist in external catalogs; OrbitLab should preserve TCE evidence and avoid overclaiming confirmation.",
+            "mission": "TESS",
+            "purpose": "Known multi-planet TESS target and alias/catalog context check.",
+            "query": "TOI-700"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0001/5042/8135/hlsp_tess-spoc_tess_phot_0000000150428135-s0006_tess_v1_tp.fits",
+          "result_id": "0e394d71-0074-42ed-9605-cc5a83628789",
+          "target_id": "TOI-700"
+        },
+        "session_id": "88ce8e5a-cfcc-4c70-81be-0244c658268f"
+      },
+      {
+        "created_at": "2026-06-04T16:57:47.519351",
+        "name": "Operation Friday Beta - tess_known_hot_jupiter",
+        "payload": {
+          "case": {
+            "case_id": "tess_known_hot_jupiter",
+            "expected_context": "Known planet host context may appear through target/catalog matching, but OrbitLab must still report candidates as follow-up evidence rather than confirmations.",
+            "mission": "TESS",
+            "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
+            "query": "TIC 307210830"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0003/0721/0830/hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+          "result_id": "59e0349e-d9a9-43a5-ab4d-77c25f20f897",
+          "target_id": "TIC 307210830"
+        },
+        "session_id": "c002af8a-33c4-499b-9d2a-6282717d026f"
+      },
+      {
+        "created_at": "2026-06-04T13:12:59.342735",
+        "name": "Deep Payload",
+        "payload": {
+          "list": [
+            1,
+            2,
+            3
+          ],
+          "nested": {
+            "value": 42
+          }
+        },
+        "session_id": "c048acb1-2ed9-463f-9bb5-4b0ddf99b757"
+      },
+      {
+        "created_at": "2026-06-04T13:12:59.320446",
+        "name": "My Session",
+        "payload": {
+          "mission": "TESS",
+          "stars": [
+            "TIC 100"
+          ]
+        },
+        "session_id": "9e54b225-91d8-4809-967d-3ad68ce2a02b"
+      },
+      {
+        "created_at": "2026-06-04T13:12:04.938502",
+        "name": "Deep Payload",
+        "payload": {
+          "list": [
+            1,
+            2,
+            3
+          ],
+          "nested": {
+            "value": 42
+          }
+        },
+        "session_id": "fa57777d-4e9d-48ad-9a46-4595f4d10793"
+      },
+      {
+        "created_at": "2026-06-04T13:12:04.916111",
+        "name": "My Session",
+        "payload": {
+          "mission": "TESS",
+          "stars": [
+            "TIC 100"
+          ]
+        },
+        "session_id": "d48b8f43-790d-4cac-aedd-8aeab30ee678"
+      },
+      {
+        "created_at": "2026-06-04T13:11:05.535368",
+        "name": "Deep Payload",
+        "payload": {
+          "list": [
+            1,
+            2,
+            3
+          ],
+          "nested": {
+            "value": 42
+          }
+        },
+        "session_id": "f8be3917-d2e5-4d7b-804f-f8e6af5b6497"
+      },
+      {
+        "created_at": "2026-06-04T13:11:05.515665",
+        "name": "My Session",
+        "payload": {
+          "mission": "TESS",
+          "stars": [
+            "TIC 100"
+          ]
+        },
+        "session_id": "756d4c2a-6d9c-4001-9d40-adb07b523d06"
+      },
+      {
+        "created_at": "2026-06-04T13:10:14.755629",
+        "name": "Deep Payload",
+        "payload": {
+          "list": [
+            1,
+            2,
+            3
+          ],
+          "nested": {
+            "value": 42
+          }
+        },
+        "session_id": "019e14c1-5379-4271-b51e-dc4d4e337cf9"
+      },
+      {
+        "created_at": "2026-06-04T13:10:14.733823",
+        "name": "My Session",
+        "payload": {
+          "mission": "TESS",
+          "stars": [
+            "TIC 100"
+          ]
+        },
+        "session_id": "b4ac15bd-62f6-4f3c-8e54-6c78c0f00ab9"
+      },
+      {
+        "created_at": "2026-06-04T13:08:59.463882",
+        "name": "Deep Payload",
+        "payload": {
+          "list": [
+            1,
+            2,
+            3
+          ],
+          "nested": {
+            "value": 42
+          }
+        },
+        "session_id": "983c471f-1e93-4a27-a318-f49acc2a79db"
+      },
+      {
+        "created_at": "2026-06-04T13:08:59.440368",
+        "name": "My Session",
+        "payload": {
+          "mission": "TESS",
+          "stars": [
+            "TIC 100"
+          ]
+        },
+        "session_id": "e05e763c-e44c-4fe9-bd00-e6d4194c7b0d"
+      },
+      {
+        "created_at": "2026-06-03T11:15:48.564408",
+        "name": "Operation Friday Beta - tess_control_candidate",
+        "payload": {
+          "case": {
+            "case_id": "tess_control_candidate",
+            "expected_context": "If no strong TCE appears, OrbitLab should show no candidates or low-confidence/rejected signals clearly.",
+            "mission": "TESS",
+            "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
+            "query": "TIC 25155310"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
+          "result_id": "eb8b2bf5-87ce-4c12-aa74-5b38e6eac53c",
+          "target_id": "TIC 25155310"
+        },
+        "session_id": "776648cf-0ce2-45eb-b7d2-dd5239c1aff4"
+      },
       {
         "created_at": "2026-06-03T11:12:22.384213",
         "name": "Operation Friday Beta - k2_multi_known",
@@ -108208,7 +108363,7 @@
     "step": "sessions"
   },
   "tpf_preview": {
-    "elapsed_s": 1.742,
+    "elapsed_s": 0.997,
     "payload": {
       "baseline": 82.15639581010328,
       "finite_max": 125859.8984375,

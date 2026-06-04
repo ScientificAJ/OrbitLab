@@ -1,38 +1,6 @@
 [
   {
-    "analysis_result_id": "26c9c7f0-21f1-4c0f-a9eb-60dd31280176",
-    "analysis_status": "complete",
-    "audit_path": "reports/tess_known_hot_jupiter/audit.md",
-    "audit_status": "pass",
-    "case_id": "tess_known_hot_jupiter",
-    "finding_count": 0,
-    "mission": "TESS",
-    "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
-    "query": "TIC 307210830",
-    "raw_dir": "reports/tess_known_hot_jupiter/raw",
-    "selected_product_id": "62575661",
-    "selected_product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0003/0721/0830/hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
-    "selected_target": "TIC 307210830",
-    "workflow_path": "reports/tess_known_hot_jupiter/workflow.json"
-  },
-  {
-    "analysis_result_id": "0caa54a3-0836-4324-a750-437adeee1263",
-    "analysis_status": "complete",
-    "audit_path": "reports/tess_multi_known/audit.md",
-    "audit_status": "pass",
-    "case_id": "tess_multi_known",
-    "finding_count": 0,
-    "mission": "TESS",
-    "purpose": "Known multi-planet TESS target and alias/catalog context check.",
-    "query": "TOI-700",
-    "raw_dir": "reports/tess_multi_known/raw",
-    "selected_product_id": "60474103",
-    "selected_product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0001/5042/8135/hlsp_tess-spoc_tess_phot_0000000150428135-s0006_tess_v1_tp.fits",
-    "selected_target": "TOI-700",
-    "workflow_path": "reports/tess_multi_known/workflow.json"
-  },
-  {
-    "analysis_result_id": "3c3a2fb0-0567-404a-ad13-53ab28109ae8",
+    "analysis_result_id": "e978f73d-55e1-4b6d-bfd6-195cf200eb48",
     "analysis_status": "complete",
     "audit_path": "reports/kepler_multi_known/audit.md",
     "audit_status": "pass",
@@ -46,37 +14,5 @@
     "selected_product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
     "selected_target": "Kepler-10",
     "workflow_path": "reports/kepler_multi_known/workflow.json"
-  },
-  {
-    "analysis_result_id": "c8b88541-4b0a-499b-95e7-a7cfaab14bd7",
-    "analysis_status": "complete",
-    "audit_path": "reports/k2_multi_known/audit.md",
-    "audit_status": "pass",
-    "case_id": "k2_multi_known",
-    "finding_count": 0,
-    "mission": "K2",
-    "purpose": "K2/ExoMAC model path and multi-planet system check.",
-    "query": "EPIC 201367065",
-    "raw_dir": "reports/k2_multi_known/raw",
-    "selected_product_id": "1073804",
-    "selected_product_uri": "mast:K2/url/missions/k2/target_pixel_files/c1/201300000/67000/ktwo201367065-c01_lpd-targ.fits.gz",
-    "selected_target": "EPIC 201367065",
-    "workflow_path": "reports/k2_multi_known/workflow.json"
-  },
-  {
-    "analysis_result_id": "eb8b2bf5-87ce-4c12-aa74-5b38e6eac53c",
-    "analysis_status": "complete",
-    "audit_path": "reports/tess_control_candidate/audit.md",
-    "audit_status": "pass",
-    "case_id": "tess_control_candidate",
-    "finding_count": 0,
-    "mission": "TESS",
-    "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
-    "query": "TIC 25155310",
-    "raw_dir": "reports/tess_control_candidate/raw",
-    "selected_product_id": "60516122",
-    "selected_product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
-    "selected_target": "TIC 25155310",
-    "workflow_path": "reports/tess_control_candidate/workflow.json"
   }
 ]

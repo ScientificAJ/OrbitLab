@@ -1,5 +1,5 @@
 {
-  "elapsed_s": 0.04,
+  "elapsed_s": 0.059,
   "payload": {
     "active_science_config_keys": [
       "aperture_percentiles",
@@ -19771,7 +19771,7 @@
       "sigma_clip_kept_cadences": 795,
       "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
     },
-    "result_id": "26c9c7f0-21f1-4c0f-a9eb-60dd31280176",
+    "result_id": "59e0349e-d9a9-43a5-ab4d-77c25f20f897",
     "schema_version": "orbitlab.analysis_result.v2",
     "science_config_hash": "95e37340cf6541a40d6db7a0be1ef167f3609db11ce8dc1b316a8abed4609edb",
     "science_readiness": {
@@ -20713,7 +20713,7 @@
           }
         ],
         "fpp": {
-          "detail": "HTTPSConnectionPool(host='stev.oapd.inaf.it', port=443): Max retries exceeded with url: /cgi-bin/trilegal_1.6 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)')))",
+          "detail": "HTTPConnectionPool(host='stev.oapd.inaf.it', port=80): Max retries exceeded with url: /cgi-bin/trilegal_1.6 (Caused by ConnectTimeoutError(<HTTPConnection(host='stev.oapd.inaf.it', port=80) at 0x7a81f44cc590>, 'Connection to stev.oapd.inaf.it timed out. (connect timeout=None)'))",
           "engine": "triceratops",
           "samples": 1000000,
           "source": "TRICERATOPS calc_probs",
@@ -22066,7 +22066,7 @@
           }
         ],
         "fpp": {
-          "detail": "HTTPSConnectionPool(host='stev.oapd.inaf.it', port=443): Max retries exceeded with url: /cgi-bin/trilegal_1.6 (Caused by SSLError(SSLCertVerificationError(1, '[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1000)')))",
+          "detail": "HTTPSConnectionPool(host='stev.oapd.inaf.it', port=443): Max retries exceeded with url: /cgi-bin/trilegal_1.6 (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000)')))",
           "engine": "triceratops",
           "samples": 1000000,
           "source": "TRICERATOPS calc_probs",

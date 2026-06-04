@@ -1,5 +1,5 @@
 {
-  "elapsed_s": 0.025,
+  "elapsed_s": 0.029,
   "payload": {
     "active_science_config_keys": [
       "aperture_percentiles",
@@ -18831,7 +18831,7 @@
       "sigma_clip_kept_cadences": 967,
       "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
     },
-    "result_id": "0caa54a3-0836-4324-a750-437adeee1263",
+    "result_id": "0e394d71-0074-42ed-9605-cc5a83628789",
     "schema_version": "orbitlab.analysis_result.v2",
     "science_config_hash": "95e37340cf6541a40d6db7a0be1ef167f3609db11ce8dc1b316a8abed4609edb",
     "science_readiness": {

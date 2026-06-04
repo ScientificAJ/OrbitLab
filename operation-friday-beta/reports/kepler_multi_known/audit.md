@@ -15,19 +15,19 @@
 
 | Step | HTTP | Elapsed s |
 | --- | ---: | ---: |
-| `health` | 200 | 0.003 |
-| `models` | 200 | 2.93 |
-| `search` | 200 | 4 |
-| `products` | 200 | 11.6 |
-| `tpf_preview` | 200 | 0.373 |
-| `aperture_mask` | 201 | 0.008 |
-| `bls_preview` | 200 | 3.46 |
-| `analysis_job_create` | 201 | 0.012 |
-| `analysis_result` | 200 | 0.028 |
-| `report` | 200 | 0.027 |
-| `save_session` | 201 | 0.012 |
-| `sessions` | 200 | 0.004 |
-| `analysis_job_poll` | 200 | 14 polls, status `complete` |
+| `health` | 200 | 0.07 |
+| `models` | 200 | 3.85 |
+| `search` | 200 | 2.93 |
+| `products` | 200 | 0.03 |
+| `tpf_preview` | 200 | 1.47 |
+| `aperture_mask` | 201 | 0.01 |
+| `bls_preview` | 200 | 4.28 |
+| `analysis_job_create` | 201 | 0.011 |
+| `analysis_result` | 200 | 0.026 |
+| `report` | 200 | 0.023 |
+| `save_session` | 201 | 0.01 |
+| `sessions` | 200 | 0.005 |
+| `analysis_job_poll` | 200 | 20 polls, status `complete` |
 
 ## Science Snapshot
 
@@ -41,8 +41,8 @@
 
 | ID | Period d | Duration h | Depth ppm | Depth source | SNR | Disposition | Action | Readiness | ML | Catalog |
 | --- | ---: | ---: | ---: | --- | ---: | --- | --- | --- | --- | --- |
-| `kepler-Kepler-10-tce-1` | 0.835992 | 1.907 | 159.29 | phase_window_median | 20.9 | borderline_tce | review_needed | blocked | ml-unavailable | Kepler-10 b |
-| `kepler-Kepler-10-tce-2` | 0.112908 | 1.92 | 24.759 | astropy_box_least_squares | 7.128 | rejected_signal | none | blocked | ml-unavailable | - |
+| `kepler-Kepler-10-tce-1` | 0.835992 | 1.907 | 159.29 | phase_window_median | 20.9 | borderline_tce | review_needed | blocked | not-transit-like | Kepler-10 b |
+| `kepler-Kepler-10-tce-2` | 0.112908 | 1.92 | 24.759 | astropy_box_least_squares | 7.128 | rejected_signal | none | blocked | not-transit-like | - |
 
 ## Quarantined Artifacts
 

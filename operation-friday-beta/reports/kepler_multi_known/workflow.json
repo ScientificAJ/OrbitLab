@@ -1,10 +1,10 @@
 {
   "analysis_job_create": {
-    "elapsed_s": 0.012,
+    "elapsed_s": 0.011,
     "payload": {
-      "created_at": "2026-06-03T11:01:56.598523",
+      "created_at": "2026-06-04T17:17:57.664344",
       "error": null,
-      "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+      "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
       "result_id": null,
       "status": "queued"
     },
@@ -14,11 +14,11 @@
   "analysis_job_poll": {
     "attempts": [
       {
-        "elapsed_s": 0.012,
+        "elapsed_s": 0.016,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -26,11 +26,11 @@
         "step": "analysis_job_poll_001"
       },
       {
-        "elapsed_s": 0.025,
+        "elapsed_s": 0.026,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -38,11 +38,11 @@
         "step": "analysis_job_poll_002"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.01,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -50,11 +50,11 @@
         "step": "analysis_job_poll_003"
       },
       {
-        "elapsed_s": 0.023,
+        "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -62,11 +62,11 @@
         "step": "analysis_job_poll_004"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.008,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -74,11 +74,11 @@
         "step": "analysis_job_poll_005"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.009,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -86,11 +86,11 @@
         "step": "analysis_job_poll_006"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.038,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -98,11 +98,11 @@
         "step": "analysis_job_poll_007"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -110,11 +110,11 @@
         "step": "analysis_job_poll_008"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -124,9 +124,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -134,11 +134,11 @@
         "step": "analysis_job_poll_010"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.008,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -146,11 +146,11 @@
         "step": "analysis_job_poll_011"
       },
       {
-        "elapsed_s": 0.003,
+        "elapsed_s": 0.008,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -158,11 +158,11 @@
         "step": "analysis_job_poll_012"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.006,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
           "result_id": null,
           "status": "running"
         },
@@ -170,33 +170,105 @@
         "step": "analysis_job_poll_013"
       },
       {
-        "elapsed_s": 0.015,
+        "elapsed_s": 0.007,
         "payload": {
-          "created_at": "2026-06-03T11:01:56.598523",
+          "created_at": "2026-06-04T17:17:57.664344",
           "error": null,
-          "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
-          "result_id": "3c3a2fb0-0567-404a-ad13-53ab28109ae8",
-          "status": "complete"
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
+          "result_id": null,
+          "status": "running"
         },
         "status": 200,
         "step": "analysis_job_poll_014"
+      },
+      {
+        "elapsed_s": 0.007,
+        "payload": {
+          "created_at": "2026-06-04T17:17:57.664344",
+          "error": null,
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
+          "result_id": null,
+          "status": "running"
+        },
+        "status": 200,
+        "step": "analysis_job_poll_015"
+      },
+      {
+        "elapsed_s": 0.01,
+        "payload": {
+          "created_at": "2026-06-04T17:17:57.664344",
+          "error": null,
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
+          "result_id": null,
+          "status": "running"
+        },
+        "status": 200,
+        "step": "analysis_job_poll_016"
+      },
+      {
+        "elapsed_s": 0.007,
+        "payload": {
+          "created_at": "2026-06-04T17:17:57.664344",
+          "error": null,
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
+          "result_id": null,
+          "status": "running"
+        },
+        "status": 200,
+        "step": "analysis_job_poll_017"
+      },
+      {
+        "elapsed_s": 0.009,
+        "payload": {
+          "created_at": "2026-06-04T17:17:57.664344",
+          "error": null,
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
+          "result_id": null,
+          "status": "running"
+        },
+        "status": 200,
+        "step": "analysis_job_poll_018"
+      },
+      {
+        "elapsed_s": 0.008,
+        "payload": {
+          "created_at": "2026-06-04T17:17:57.664344",
+          "error": null,
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
+          "result_id": null,
+          "status": "running"
+        },
+        "status": 200,
+        "step": "analysis_job_poll_019"
+      },
+      {
+        "elapsed_s": 0.014,
+        "payload": {
+          "created_at": "2026-06-04T17:17:57.664344",
+          "error": null,
+          "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
+          "result_id": "e978f73d-55e1-4b6d-bfd6-195cf200eb48",
+          "status": "complete"
+        },
+        "status": 200,
+        "step": "analysis_job_poll_020"
       }
     ],
     "final": {
-      "elapsed_s": 0.015,
+      "elapsed_s": 0.014,
       "payload": {
-        "created_at": "2026-06-03T11:01:56.598523",
+        "created_at": "2026-06-04T17:17:57.664344",
         "error": null,
-        "job_id": "61b76fde-3d54-41b8-a348-02521cb6e453",
-        "result_id": "3c3a2fb0-0567-404a-ad13-53ab28109ae8",
+        "job_id": "0412f8e6-94c9-49cb-90bf-e35568d2ab4a",
+        "result_id": "e978f73d-55e1-4b6d-bfd6-195cf200eb48",
         "status": "complete"
       },
       "status": 200,
-      "step": "analysis_job_poll_014"
+      "step": "analysis_job_poll_020"
     }
   },
   "analysis_result": {
-    "elapsed_s": 0.028,
+    "elapsed_s": 0.026,
     "payload": {
       "active_science_config_keys": [
         "aperture_percentiles",
@@ -16647,7 +16719,7 @@
         "sigma_clip_kept_cadences": 439,
         "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
       },
-      "result_id": "3c3a2fb0-0567-404a-ad13-53ab28109ae8",
+      "result_id": "e978f73d-55e1-4b6d-bfd6-195cf200eb48",
       "schema_version": "orbitlab.analysis_result.v2",
       "science_config_hash": "95e37340cf6541a40d6db7a0be1ef167f3609db11ce8dc1b316a8abed4609edb",
       "science_readiness": {
@@ -16666,6 +16738,7 @@
         "tce_count": 2,
         "vetting_mode": "paper",
         "warnings": [
+          "ml_low_score_without_hard_vetting_failure",
           "single_sector_only"
         ]
       },
@@ -16851,8 +16924,8 @@
               "Habitability is limited by fallback stellar parameters",
               "Science-readiness blockers prevent planet-candidate promotion."
             ],
-            "final_score": 0.8534355179704017,
-            "ml_score": null,
+            "final_score": 0.7784507191304468,
+            "ml_score": 0.00010134106696690695,
             "model_shift": {
               "dmm": 0.9999996667,
               "engine": "dave_model_shift",
@@ -17012,7 +17085,7 @@
             "centroid": 1.0,
             "data_quality": 0.8562367864693446,
             "detection": 0.9999999999999999,
-            "ml": null,
+            "ml": 0.00010134106696690695,
             "physics_plausibility": 0.5,
             "vetting": 1.0
           },
@@ -17024,7 +17097,7 @@
             "Habitability is limited by fallback stellar parameters",
             "Science-readiness blockers prevent planet-candidate promotion."
           ],
-          "final_score": 0.8534355179704017,
+          "final_score": 0.7784507191304468,
           "flags": [],
           "fpp": {
             "engine": "triceratops",
@@ -17032,40 +17105,39 @@
           },
           "is_residual": false,
           "ml": {
-            "calibrated_ml_probability": null,
-            "calibration_checksum": null,
-            "calibration_method": null,
-            "calibration_source": null,
-            "citation": "Model artifact unavailable; OrbitLab preserved BLS, physics, and validation outputs.",
-            "detail": "Kepler TensorFlow Docker inference failed: File \"scripts/predict_kepler_astronet_tf.py\", line 126\n    copied.input[index] = f\"{control}orbitlab_global_view\"\n                                                         ^\nSyntaxError: invalid syntax",
+            "calibrated_ml_probability": 0.00010134106696690695,
+            "calibration_checksum": "40431bba4dcc3aaff86a23a9545b75aff1fd12366a4f2e86308292fd7ceda860",
+            "calibration_method": "isotonic_bins",
+            "calibration_source": ".orbitlab/calibration/raw/kepler-calibration-source.csv",
+            "citation": "Google Research exoplanet-ml AstroNet; AstroNet-Triage/Vetting family where mission-compatible.",
             "domain_awareness": {
               "artifact_checksum": null,
-              "calibrated_score": null,
-              "model_score": null,
+              "calibrated_score": 0.00010134106696690695,
+              "model_score": 0.004536026157438755,
               "model_training_domain": "AstroNet-style Kepler global and local folded light-curve views",
               "out_of_distribution_reasons": [
-                "preprocessing_incompatible",
-                "no_model_score",
                 "fallback_stellar_context"
               ],
-              "out_of_distribution_score": 0.75,
+              "out_of_distribution_score": 0.25,
               "status": "inconclusive",
-              "tensor_checksum": null
+              "tensor_checksum": "0bc11e6179e7b93615a31fe547a16d45450f43d0737acaedeb59f7f1537194f6"
             },
             "evidence_conflicts": {
-              "conflicts": [],
+              "conflicts": [
+                "ml_low_score_without_hard_vetting_failure"
+              ],
               "hard_vetting_flags": [],
-              "status": "passed",
+              "status": "inconclusive",
               "warning_vetting_flags": []
             },
-            "input_tensor_checksum": null,
-            "label": "ml-unavailable",
-            "model_source": "KEPLER model artifact unavailable",
-            "model_version": "unavailable",
-            "preprocessing_compatible": false,
-            "probability": null,
-            "raw_ml_probability": null,
-            "threshold": null
+            "input_tensor_checksum": "0bc11e6179e7b93615a31fe547a16d45450f43d0737acaedeb59f7f1537194f6",
+            "label": "not-transit-like",
+            "model_source": "bibinthomas123/Astronet TensorFlow checkpoint at 9809ce92306f11fbdc96f9830b522026710a3883",
+            "model_version": "9809ce92306f11fbdc96f9830b522026710a3883",
+            "preprocessing_compatible": true,
+            "probability": 0.004536026157438755,
+            "raw_ml_probability": 0.004536026157438755,
+            "threshold": 0.5
           },
           "period": 0.8359916326865486,
           "period_days": 0.8359916326865486,
@@ -17127,6 +17199,7 @@
             "status": "blocked",
             "vetting_mode": "paper",
             "warnings": [
+              "ml_low_score_without_hard_vetting_failure",
               "single_sector_only"
             ]
           },
@@ -17572,8 +17645,8 @@
               "Centroid evidence is below rejection threshold",
               "Habitability is limited by fallback stellar parameters"
             ],
-            "final_score": 0.5183190500529107,
-            "ml_score": null,
+            "final_score": 0.443319057020444,
+            "ml_score": 4.645022200261065e-08,
             "model_shift": {
               "dmm": null,
               "engine": "dave_model_shift",
@@ -17705,7 +17778,7 @@
             "centroid": 1.0,
             "data_quality": 0.8562367864693446,
             "detection": 0.45953412833003604,
-            "ml": null,
+            "ml": 4.645022200261065e-08,
             "physics_plausibility": 0.5,
             "vetting": 0.0
           },
@@ -17715,7 +17788,7 @@
             "Centroid evidence is below rejection threshold",
             "Habitability is limited by fallback stellar parameters"
           ],
-          "final_score": 0.5183190500529107,
+          "final_score": 0.443319057020444,
           "flags": [
             {
               "code": "implausible_duration",
@@ -17744,25 +17817,22 @@
           },
           "is_residual": true,
           "ml": {
-            "calibrated_ml_probability": null,
-            "calibration_checksum": null,
-            "calibration_method": null,
-            "calibration_source": null,
-            "citation": "Model artifact unavailable; OrbitLab preserved BLS, physics, and validation outputs.",
-            "detail": "Kepler TensorFlow Docker inference failed: File \"scripts/predict_kepler_astronet_tf.py\", line 126\n    copied.input[index] = f\"{control}orbitlab_global_view\"\n                                                         ^\nSyntaxError: invalid syntax",
+            "calibrated_ml_probability": 4.645022200261065e-08,
+            "calibration_checksum": "40431bba4dcc3aaff86a23a9545b75aff1fd12366a4f2e86308292fd7ceda860",
+            "calibration_method": "isotonic_bins",
+            "calibration_source": ".orbitlab/calibration/raw/kepler-calibration-source.csv",
+            "citation": "Google Research exoplanet-ml AstroNet; AstroNet-Triage/Vetting family where mission-compatible.",
             "domain_awareness": {
               "artifact_checksum": null,
-              "calibrated_score": null,
-              "model_score": null,
+              "calibrated_score": 4.645022200261065e-08,
+              "model_score": 2.0791119368368527e-06,
               "model_training_domain": "AstroNet-style Kepler global and local folded light-curve views",
               "out_of_distribution_reasons": [
-                "preprocessing_incompatible",
-                "no_model_score",
                 "fallback_stellar_context"
               ],
-              "out_of_distribution_score": 0.75,
+              "out_of_distribution_score": 0.25,
               "status": "inconclusive",
-              "tensor_checksum": null
+              "tensor_checksum": "9b2bdf384535042c23ae51b1a624d0363470e54a8e9aeaace1e934f4891f9502"
             },
             "evidence_conflicts": {
               "conflicts": [],
@@ -17775,14 +17845,14 @@
               "status": "passed",
               "warning_vetting_flags": []
             },
-            "input_tensor_checksum": null,
-            "label": "ml-unavailable",
-            "model_source": "KEPLER model artifact unavailable",
-            "model_version": "unavailable",
-            "preprocessing_compatible": false,
-            "probability": null,
-            "raw_ml_probability": null,
-            "threshold": null
+            "input_tensor_checksum": "9b2bdf384535042c23ae51b1a624d0363470e54a8e9aeaace1e934f4891f9502",
+            "label": "not-transit-like",
+            "model_source": "bibinthomas123/Astronet TensorFlow checkpoint at 9809ce92306f11fbdc96f9830b522026710a3883",
+            "model_version": "9809ce92306f11fbdc96f9830b522026710a3883",
+            "preprocessing_compatible": true,
+            "probability": 2.0791119368368527e-06,
+            "raw_ml_probability": 2.0791119368368527e-06,
+            "threshold": 0.5
           },
           "period": 0.11290819486727502,
           "period_days": 0.11290819486727502,
@@ -18124,10 +18194,10 @@
     "step": "analysis_result"
   },
   "aperture_mask": {
-    "elapsed_s": 0.008,
+    "elapsed_s": 0.01,
     "payload": {
-      "aperture_mask_id": "3ce1bf80-2e07-4672-b80f-cf35429b1ffc",
-      "created_at": "2026-06-03T11:01:53.093088",
+      "aperture_mask_id": "78c79919-79a3-4d13-a1b9-0c31aaba4e0f",
+      "created_at": "2026-06-04T17:17:53.326628",
       "mask": [
         [
           false,
@@ -18280,7 +18350,7 @@
   "audit_findings": [],
   "audit_status": "pass",
   "bls_preview": {
-    "elapsed_s": 3.461,
+    "elapsed_s": 4.279,
     "payload": {
       "bls_light_curve": {
         "flux": [
@@ -36028,12 +36098,12 @@
     "query": "Kepler-10"
   },
   "health": {
-    "elapsed_s": 0.003,
+    "elapsed_s": 0.07,
     "payload": {
       "api": "ok",
       "database": "ok",
       "frontend": "served separately",
-      "generated_at": "2026-06-03T11:01:34.215934+00:00",
+      "generated_at": "2026-06-04T17:17:45.034368+00:00",
       "redis_configured": true,
       "status": "ok",
       "worker_mode": "inline"
@@ -36042,7 +36112,7 @@
     "step": "health"
   },
   "models": {
-    "elapsed_s": 2.93,
+    "elapsed_s": 3.852,
     "payload": {
       "k2_exomac_kkt": {
         "checksum": "d8a28d99cb29be8cfd0870d964bdde0bb3e97ee8d0aee9fded946ad5a54b2c2c",
@@ -36073,7 +36143,7 @@
     "step": "models"
   },
   "products": {
-    "elapsed_s": 11.563,
+    "elapsed_s": 0.03,
     "payload": [
       {
         "description": "Target Pixel Short Cadence (TPS) - Q2",
@@ -36423,11 +36493,11 @@
     "step": "products"
   },
   "report": {
-    "elapsed_s": 0.027,
+    "elapsed_s": 0.023,
     "payload": {
       "format": "json",
-      "generated_at": "2026-06-03T11:03:01.817051+00:00",
-      "report_id": "3c3a2fb0-0567-404a-ad13-53ab28109ae8",
+      "generated_at": "2026-06-04T17:19:32.987457+00:00",
+      "report_id": "e978f73d-55e1-4b6d-bfd6-195cf200eb48",
       "result": {
         "active_science_config_keys": [
           "aperture_percentiles",
@@ -52878,7 +52948,7 @@
           "sigma_clip_kept_cadences": 439,
           "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
         },
-        "result_id": "3c3a2fb0-0567-404a-ad13-53ab28109ae8",
+        "result_id": "e978f73d-55e1-4b6d-bfd6-195cf200eb48",
         "schema_version": "orbitlab.analysis_result.v2",
         "science_config_hash": "95e37340cf6541a40d6db7a0be1ef167f3609db11ce8dc1b316a8abed4609edb",
         "science_readiness": {
@@ -52897,6 +52967,7 @@
           "tce_count": 2,
           "vetting_mode": "paper",
           "warnings": [
+            "ml_low_score_without_hard_vetting_failure",
             "single_sector_only"
           ]
         },
@@ -53087,8 +53158,8 @@
                 "Habitability is limited by fallback stellar parameters",
                 "Science-readiness blockers prevent planet-candidate promotion."
               ],
-              "final_score": 0.8534355179704017,
-              "ml_score": null,
+              "final_score": 0.7784507191304468,
+              "ml_score": 0.00010134106696690695,
               "model_shift": {
                 "dmm": 0.9999996667,
                 "engine": "dave_model_shift",
@@ -53248,7 +53319,7 @@
               "centroid": 1.0,
               "data_quality": 0.8562367864693446,
               "detection": 0.9999999999999999,
-              "ml": null,
+              "ml": 0.00010134106696690695,
               "physics_plausibility": 0.5,
               "vetting": 1.0
             },
@@ -53260,7 +53331,7 @@
               "Habitability is limited by fallback stellar parameters",
               "Science-readiness blockers prevent planet-candidate promotion."
             ],
-            "final_score": 0.8534355179704017,
+            "final_score": 0.7784507191304468,
             "flags": [],
             "fpp": {
               "engine": "triceratops",
@@ -53270,40 +53341,39 @@
             "local_noise_snr": 18.20417137608041,
             "measured_depth_fraction": 0.00015929341316223145,
             "ml": {
-              "calibrated_ml_probability": null,
-              "calibration_checksum": null,
-              "calibration_method": null,
-              "calibration_source": null,
-              "citation": "Model artifact unavailable; OrbitLab preserved BLS, physics, and validation outputs.",
-              "detail": "Kepler TensorFlow Docker inference failed: File \"scripts/predict_kepler_astronet_tf.py\", line 126\n    copied.input[index] = f\"{control}orbitlab_global_view\"\n                                                         ^\nSyntaxError: invalid syntax",
+              "calibrated_ml_probability": 0.00010134106696690695,
+              "calibration_checksum": "40431bba4dcc3aaff86a23a9545b75aff1fd12366a4f2e86308292fd7ceda860",
+              "calibration_method": "isotonic_bins",
+              "calibration_source": ".orbitlab/calibration/raw/kepler-calibration-source.csv",
+              "citation": "Google Research exoplanet-ml AstroNet; AstroNet-Triage/Vetting family where mission-compatible.",
               "domain_awareness": {
                 "artifact_checksum": null,
-                "calibrated_score": null,
-                "model_score": null,
+                "calibrated_score": 0.00010134106696690695,
+                "model_score": 0.004536026157438755,
                 "model_training_domain": "AstroNet-style Kepler global and local folded light-curve views",
                 "out_of_distribution_reasons": [
-                  "preprocessing_incompatible",
-                  "no_model_score",
                   "fallback_stellar_context"
                 ],
-                "out_of_distribution_score": 0.75,
+                "out_of_distribution_score": 0.25,
                 "status": "inconclusive",
-                "tensor_checksum": null
+                "tensor_checksum": "0bc11e6179e7b93615a31fe547a16d45450f43d0737acaedeb59f7f1537194f6"
               },
               "evidence_conflicts": {
-                "conflicts": [],
+                "conflicts": [
+                  "ml_low_score_without_hard_vetting_failure"
+                ],
                 "hard_vetting_flags": [],
-                "status": "passed",
+                "status": "inconclusive",
                 "warning_vetting_flags": []
               },
-              "input_tensor_checksum": null,
-              "label": "ml-unavailable",
-              "model_source": "KEPLER model artifact unavailable",
-              "model_version": "unavailable",
-              "preprocessing_compatible": false,
-              "probability": null,
-              "raw_ml_probability": null,
-              "threshold": null
+              "input_tensor_checksum": "0bc11e6179e7b93615a31fe547a16d45450f43d0737acaedeb59f7f1537194f6",
+              "label": "not-transit-like",
+              "model_source": "bibinthomas123/Astronet TensorFlow checkpoint at 9809ce92306f11fbdc96f9830b522026710a3883",
+              "model_version": "9809ce92306f11fbdc96f9830b522026710a3883",
+              "preprocessing_compatible": true,
+              "probability": 0.004536026157438755,
+              "raw_ml_probability": 0.004536026157438755,
+              "threshold": 0.5
             },
             "model_depth_fraction": 0.9998295340700553,
             "period": 0.8359916326865486,
@@ -53367,6 +53437,7 @@
               "status": "blocked",
               "vetting_mode": "paper",
               "warnings": [
+                "ml_low_score_without_hard_vetting_failure",
                 "single_sector_only"
               ]
             },
@@ -53819,8 +53890,8 @@
                 "Centroid evidence is below rejection threshold",
                 "Habitability is limited by fallback stellar parameters"
               ],
-              "final_score": 0.5183190500529107,
-              "ml_score": null,
+              "final_score": 0.443319057020444,
+              "ml_score": 4.645022200261065e-08,
               "model_shift": {
                 "dmm": null,
                 "engine": "dave_model_shift",
@@ -53952,7 +54023,7 @@
               "centroid": 1.0,
               "data_quality": 0.8562367864693446,
               "detection": 0.45953412833003604,
-              "ml": null,
+              "ml": 4.645022200261065e-08,
               "physics_plausibility": 0.5,
               "vetting": 0.0
             },
@@ -53962,7 +54033,7 @@
               "Centroid evidence is below rejection threshold",
               "Habitability is limited by fallback stellar parameters"
             ],
-            "final_score": 0.5183190500529107,
+            "final_score": 0.443319057020444,
             "flags": [
               {
                 "code": "implausible_duration",
@@ -53993,25 +54064,22 @@
             "local_noise_snr": 6.2092942321075295,
             "measured_depth_fraction": 0.0,
             "ml": {
-              "calibrated_ml_probability": null,
-              "calibration_checksum": null,
-              "calibration_method": null,
-              "calibration_source": null,
-              "citation": "Model artifact unavailable; OrbitLab preserved BLS, physics, and validation outputs.",
-              "detail": "Kepler TensorFlow Docker inference failed: File \"scripts/predict_kepler_astronet_tf.py\", line 126\n    copied.input[index] = f\"{control}orbitlab_global_view\"\n                                                         ^\nSyntaxError: invalid syntax",
+              "calibrated_ml_probability": 4.645022200261065e-08,
+              "calibration_checksum": "40431bba4dcc3aaff86a23a9545b75aff1fd12366a4f2e86308292fd7ceda860",
+              "calibration_method": "isotonic_bins",
+              "calibration_source": ".orbitlab/calibration/raw/kepler-calibration-source.csv",
+              "citation": "Google Research exoplanet-ml AstroNet; AstroNet-Triage/Vetting family where mission-compatible.",
               "domain_awareness": {
                 "artifact_checksum": null,
-                "calibrated_score": null,
-                "model_score": null,
+                "calibrated_score": 4.645022200261065e-08,
+                "model_score": 2.0791119368368527e-06,
                 "model_training_domain": "AstroNet-style Kepler global and local folded light-curve views",
                 "out_of_distribution_reasons": [
-                  "preprocessing_incompatible",
-                  "no_model_score",
                   "fallback_stellar_context"
                 ],
-                "out_of_distribution_score": 0.75,
+                "out_of_distribution_score": 0.25,
                 "status": "inconclusive",
-                "tensor_checksum": null
+                "tensor_checksum": "9b2bdf384535042c23ae51b1a624d0363470e54a8e9aeaace1e934f4891f9502"
               },
               "evidence_conflicts": {
                 "conflicts": [],
@@ -54024,14 +54092,14 @@
                 "status": "passed",
                 "warning_vetting_flags": []
               },
-              "input_tensor_checksum": null,
-              "label": "ml-unavailable",
-              "model_source": "KEPLER model artifact unavailable",
-              "model_version": "unavailable",
-              "preprocessing_compatible": false,
-              "probability": null,
-              "raw_ml_probability": null,
-              "threshold": null
+              "input_tensor_checksum": "9b2bdf384535042c23ae51b1a624d0363470e54a8e9aeaace1e934f4891f9502",
+              "label": "not-transit-like",
+              "model_source": "bibinthomas123/Astronet TensorFlow checkpoint at 9809ce92306f11fbdc96f9830b522026710a3883",
+              "model_version": "9809ce92306f11fbdc96f9830b522026710a3883",
+              "preprocessing_compatible": true,
+              "probability": 2.0791119368368527e-06,
+              "raw_ml_probability": 2.0791119368368527e-06,
+              "threshold": 0.5
             },
             "model_depth_fraction": 2.475944405453968e-05,
             "period": 0.11290819486727502,
@@ -54378,9 +54446,9 @@
     "step": "report"
   },
   "save_session": {
-    "elapsed_s": 0.012,
+    "elapsed_s": 0.01,
     "payload": {
-      "created_at": "2026-06-03T11:03:01.871928",
+      "created_at": "2026-06-04T17:19:33.038080",
       "name": "Operation Friday Beta - kepler_multi_known",
       "payload": {
         "case": {
@@ -54391,16 +54459,16 @@
           "query": "Kepler-10"
         },
         "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
-        "result_id": "3c3a2fb0-0567-404a-ad13-53ab28109ae8",
+        "result_id": "e978f73d-55e1-4b6d-bfd6-195cf200eb48",
         "target_id": "Kepler-10"
       },
-      "session_id": "f7729bff-da3b-40a6-843a-ecb58c998e11"
+      "session_id": "ed274edd-8df3-482a-9d71-36a8bb6cfbf7"
     },
     "status": 201,
     "step": "save_session"
   },
   "search": {
-    "elapsed_s": 4.004,
+    "elapsed_s": 2.934,
     "payload": [
       {
         "catalog": "NAME",
@@ -54428,8 +54496,274 @@
   },
   "selected_target": "Kepler-10",
   "sessions": {
-    "elapsed_s": 0.004,
+    "elapsed_s": 0.005,
     "payload": [
+      {
+        "created_at": "2026-06-04T17:19:33.038080",
+        "name": "Operation Friday Beta - kepler_multi_known",
+        "payload": {
+          "case": {
+            "case_id": "kepler_multi_known",
+            "expected_context": "Kepler target should exercise Kepler product retrieval, BLS preview, full analysis, and AstroNet readiness/result surfaces.",
+            "mission": "Kepler",
+            "purpose": "Kepler known-system check.",
+            "query": "Kepler-10"
+          },
+          "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
+          "result_id": "e978f73d-55e1-4b6d-bfd6-195cf200eb48",
+          "target_id": "Kepler-10"
+        },
+        "session_id": "ed274edd-8df3-482a-9d71-36a8bb6cfbf7"
+      },
+      {
+        "created_at": "2026-06-04T17:16:54.248224",
+        "name": "Operation Friday Beta - tess_control_candidate",
+        "payload": {
+          "case": {
+            "case_id": "tess_control_candidate",
+            "expected_context": "If no strong TCE appears, OrbitLab should show no candidates or low-confidence/rejected signals clearly.",
+            "mission": "TESS",
+            "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
+            "query": "TIC 25155310"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
+          "result_id": "eb79a275-caaa-42a3-bb56-94408e602171",
+          "target_id": "TIC 25155310"
+        },
+        "session_id": "b6dc4263-cebf-47d2-ad02-4da81bf451ed"
+      },
+      {
+        "created_at": "2026-06-04T17:12:13.063104",
+        "name": "Operation Friday Beta - k2_multi_known",
+        "payload": {
+          "case": {
+            "case_id": "k2_multi_known",
+            "expected_context": "K2 target should exercise K2 product retrieval and ExoMAC-KKT readiness/result surfaces.",
+            "mission": "K2",
+            "purpose": "K2/ExoMAC model path and multi-planet system check.",
+            "query": "EPIC 201367065"
+          },
+          "product_uri": "mast:K2/url/missions/k2/target_pixel_files/c1/201300000/67000/ktwo201367065-c01_lpd-targ.fits.gz",
+          "result_id": "d554731c-56f8-478f-8563-471f1481a208",
+          "target_id": "EPIC 201367065"
+        },
+        "session_id": "cbe18a10-9fbe-4d39-88ff-95b8ff891d50"
+      },
+      {
+        "created_at": "2026-06-04T17:03:19.808862",
+        "name": "Operation Friday Beta - kepler_multi_known",
+        "payload": {
+          "case": {
+            "case_id": "kepler_multi_known",
+            "expected_context": "Kepler target should exercise Kepler product retrieval, BLS preview, full analysis, and AstroNet readiness/result surfaces.",
+            "mission": "Kepler",
+            "purpose": "Kepler known-system check.",
+            "query": "Kepler-10"
+          },
+          "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
+          "result_id": "f336859c-da4e-4c8d-9002-e6089f55ba5a",
+          "target_id": "Kepler-10"
+        },
+        "session_id": "eba7ef7f-4e4c-4c2b-ad58-0274467b6172"
+      },
+      {
+        "created_at": "2026-06-04T17:01:48.296477",
+        "name": "Operation Friday Beta - tess_multi_known",
+        "payload": {
+          "case": {
+            "case_id": "tess_multi_known",
+            "expected_context": "Multiple known planets may exist in external catalogs; OrbitLab should preserve TCE evidence and avoid overclaiming confirmation.",
+            "mission": "TESS",
+            "purpose": "Known multi-planet TESS target and alias/catalog context check.",
+            "query": "TOI-700"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0001/5042/8135/hlsp_tess-spoc_tess_phot_0000000150428135-s0006_tess_v1_tp.fits",
+          "result_id": "0e394d71-0074-42ed-9605-cc5a83628789",
+          "target_id": "TOI-700"
+        },
+        "session_id": "88ce8e5a-cfcc-4c70-81be-0244c658268f"
+      },
+      {
+        "created_at": "2026-06-04T16:57:47.519351",
+        "name": "Operation Friday Beta - tess_known_hot_jupiter",
+        "payload": {
+          "case": {
+            "case_id": "tess_known_hot_jupiter",
+            "expected_context": "Known planet host context may appear through target/catalog matching, but OrbitLab must still report candidates as follow-up evidence rather than confirmations.",
+            "mission": "TESS",
+            "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
+            "query": "TIC 307210830"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0003/0721/0830/hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+          "result_id": "59e0349e-d9a9-43a5-ab4d-77c25f20f897",
+          "target_id": "TIC 307210830"
+        },
+        "session_id": "c002af8a-33c4-499b-9d2a-6282717d026f"
+      },
+      {
+        "created_at": "2026-06-04T13:12:59.342735",
+        "name": "Deep Payload",
+        "payload": {
+          "list": [
+            1,
+            2,
+            3
+          ],
+          "nested": {
+            "value": 42
+          }
+        },
+        "session_id": "c048acb1-2ed9-463f-9bb5-4b0ddf99b757"
+      },
+      {
+        "created_at": "2026-06-04T13:12:59.320446",
+        "name": "My Session",
+        "payload": {
+          "mission": "TESS",
+          "stars": [
+            "TIC 100"
+          ]
+        },
+        "session_id": "9e54b225-91d8-4809-967d-3ad68ce2a02b"
+      },
+      {
+        "created_at": "2026-06-04T13:12:04.938502",
+        "name": "Deep Payload",
+        "payload": {
+          "list": [
+            1,
+            2,
+            3
+          ],
+          "nested": {
+            "value": 42
+          }
+        },
+        "session_id": "fa57777d-4e9d-48ad-9a46-4595f4d10793"
+      },
+      {
+        "created_at": "2026-06-04T13:12:04.916111",
+        "name": "My Session",
+        "payload": {
+          "mission": "TESS",
+          "stars": [
+            "TIC 100"
+          ]
+        },
+        "session_id": "d48b8f43-790d-4cac-aedd-8aeab30ee678"
+      },
+      {
+        "created_at": "2026-06-04T13:11:05.535368",
+        "name": "Deep Payload",
+        "payload": {
+          "list": [
+            1,
+            2,
+            3
+          ],
+          "nested": {
+            "value": 42
+          }
+        },
+        "session_id": "f8be3917-d2e5-4d7b-804f-f8e6af5b6497"
+      },
+      {
+        "created_at": "2026-06-04T13:11:05.515665",
+        "name": "My Session",
+        "payload": {
+          "mission": "TESS",
+          "stars": [
+            "TIC 100"
+          ]
+        },
+        "session_id": "756d4c2a-6d9c-4001-9d40-adb07b523d06"
+      },
+      {
+        "created_at": "2026-06-04T13:10:14.755629",
+        "name": "Deep Payload",
+        "payload": {
+          "list": [
+            1,
+            2,
+            3
+          ],
+          "nested": {
+            "value": 42
+          }
+        },
+        "session_id": "019e14c1-5379-4271-b51e-dc4d4e337cf9"
+      },
+      {
+        "created_at": "2026-06-04T13:10:14.733823",
+        "name": "My Session",
+        "payload": {
+          "mission": "TESS",
+          "stars": [
+            "TIC 100"
+          ]
+        },
+        "session_id": "b4ac15bd-62f6-4f3c-8e54-6c78c0f00ab9"
+      },
+      {
+        "created_at": "2026-06-04T13:08:59.463882",
+        "name": "Deep Payload",
+        "payload": {
+          "list": [
+            1,
+            2,
+            3
+          ],
+          "nested": {
+            "value": 42
+          }
+        },
+        "session_id": "983c471f-1e93-4a27-a318-f49acc2a79db"
+      },
+      {
+        "created_at": "2026-06-04T13:08:59.440368",
+        "name": "My Session",
+        "payload": {
+          "mission": "TESS",
+          "stars": [
+            "TIC 100"
+          ]
+        },
+        "session_id": "e05e763c-e44c-4fe9-bd00-e6d4194c7b0d"
+      },
+      {
+        "created_at": "2026-06-03T11:15:48.564408",
+        "name": "Operation Friday Beta - tess_control_candidate",
+        "payload": {
+          "case": {
+            "case_id": "tess_control_candidate",
+            "expected_context": "If no strong TCE appears, OrbitLab should show no candidates or low-confidence/rejected signals clearly.",
+            "mission": "TESS",
+            "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
+            "query": "TIC 25155310"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
+          "result_id": "eb8b2bf5-87ce-4c12-aa74-5b38e6eac53c",
+          "target_id": "TIC 25155310"
+        },
+        "session_id": "776648cf-0ce2-45eb-b7d2-dd5239c1aff4"
+      },
+      {
+        "created_at": "2026-06-03T11:12:22.384213",
+        "name": "Operation Friday Beta - k2_multi_known",
+        "payload": {
+          "case": {
+            "case_id": "k2_multi_known",
+            "expected_context": "K2 target should exercise K2 product retrieval and ExoMAC-KKT readiness/result surfaces.",
+            "mission": "K2",
+            "purpose": "K2/ExoMAC model path and multi-planet system check.",
+            "query": "EPIC 201367065"
+          },
+          "product_uri": "mast:K2/url/missions/k2/target_pixel_files/c1/201300000/67000/ktwo201367065-c01_lpd-targ.fits.gz",
+          "result_id": "c8b88541-4b0a-499b-95e7-a7cfaab14bd7",
+          "target_id": "EPIC 201367065"
+        },
+        "session_id": "499b2d60-e38e-4f39-88ef-1a55664df229"
+      },
       {
         "created_at": "2026-06-03T11:03:01.871928",
         "name": "Operation Friday Beta - kepler_multi_known",
@@ -54994,7 +55328,7 @@
     "step": "sessions"
   },
   "tpf_preview": {
-    "elapsed_s": 0.373,
+    "elapsed_s": 1.469,
     "payload": {
       "baseline": 9.706248765658529,
       "finite_max": 153450.796875,

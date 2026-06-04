@@ -1,6 +1,221 @@
 {
-  "elapsed_s": 0.006,
+  "elapsed_s": 0.011,
   "payload": [
+    {
+      "created_at": "2026-06-04T17:16:54.248224",
+      "name": "Operation Friday Beta - tess_control_candidate",
+      "payload": {
+        "case": {
+          "case_id": "tess_control_candidate",
+          "expected_context": "If no strong TCE appears, OrbitLab should show no candidates or low-confidence/rejected signals clearly.",
+          "mission": "TESS",
+          "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
+          "query": "TIC 25155310"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
+        "result_id": "eb79a275-caaa-42a3-bb56-94408e602171",
+        "target_id": "TIC 25155310"
+      },
+      "session_id": "b6dc4263-cebf-47d2-ad02-4da81bf451ed"
+    },
+    {
+      "created_at": "2026-06-04T17:12:13.063104",
+      "name": "Operation Friday Beta - k2_multi_known",
+      "payload": {
+        "case": {
+          "case_id": "k2_multi_known",
+          "expected_context": "K2 target should exercise K2 product retrieval and ExoMAC-KKT readiness/result surfaces.",
+          "mission": "K2",
+          "purpose": "K2/ExoMAC model path and multi-planet system check.",
+          "query": "EPIC 201367065"
+        },
+        "product_uri": "mast:K2/url/missions/k2/target_pixel_files/c1/201300000/67000/ktwo201367065-c01_lpd-targ.fits.gz",
+        "result_id": "d554731c-56f8-478f-8563-471f1481a208",
+        "target_id": "EPIC 201367065"
+      },
+      "session_id": "cbe18a10-9fbe-4d39-88ff-95b8ff891d50"
+    },
+    {
+      "created_at": "2026-06-04T17:03:19.808862",
+      "name": "Operation Friday Beta - kepler_multi_known",
+      "payload": {
+        "case": {
+          "case_id": "kepler_multi_known",
+          "expected_context": "Kepler target should exercise Kepler product retrieval, BLS preview, full analysis, and AstroNet readiness/result surfaces.",
+          "mission": "Kepler",
+          "purpose": "Kepler known-system check.",
+          "query": "Kepler-10"
+        },
+        "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
+        "result_id": "f336859c-da4e-4c8d-9002-e6089f55ba5a",
+        "target_id": "Kepler-10"
+      },
+      "session_id": "eba7ef7f-4e4c-4c2b-ad58-0274467b6172"
+    },
+    {
+      "created_at": "2026-06-04T17:01:48.296477",
+      "name": "Operation Friday Beta - tess_multi_known",
+      "payload": {
+        "case": {
+          "case_id": "tess_multi_known",
+          "expected_context": "Multiple known planets may exist in external catalogs; OrbitLab should preserve TCE evidence and avoid overclaiming confirmation.",
+          "mission": "TESS",
+          "purpose": "Known multi-planet TESS target and alias/catalog context check.",
+          "query": "TOI-700"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0001/5042/8135/hlsp_tess-spoc_tess_phot_0000000150428135-s0006_tess_v1_tp.fits",
+        "result_id": "0e394d71-0074-42ed-9605-cc5a83628789",
+        "target_id": "TOI-700"
+      },
+      "session_id": "88ce8e5a-cfcc-4c70-81be-0244c658268f"
+    },
+    {
+      "created_at": "2026-06-04T16:57:47.519351",
+      "name": "Operation Friday Beta - tess_known_hot_jupiter",
+      "payload": {
+        "case": {
+          "case_id": "tess_known_hot_jupiter",
+          "expected_context": "Known planet host context may appear through target/catalog matching, but OrbitLab must still report candidates as follow-up evidence rather than confirmations.",
+          "mission": "TESS",
+          "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
+          "query": "TIC 307210830"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0003/0721/0830/hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+        "result_id": "59e0349e-d9a9-43a5-ab4d-77c25f20f897",
+        "target_id": "TIC 307210830"
+      },
+      "session_id": "c002af8a-33c4-499b-9d2a-6282717d026f"
+    },
+    {
+      "created_at": "2026-06-04T13:12:59.342735",
+      "name": "Deep Payload",
+      "payload": {
+        "list": [
+          1,
+          2,
+          3
+        ],
+        "nested": {
+          "value": 42
+        }
+      },
+      "session_id": "c048acb1-2ed9-463f-9bb5-4b0ddf99b757"
+    },
+    {
+      "created_at": "2026-06-04T13:12:59.320446",
+      "name": "My Session",
+      "payload": {
+        "mission": "TESS",
+        "stars": [
+          "TIC 100"
+        ]
+      },
+      "session_id": "9e54b225-91d8-4809-967d-3ad68ce2a02b"
+    },
+    {
+      "created_at": "2026-06-04T13:12:04.938502",
+      "name": "Deep Payload",
+      "payload": {
+        "list": [
+          1,
+          2,
+          3
+        ],
+        "nested": {
+          "value": 42
+        }
+      },
+      "session_id": "fa57777d-4e9d-48ad-9a46-4595f4d10793"
+    },
+    {
+      "created_at": "2026-06-04T13:12:04.916111",
+      "name": "My Session",
+      "payload": {
+        "mission": "TESS",
+        "stars": [
+          "TIC 100"
+        ]
+      },
+      "session_id": "d48b8f43-790d-4cac-aedd-8aeab30ee678"
+    },
+    {
+      "created_at": "2026-06-04T13:11:05.535368",
+      "name": "Deep Payload",
+      "payload": {
+        "list": [
+          1,
+          2,
+          3
+        ],
+        "nested": {
+          "value": 42
+        }
+      },
+      "session_id": "f8be3917-d2e5-4d7b-804f-f8e6af5b6497"
+    },
+    {
+      "created_at": "2026-06-04T13:11:05.515665",
+      "name": "My Session",
+      "payload": {
+        "mission": "TESS",
+        "stars": [
+          "TIC 100"
+        ]
+      },
+      "session_id": "756d4c2a-6d9c-4001-9d40-adb07b523d06"
+    },
+    {
+      "created_at": "2026-06-04T13:10:14.755629",
+      "name": "Deep Payload",
+      "payload": {
+        "list": [
+          1,
+          2,
+          3
+        ],
+        "nested": {
+          "value": 42
+        }
+      },
+      "session_id": "019e14c1-5379-4271-b51e-dc4d4e337cf9"
+    },
+    {
+      "created_at": "2026-06-04T13:10:14.733823",
+      "name": "My Session",
+      "payload": {
+        "mission": "TESS",
+        "stars": [
+          "TIC 100"
+        ]
+      },
+      "session_id": "b4ac15bd-62f6-4f3c-8e54-6c78c0f00ab9"
+    },
+    {
+      "created_at": "2026-06-04T13:08:59.463882",
+      "name": "Deep Payload",
+      "payload": {
+        "list": [
+          1,
+          2,
+          3
+        ],
+        "nested": {
+          "value": 42
+        }
+      },
+      "session_id": "983c471f-1e93-4a27-a318-f49acc2a79db"
+    },
+    {
+      "created_at": "2026-06-04T13:08:59.440368",
+      "name": "My Session",
+      "payload": {
+        "mission": "TESS",
+        "stars": [
+          "TIC 100"
+        ]
+      },
+      "session_id": "e05e763c-e44c-4fe9-bd00-e6d4194c7b0d"
+    },
     {
       "created_at": "2026-06-03T11:15:48.564408",
       "name": "Operation Friday Beta - tess_control_candidate",

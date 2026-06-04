@@ -123,9 +123,9 @@ def build_inference_graph(meta_path: Path) -> graph_pb2.GraphDef:
             control = "^" if input_name.startswith("^") else ""
             clean = input_name[1:] if control else input_name
             if clean == "IteratorGetNext:1":
-                copied.input[index] = f"{control}orbitlab_global_view"
+                copied.input[index] = "{0}orbitlab_global_view".format(control)
             elif clean == "IteratorGetNext:2":
-                copied.input[index] = f"{control}orbitlab_local_view"
+                copied.input[index] = "{0}orbitlab_local_view".format(control)
         graph_def.node.extend([copied])
     return graph_def
 
@@ -141,7 +141,9 @@ def main() -> int:
     global_view = np.asarray(arrays["global_view"], dtype=np.float32)
     local_view = np.asarray(arrays["local_view"], dtype=np.float32)
     if global_view.shape != (1, 2001, 1) or local_view.shape != (1, 201, 1):
-        raise ValueError(f"unexpected AstroNet tensor shapes: {global_view.shape}, {local_view.shape}")
+        raise ValueError(
+            "unexpected AstroNet tensor shapes: {0}, {1}".format(global_view.shape, local_view.shape)
+        )
     global_batch = np.repeat(global_view, 64, axis=0)
     local_batch = np.repeat(local_view, 64, axis=0)
 

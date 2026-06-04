@@ -1,9 +1,9 @@
 {
-  "elapsed_s": 0.049,
+  "elapsed_s": 0.047,
   "payload": {
     "format": "json",
-    "generated_at": "2026-06-03T11:12:22.266534+00:00",
-    "report_id": "c8b88541-4b0a-499b-95e7-a7cfaab14bd7",
+    "generated_at": "2026-06-04T17:12:12.964322+00:00",
+    "report_id": "d554731c-56f8-478f-8563-471f1481a208",
     "result": {
       "active_science_config_keys": [
         "aperture_percentiles",
@@ -36268,7 +36268,7 @@
         "sigma_clip_kept_cadences": 3326,
         "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
       },
-      "result_id": "c8b88541-4b0a-499b-95e7-a7cfaab14bd7",
+      "result_id": "d554731c-56f8-478f-8563-471f1481a208",
       "schema_version": "orbitlab.analysis_result.v2",
       "science_config_hash": "95e37340cf6541a40d6db7a0be1ef167f3609db11ce8dc1b316a8abed4609edb",
       "science_readiness": {
