@@ -1,7 +1,7 @@
 {
-  "elapsed_s": 0.015,
+  "elapsed_s": 0.01,
   "payload": {
-    "created_at": "2026-06-04T17:16:54.248224",
+    "created_at": "2026-06-05T08:22:34.277098",
     "name": "Operation Friday Beta - tess_control_candidate",
     "payload": {
       "case": {
@@ -12,10 +12,10 @@
         "query": "TIC 25155310"
       },
       "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
-      "result_id": "eb79a275-caaa-42a3-bb56-94408e602171",
+      "result_id": "ddfbd89b-c411-4012-81c5-5aa90c381326",
       "target_id": "TIC 25155310"
     },
-    "session_id": "b6dc4263-cebf-47d2-ad02-4da81bf451ed"
+    "session_id": "9cc3f58e-85eb-426e-b7d3-726eaf206b37"
   },
   "status": 201,
   "step": "save_session"

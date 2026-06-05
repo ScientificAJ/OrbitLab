@@ -1,5 +1,5 @@
 {
-  "elapsed_s": 0.029,
+  "elapsed_s": 0.026,
   "payload": {
     "active_science_config_keys": [
       "aperture_percentiles",
@@ -18831,7 +18831,7 @@
       "sigma_clip_kept_cadences": 967,
       "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
     },
-    "result_id": "0e394d71-0074-42ed-9605-cc5a83628789",
+    "result_id": "1c204a5a-dbdf-4e44-8889-ae6164fe3ffe",
     "schema_version": "orbitlab.analysis_result.v2",
     "science_config_hash": "95e37340cf6541a40d6db7a0be1ef167f3609db11ce8dc1b316a8abed4609edb",
     "science_readiness": {
@@ -19464,6 +19464,14 @@
             "gaia_id": "5284517766615492736",
             "query_target_id": null,
             "ra": 97.0967865903209,
+            "stellar": {
+              "logg": 4.80892,
+              "luminosity_solar": 0.023624422,
+              "mass_solar": 0.413261,
+              "radius_solar": 0.419457,
+              "source": "TIC",
+              "teff": 3494.0
+            },
             "target_id": 150428135,
             "tmag": 10.9102
           }
@@ -19473,6 +19481,7 @@
         "depth": 0.0005362033843994141,
         "depth_fraction": 0.0005362033843994141,
         "depth_ppm": 536.2033843994141,
+        "depth_source": "phase_window_median",
         "detection_metrics": {
           "alias_flags": [],
           "bls_snr": 4.941095458667499,
@@ -19836,6 +19845,7 @@
           }
         },
         "is_residual": false,
+        "measured_depth_fraction": 0.0005362033843994141,
         "ml": {
           "calibrated_ml_probability": 0.3,
           "calibration_checksum": null,
@@ -19848,12 +19858,12 @@
             "model_score": 0.3,
             "model_training_domain": "Nigraha TESS CNN ensemble over global, local, odd/even views and stellar scalar features",
             "out_of_distribution_reasons": [
-              "many_imputed_stellar_features",
+              "preprocessing_incompatible",
               "fallback_stellar_context"
             ],
             "out_of_distribution_score": 0.5,
             "status": "inconclusive",
-            "tensor_checksum": "0e64eeb9cde04d4d6694fed88cd3ab85754986ed1f61db8fba037f07fabb1868"
+            "tensor_checksum": "56dc7e73ac8a9887d87df0cb3d3d939c79d4f84d32124c8ba07b817207ee4eeb"
           },
           "evidence_conflicts": {
             "conflicts": [],
@@ -19873,24 +19883,33 @@
             ]
           },
           "imputed_features": [
-            "Teff",
-            "Radius",
-            "logg",
-            "Mass",
-            "lum",
             "rho"
           ],
-          "input_tensor_checksum": "0e64eeb9cde04d4d6694fed88cd3ab85754986ed1f61db8fba037f07fabb1868",
+          "input_tensor_checksum": "56dc7e73ac8a9887d87df0cb3d3d939c79d4f84d32124c8ba07b817207ee4eeb",
           "label": "not-transit-like",
+          "mean_logit": -1030.0562965393067,
           "model_family": "Nigraha TESS CNN ensemble",
           "model_source": "ExoplanetML/Nigraha models/weights/global_nodropout/binary at c4365b41dd02b187c3210189ffe8e3ead584f4f5",
           "model_version": "c4365b41dd02b187c3210189ffe8e3ead584f4f5",
-          "preprocessing_compatible": true,
+          "preprocessing_compatible": false,
           "probability": 0.3,
           "raw_ml_probability": 0.3,
+          "saturated": true,
+          "score_caveat": "Nigraha ensemble logit is saturated (-1030); the released CNN expects standardized scalar features (Rao et al. 2021, MNRAS 502, 2845) and OrbitLab lacks the upstream normalization constants, so this probability does not discriminate between candidates and must not be trusted as ML evidence.",
+          "score_confidence": "degenerate_saturated",
+          "stellar_context_source": {
+            "catalog_lookup_status": "complete",
+            "density_solar": "imputed_solar_default",
+            "logg": "tic_catalog",
+            "luminosity_solar": "tic_catalog",
+            "mass_solar": "tic_catalog",
+            "radius_solar": "tic_catalog",
+            "teff": "tic_catalog"
+          },
           "threshold": 0.4,
           "threshold_source": "ExoplanetML/Nigraha gen_predict.sh"
         },
+        "model_depth_fraction": 0.9992381836373289,
         "period": 3.126488937711135,
         "period_days": 3.126488937711135,
         "period_source": "tls_full_search",
@@ -20847,6 +20866,14 @@
             "gaia_id": "5284517766615492736",
             "query_target_id": null,
             "ra": 97.0967865903209,
+            "stellar": {
+              "logg": 4.80892,
+              "luminosity_solar": 0.023624422,
+              "mass_solar": 0.413261,
+              "radius_solar": 0.419457,
+              "source": "TIC",
+              "teff": 3494.0
+            },
             "target_id": 150428135,
             "tmag": 10.9102
           }
@@ -20856,6 +20883,7 @@
         "depth": 0.00014270099029628128,
         "depth_fraction": 0.00014270099029628128,
         "depth_ppm": 142.70099029628128,
+        "depth_source": "astropy_box_least_squares",
         "detection_metrics": {
           "alias_flags": [],
           "bls_snr": 6.735153844349828,
@@ -21186,6 +21214,7 @@
           }
         },
         "is_residual": true,
+        "measured_depth_fraction": 0.0,
         "ml": {
           "calibrated_ml_probability": 0.3,
           "calibration_checksum": null,
@@ -21198,12 +21227,12 @@
             "model_score": 0.3,
             "model_training_domain": "Nigraha TESS CNN ensemble over global, local, odd/even views and stellar scalar features",
             "out_of_distribution_reasons": [
-              "many_imputed_stellar_features",
+              "preprocessing_incompatible",
               "fallback_stellar_context"
             ],
             "out_of_distribution_score": 0.5,
             "status": "inconclusive",
-            "tensor_checksum": "dbe9b988d6b47cd6bedcf2c2245f0cbb28ac74eea286b140445deedd6a907789"
+            "tensor_checksum": "199a38dd8a3c98c3c2c941810df35cdb912936a0c5f46c4cfe3a7a2fc038c522"
           },
           "evidence_conflicts": {
             "conflicts": [],
@@ -21223,24 +21252,33 @@
             ]
           },
           "imputed_features": [
-            "Teff",
-            "Radius",
-            "logg",
-            "Mass",
-            "lum",
             "rho"
           ],
-          "input_tensor_checksum": "dbe9b988d6b47cd6bedcf2c2245f0cbb28ac74eea286b140445deedd6a907789",
+          "input_tensor_checksum": "199a38dd8a3c98c3c2c941810df35cdb912936a0c5f46c4cfe3a7a2fc038c522",
           "label": "not-transit-like",
+          "mean_logit": -1041.9037658691407,
           "model_family": "Nigraha TESS CNN ensemble",
           "model_source": "ExoplanetML/Nigraha models/weights/global_nodropout/binary at c4365b41dd02b187c3210189ffe8e3ead584f4f5",
           "model_version": "c4365b41dd02b187c3210189ffe8e3ead584f4f5",
-          "preprocessing_compatible": true,
+          "preprocessing_compatible": false,
           "probability": 0.3,
           "raw_ml_probability": 0.3,
+          "saturated": true,
+          "score_caveat": "Nigraha ensemble logit is saturated (-1042); the released CNN expects standardized scalar features (Rao et al. 2021, MNRAS 502, 2845) and OrbitLab lacks the upstream normalization constants, so this probability does not discriminate between candidates and must not be trusted as ML evidence.",
+          "score_confidence": "degenerate_saturated",
+          "stellar_context_source": {
+            "catalog_lookup_status": "complete",
+            "density_solar": "imputed_solar_default",
+            "logg": "tic_catalog",
+            "luminosity_solar": "tic_catalog",
+            "mass_solar": "tic_catalog",
+            "radius_solar": "tic_catalog",
+            "teff": "tic_catalog"
+          },
           "threshold": 0.4,
           "threshold_source": "ExoplanetML/Nigraha gen_predict.sh"
         },
+        "model_depth_fraction": 0.00014270099029628128,
         "period": 0.11675468860769805,
         "period_days": 0.11675468860769805,
         "period_source": "residual_bls",

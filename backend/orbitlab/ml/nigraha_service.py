@@ -35,6 +35,22 @@ class NigrahaVerdict:
     citation: str
     model_family: str
     imputed_features: tuple[str, ...]
+    mean_logit: float | None = None
+    saturated: bool = False
+    score_confidence: str = "nominal"
+    score_caveat: str | None = None
+
+
+# The released Nigraha CNN expects its scalar features (Teff, R*, logg, mass,
+# luminosity, density, depth, duration, Rp/Rs, odd/even depths) to be
+# standardized per the training-set median/std before the dense head
+# (Rao et al. 2021, MNRAS 502, 2845, sec. 3). OrbitLab does not hold those
+# upstream normalization constants, so the raw physical scalars enter the dense
+# head unscaled. With features on the order of 1e3 (Teff) the final logit is
+# driven far past the sigmoid floor, so the probability saturates and stops
+# discriminating between candidates. We do NOT fabricate normalization; instead
+# we detect this saturated regime and gate the score's confidence honestly.
+_NIGRAHA_SATURATION_LOGIT = 50.0
 
 
 _GLOBAL_NIGRAHA_CACHE: dict[str, tuple[NigrahaModelInfo, list[NigrahaNumpyModel]]] = {}
@@ -89,8 +105,30 @@ class NigrahaService:
 
         info, models = _GLOBAL_NIGRAHA_CACHE[cache_key]
         inputs = tensors.as_inputs()
-        scores = [model.predict(inputs) for model in models]
+        results = [model.predict_with_logit(inputs) for model in models]
+        scores = [score for score, _ in results]
+        logits = [logit for _, logit in results]
         probability = min(max(float(np.mean(scores)), 0.0), 1.0)
+        mean_logit = float(np.mean(logits))
+
+        # Honest gating: when the ensemble logits are pushed past the sigmoid's
+        # numerically saturated region, the probability carries no real
+        # discrimination (it floors/ceils for essentially any candidate). This is
+        # a consequence of the missing upstream scalar standardization, not a real
+        # planet judgement, so we flag it rather than trusting it.
+        saturated = bool(np.all(np.abs(np.asarray(logits)) >= _NIGRAHA_SATURATION_LOGIT))
+        if saturated:
+            score_confidence = "degenerate_saturated"
+            score_caveat = (
+                f"Nigraha ensemble logit is saturated ({mean_logit:.0f}); the released CNN expects "
+                "standardized scalar features (Rao et al. 2021, MNRAS 502, 2845) and OrbitLab "
+                "lacks the upstream normalization constants, so this probability does not "
+                "discriminate between candidates and must not be trusted as ML evidence."
+            )
+        else:
+            score_confidence = "nominal"
+            score_caveat = None
+
         return NigrahaVerdict(
             probability=probability,
             threshold=threshold,
@@ -98,10 +136,14 @@ class NigrahaService:
             model_version=info.version,
             model_source=info.source,
             input_tensor_checksum=tensors.checksum,
-            preprocessing_compatible=True,
+            preprocessing_compatible=not saturated,
             citation="Rao et al. 2021, MNRAS 502, 2845; ExoplanetML/Nigraha released TESS CNN weights.",
             model_family="Nigraha TESS CNN ensemble",
             imputed_features=tensors.imputed_features,
+            mean_logit=mean_logit,
+            saturated=saturated,
+            score_confidence=score_confidence,
+            score_caveat=score_caveat,
         )
 
 
@@ -200,7 +242,7 @@ class NigrahaNumpyModel:
             return self._sigmoid(y)
         return y
 
-    def predict(self, inputs: dict[str, np.ndarray]) -> float:
+    def predict_with_logit(self, inputs: dict[str, np.ndarray]) -> tuple[float, float]:
         global_path = self._global_path(np.asarray(inputs["global_view"], dtype=np.float32))
         local_path = self._local_path(np.asarray(inputs["local_view"], dtype=np.float32), 10)
         odd_even_path = self._local_path(np.asarray(inputs["odd_even_view"], dtype=np.float32), 14)
@@ -225,5 +267,11 @@ class NigrahaNumpyModel:
         x = self._dense(x, "dense_1", activation="relu")
         x = self._dense(x, "dense_2", activation="relu")
         x = self._dense(x, "dense_3", activation="relu")
-        x = self._dense(x, "prediction", activation="sigmoid")
-        return float(x.reshape(-1)[0])
+        kernel, bias = self.weights["prediction"]
+        logit = float((x @ kernel + bias).reshape(-1)[0])
+        probability = float(self._sigmoid(np.asarray([logit], dtype=np.float32)).reshape(-1)[0])
+        return probability, logit
+
+    def predict(self, inputs: dict[str, np.ndarray]) -> float:
+        probability, _logit = self.predict_with_logit(inputs)
+        return probability

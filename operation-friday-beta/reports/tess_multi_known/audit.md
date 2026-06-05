@@ -15,19 +15,19 @@
 
 | Step | HTTP | Elapsed s |
 | --- | ---: | ---: |
-| `health` | 200 | 0.009 |
-| `models` | 200 | 5.5 |
-| `search` | 200 | 4.65 |
-| `products` | 200 | 24.7 |
-| `tpf_preview` | 200 | 0.421 |
-| `aperture_mask` | 201 | 0.013 |
-| `bls_preview` | 200 | 4.5 |
-| `analysis_job_create` | 201 | 0.013 |
-| `analysis_result` | 200 | 0.029 |
-| `report` | 200 | 0.039 |
-| `save_session` | 201 | 0.009 |
-| `sessions` | 200 | 0.009 |
-| `analysis_job_poll` | 200 | 41 polls, status `complete` |
+| `health` | 200 | 0.052 |
+| `models` | 200 | 3.04 |
+| `search` | 200 | 3.29 |
+| `products` | 200 | 21.3 |
+| `tpf_preview` | 200 | 0.385 |
+| `aperture_mask` | 201 | 0.011 |
+| `bls_preview` | 200 | 3.71 |
+| `analysis_job_create` | 201 | 0.011 |
+| `analysis_result` | 200 | 0.026 |
+| `report` | 200 | 0.028 |
+| `save_session` | 201 | 0.011 |
+| `sessions` | 200 | 0.008 |
+| `analysis_job_poll` | 200 | 32 polls, status `complete` |
 
 ## Science Snapshot
 

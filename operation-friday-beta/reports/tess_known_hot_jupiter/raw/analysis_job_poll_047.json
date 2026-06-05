@@ -1,11 +1,11 @@
 {
-  "elapsed_s": 0.007,
+  "elapsed_s": 0.031,
   "payload": {
-    "created_at": "2026-06-04T16:48:31.394348",
+    "created_at": "2026-06-05T08:22:55.685000",
     "error": null,
-    "job_id": "e005a589-aa89-4041-a297-fdac06fd5d26",
-    "result_id": null,
-    "status": "running"
+    "job_id": "55f021dc-5120-4a92-bbec-400f7390bac8",
+    "result_id": "590eda14-0ea3-489f-8076-7f5976fe33e1",
+    "status": "complete"
   },
   "status": 200,
   "step": "analysis_job_poll_047"

@@ -34,6 +34,8 @@ class AnalysisJobRecord(Base):
     stellar_luminosity_solar: Mapped[float | None] = mapped_column(Float, nullable=True)
     stellar_density_solar: Mapped[float | None] = mapped_column(Float, nullable=True)
     stellar_rotation_period: Mapped[float | None] = mapped_column(Float, nullable=True)
+    min_period: Mapped[float | None] = mapped_column(Float, nullable=True)
+    max_period: Mapped[float | None] = mapped_column(Float, nullable=True)
     status: Mapped[str] = mapped_column(String(24), index=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))

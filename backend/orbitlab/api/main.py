@@ -448,6 +448,8 @@ async def create_analysis_job(
         stellar_luminosity_solar=payload.stellar_luminosity_solar,
         stellar_density_solar=payload.stellar_density_solar,
         stellar_rotation_period=payload.stellar_rotation_period,
+        min_period=payload.min_period,
+        max_period=payload.max_period,
         status=JobStatus.queued.value,
     )
     if payload.aperture_mask_id:

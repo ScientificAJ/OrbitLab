@@ -49,6 +49,14 @@ class AnalysisJobCreate(BaseModel):
     stellar_luminosity_solar: float | None = Field(default=None, gt=0)
     stellar_density_solar: float | None = Field(default=None, gt=0)
     stellar_rotation_period: float | None = Field(default=None, gt=0)
+    min_period: float | None = Field(default=None, gt=0)
+    max_period: float | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def validate_period_range(self):
+        if self.min_period is not None and self.max_period is not None and self.min_period >= self.max_period:
+            raise ValueError("min_period must be less than max_period")
+        return self
 
 
 class BlsPreviewCreate(BaseModel):
@@ -108,6 +116,9 @@ class TcePayload(CandidatePayload):
     duration_days: float | None = None
     depth_fraction: float | None = None
     depth_ppm: float | None = None
+    depth_source: str | None = None
+    model_depth_fraction: float | None = None
+    measured_depth_fraction: float | None = None
     duration_hours: float | None = None
     disposition: Literal["planet_candidate", "borderline_tce", "rejected_signal"] | None = None
     action_label: Literal["none", "review_needed", "follow_up_needed"] | None = None

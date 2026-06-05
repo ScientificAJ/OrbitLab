@@ -1,10 +1,10 @@
 {
   "analysis_job_create": {
-    "elapsed_s": 0.013,
+    "elapsed_s": 0.011,
     "payload": {
-      "created_at": "2026-06-04T16:58:27.629512",
+      "created_at": "2026-06-05T08:27:30.231964",
       "error": null,
-      "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+      "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
       "result_id": null,
       "status": "queued"
     },
@@ -14,11 +14,11 @@
   "analysis_job_poll": {
     "attempts": [
       {
-        "elapsed_s": 0.014,
+        "elapsed_s": 0.008,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -26,11 +26,11 @@
         "step": "analysis_job_poll_001"
       },
       {
-        "elapsed_s": 0.016,
+        "elapsed_s": 0.019,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -38,11 +38,11 @@
         "step": "analysis_job_poll_002"
       },
       {
-        "elapsed_s": 0.016,
+        "elapsed_s": 0.003,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -50,11 +50,11 @@
         "step": "analysis_job_poll_003"
       },
       {
-        "elapsed_s": 0.029,
+        "elapsed_s": 0.003,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -62,11 +62,11 @@
         "step": "analysis_job_poll_004"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.003,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -76,9 +76,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -86,11 +86,11 @@
         "step": "analysis_job_poll_006"
       },
       {
-        "elapsed_s": 0.01,
+        "elapsed_s": 0.025,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -98,11 +98,11 @@
         "step": "analysis_job_poll_007"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.011,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -110,11 +110,11 @@
         "step": "analysis_job_poll_008"
       },
       {
-        "elapsed_s": 0.058,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -122,11 +122,11 @@
         "step": "analysis_job_poll_009"
       },
       {
-        "elapsed_s": 0.023,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -134,11 +134,11 @@
         "step": "analysis_job_poll_010"
       },
       {
-        "elapsed_s": 0.024,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -148,9 +148,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -158,11 +158,11 @@
         "step": "analysis_job_poll_012"
       },
       {
-        "elapsed_s": 0.007,
+        "elapsed_s": 0.005,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -170,11 +170,11 @@
         "step": "analysis_job_poll_013"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -182,11 +182,11 @@
         "step": "analysis_job_poll_014"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.003,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -194,11 +194,11 @@
         "step": "analysis_job_poll_015"
       },
       {
-        "elapsed_s": 0.006,
+        "elapsed_s": 0.003,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -206,11 +206,11 @@
         "step": "analysis_job_poll_016"
       },
       {
-        "elapsed_s": 0.011,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -218,11 +218,11 @@
         "step": "analysis_job_poll_017"
       },
       {
-        "elapsed_s": 0.007,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -230,11 +230,11 @@
         "step": "analysis_job_poll_018"
       },
       {
-        "elapsed_s": 0.01,
+        "elapsed_s": 0.003,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -242,11 +242,11 @@
         "step": "analysis_job_poll_019"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.003,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -254,11 +254,11 @@
         "step": "analysis_job_poll_020"
       },
       {
-        "elapsed_s": 0.008,
+        "elapsed_s": 0.003,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -268,9 +268,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -280,9 +280,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -290,11 +290,11 @@
         "step": "analysis_job_poll_023"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.003,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -302,11 +302,11 @@
         "step": "analysis_job_poll_024"
       },
       {
-        "elapsed_s": 0.005,
+        "elapsed_s": 0.003,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -314,11 +314,11 @@
         "step": "analysis_job_poll_025"
       },
       {
-        "elapsed_s": 0.009,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -328,9 +328,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -338,11 +338,11 @@
         "step": "analysis_job_poll_027"
       },
       {
-        "elapsed_s": 0.004,
+        "elapsed_s": 0.003,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -352,9 +352,9 @@
       {
         "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -362,11 +362,11 @@
         "step": "analysis_job_poll_029"
       },
       {
-        "elapsed_s": 0.011,
+        "elapsed_s": 0.004,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -376,9 +376,9 @@
       {
         "elapsed_s": 0.006,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
           "result_id": null,
           "status": "running"
         },
@@ -386,141 +386,33 @@
         "step": "analysis_job_poll_031"
       },
       {
-        "elapsed_s": 0.007,
+        "elapsed_s": 0.021,
         "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
+          "created_at": "2026-06-05T08:27:30.231964",
           "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_032"
-      },
-      {
-        "elapsed_s": 0.006,
-        "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
-          "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_033"
-      },
-      {
-        "elapsed_s": 0.003,
-        "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
-          "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_034"
-      },
-      {
-        "elapsed_s": 0.004,
-        "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
-          "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_035"
-      },
-      {
-        "elapsed_s": 0.004,
-        "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
-          "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_036"
-      },
-      {
-        "elapsed_s": 0.008,
-        "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
-          "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_037"
-      },
-      {
-        "elapsed_s": 0.004,
-        "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
-          "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_038"
-      },
-      {
-        "elapsed_s": 0.014,
-        "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
-          "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_039"
-      },
-      {
-        "elapsed_s": 0.004,
-        "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
-          "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
-          "result_id": null,
-          "status": "running"
-        },
-        "status": 200,
-        "step": "analysis_job_poll_040"
-      },
-      {
-        "elapsed_s": 0.02,
-        "payload": {
-          "created_at": "2026-06-04T16:58:27.629512",
-          "error": null,
-          "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
-          "result_id": "0e394d71-0074-42ed-9605-cc5a83628789",
+          "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
+          "result_id": "1c204a5a-dbdf-4e44-8889-ae6164fe3ffe",
           "status": "complete"
         },
         "status": 200,
-        "step": "analysis_job_poll_041"
+        "step": "analysis_job_poll_032"
       }
     ],
     "final": {
-      "elapsed_s": 0.02,
+      "elapsed_s": 0.021,
       "payload": {
-        "created_at": "2026-06-04T16:58:27.629512",
+        "created_at": "2026-06-05T08:27:30.231964",
         "error": null,
-        "job_id": "245c1bce-b030-4401-8e3f-3edaacfd0bc1",
-        "result_id": "0e394d71-0074-42ed-9605-cc5a83628789",
+        "job_id": "953f3a89-c523-4b3e-983c-a720cc9e0bdf",
+        "result_id": "1c204a5a-dbdf-4e44-8889-ae6164fe3ffe",
         "status": "complete"
       },
       "status": 200,
-      "step": "analysis_job_poll_041"
+      "step": "analysis_job_poll_032"
     }
   },
   "analysis_result": {
-    "elapsed_s": 0.029,
+    "elapsed_s": 0.026,
     "payload": {
       "active_science_config_keys": [
         "aperture_percentiles",
@@ -19352,7 +19244,7 @@
         "sigma_clip_kept_cadences": 967,
         "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
       },
-      "result_id": "0e394d71-0074-42ed-9605-cc5a83628789",
+      "result_id": "1c204a5a-dbdf-4e44-8889-ae6164fe3ffe",
       "schema_version": "orbitlab.analysis_result.v2",
       "science_config_hash": "95e37340cf6541a40d6db7a0be1ef167f3609db11ce8dc1b316a8abed4609edb",
       "science_readiness": {
@@ -19985,6 +19877,14 @@
               "gaia_id": "5284517766615492736",
               "query_target_id": null,
               "ra": 97.0967865903209,
+              "stellar": {
+                "logg": 4.80892,
+                "luminosity_solar": 0.023624422,
+                "mass_solar": 0.413261,
+                "radius_solar": 0.419457,
+                "source": "TIC",
+                "teff": 3494.0
+              },
               "target_id": 150428135,
               "tmag": 10.9102
             }
@@ -19994,6 +19894,7 @@
           "depth": 0.0005362033843994141,
           "depth_fraction": 0.0005362033843994141,
           "depth_ppm": 536.2033843994141,
+          "depth_source": "phase_window_median",
           "detection_metrics": {
             "alias_flags": [],
             "bls_snr": 4.941095458667499,
@@ -20357,6 +20258,7 @@
             }
           },
           "is_residual": false,
+          "measured_depth_fraction": 0.0005362033843994141,
           "ml": {
             "calibrated_ml_probability": 0.3,
             "calibration_checksum": null,
@@ -20369,12 +20271,12 @@
               "model_score": 0.3,
               "model_training_domain": "Nigraha TESS CNN ensemble over global, local, odd/even views and stellar scalar features",
               "out_of_distribution_reasons": [
-                "many_imputed_stellar_features",
+                "preprocessing_incompatible",
                 "fallback_stellar_context"
               ],
               "out_of_distribution_score": 0.5,
               "status": "inconclusive",
-              "tensor_checksum": "0e64eeb9cde04d4d6694fed88cd3ab85754986ed1f61db8fba037f07fabb1868"
+              "tensor_checksum": "56dc7e73ac8a9887d87df0cb3d3d939c79d4f84d32124c8ba07b817207ee4eeb"
             },
             "evidence_conflicts": {
               "conflicts": [],
@@ -20394,24 +20296,33 @@
               ]
             },
             "imputed_features": [
-              "Teff",
-              "Radius",
-              "logg",
-              "Mass",
-              "lum",
               "rho"
             ],
-            "input_tensor_checksum": "0e64eeb9cde04d4d6694fed88cd3ab85754986ed1f61db8fba037f07fabb1868",
+            "input_tensor_checksum": "56dc7e73ac8a9887d87df0cb3d3d939c79d4f84d32124c8ba07b817207ee4eeb",
             "label": "not-transit-like",
+            "mean_logit": -1030.0562965393067,
             "model_family": "Nigraha TESS CNN ensemble",
             "model_source": "ExoplanetML/Nigraha models/weights/global_nodropout/binary at c4365b41dd02b187c3210189ffe8e3ead584f4f5",
             "model_version": "c4365b41dd02b187c3210189ffe8e3ead584f4f5",
-            "preprocessing_compatible": true,
+            "preprocessing_compatible": false,
             "probability": 0.3,
             "raw_ml_probability": 0.3,
+            "saturated": true,
+            "score_caveat": "Nigraha ensemble logit is saturated (-1030); the released CNN expects standardized scalar features (Rao et al. 2021, MNRAS 502, 2845) and OrbitLab lacks the upstream normalization constants, so this probability does not discriminate between candidates and must not be trusted as ML evidence.",
+            "score_confidence": "degenerate_saturated",
+            "stellar_context_source": {
+              "catalog_lookup_status": "complete",
+              "density_solar": "imputed_solar_default",
+              "logg": "tic_catalog",
+              "luminosity_solar": "tic_catalog",
+              "mass_solar": "tic_catalog",
+              "radius_solar": "tic_catalog",
+              "teff": "tic_catalog"
+            },
             "threshold": 0.4,
             "threshold_source": "ExoplanetML/Nigraha gen_predict.sh"
           },
+          "model_depth_fraction": 0.9992381836373289,
           "period": 3.126488937711135,
           "period_days": 3.126488937711135,
           "period_source": "tls_full_search",
@@ -21368,6 +21279,14 @@
               "gaia_id": "5284517766615492736",
               "query_target_id": null,
               "ra": 97.0967865903209,
+              "stellar": {
+                "logg": 4.80892,
+                "luminosity_solar": 0.023624422,
+                "mass_solar": 0.413261,
+                "radius_solar": 0.419457,
+                "source": "TIC",
+                "teff": 3494.0
+              },
               "target_id": 150428135,
               "tmag": 10.9102
             }
@@ -21377,6 +21296,7 @@
           "depth": 0.00014270099029628128,
           "depth_fraction": 0.00014270099029628128,
           "depth_ppm": 142.70099029628128,
+          "depth_source": "astropy_box_least_squares",
           "detection_metrics": {
             "alias_flags": [],
             "bls_snr": 6.735153844349828,
@@ -21707,6 +21627,7 @@
             }
           },
           "is_residual": true,
+          "measured_depth_fraction": 0.0,
           "ml": {
             "calibrated_ml_probability": 0.3,
             "calibration_checksum": null,
@@ -21719,12 +21640,12 @@
               "model_score": 0.3,
               "model_training_domain": "Nigraha TESS CNN ensemble over global, local, odd/even views and stellar scalar features",
               "out_of_distribution_reasons": [
-                "many_imputed_stellar_features",
+                "preprocessing_incompatible",
                 "fallback_stellar_context"
               ],
               "out_of_distribution_score": 0.5,
               "status": "inconclusive",
-              "tensor_checksum": "dbe9b988d6b47cd6bedcf2c2245f0cbb28ac74eea286b140445deedd6a907789"
+              "tensor_checksum": "199a38dd8a3c98c3c2c941810df35cdb912936a0c5f46c4cfe3a7a2fc038c522"
             },
             "evidence_conflicts": {
               "conflicts": [],
@@ -21744,24 +21665,33 @@
               ]
             },
             "imputed_features": [
-              "Teff",
-              "Radius",
-              "logg",
-              "Mass",
-              "lum",
               "rho"
             ],
-            "input_tensor_checksum": "dbe9b988d6b47cd6bedcf2c2245f0cbb28ac74eea286b140445deedd6a907789",
+            "input_tensor_checksum": "199a38dd8a3c98c3c2c941810df35cdb912936a0c5f46c4cfe3a7a2fc038c522",
             "label": "not-transit-like",
+            "mean_logit": -1041.9037658691407,
             "model_family": "Nigraha TESS CNN ensemble",
             "model_source": "ExoplanetML/Nigraha models/weights/global_nodropout/binary at c4365b41dd02b187c3210189ffe8e3ead584f4f5",
             "model_version": "c4365b41dd02b187c3210189ffe8e3ead584f4f5",
-            "preprocessing_compatible": true,
+            "preprocessing_compatible": false,
             "probability": 0.3,
             "raw_ml_probability": 0.3,
+            "saturated": true,
+            "score_caveat": "Nigraha ensemble logit is saturated (-1042); the released CNN expects standardized scalar features (Rao et al. 2021, MNRAS 502, 2845) and OrbitLab lacks the upstream normalization constants, so this probability does not discriminate between candidates and must not be trusted as ML evidence.",
+            "score_confidence": "degenerate_saturated",
+            "stellar_context_source": {
+              "catalog_lookup_status": "complete",
+              "density_solar": "imputed_solar_default",
+              "logg": "tic_catalog",
+              "luminosity_solar": "tic_catalog",
+              "mass_solar": "tic_catalog",
+              "radius_solar": "tic_catalog",
+              "teff": "tic_catalog"
+            },
             "threshold": 0.4,
             "threshold_source": "ExoplanetML/Nigraha gen_predict.sh"
           },
+          "model_depth_fraction": 0.00014270099029628128,
           "period": 0.11675468860769805,
           "period_days": 0.11675468860769805,
           "period_source": "residual_bls",
@@ -22109,10 +22039,10 @@
     "step": "analysis_result"
   },
   "aperture_mask": {
-    "elapsed_s": 0.013,
+    "elapsed_s": 0.011,
     "payload": {
-      "aperture_mask_id": "78fc5530-9963-4075-86a3-22fbdfffb6c6",
-      "created_at": "2026-06-04T16:58:23.078244",
+      "aperture_mask_id": "b51d45bb-0a07-4e16-905b-f400dd70f6e3",
+      "created_at": "2026-06-05T08:27:26.478245",
       "mask": [
         [
           false,
@@ -22268,7 +22198,7 @@
   "audit_findings": [],
   "audit_status": "pass",
   "bls_preview": {
-    "elapsed_s": 4.499,
+    "elapsed_s": 3.707,
     "payload": {
       "bls_light_curve": {
         "flux": [
@@ -41053,12 +40983,12 @@
     "query": "TOI-700"
   },
   "health": {
-    "elapsed_s": 0.009,
+    "elapsed_s": 0.052,
     "payload": {
       "api": "ok",
       "database": "ok",
       "frontend": "served separately",
-      "generated_at": "2026-06-04T16:57:47.766344+00:00",
+      "generated_at": "2026-06-05T08:26:58.462319+00:00",
       "redis_configured": true,
       "status": "ok",
       "worker_mode": "inline"
@@ -41067,7 +40997,7 @@
     "step": "health"
   },
   "models": {
-    "elapsed_s": 5.495,
+    "elapsed_s": 3.036,
     "payload": {
       "k2_exomac_kkt": {
         "checksum": "d8a28d99cb29be8cfd0870d964bdde0bb3e97ee8d0aee9fded946ad5a54b2c2c",
@@ -41098,7 +41028,7 @@
     "step": "models"
   },
   "products": {
-    "elapsed_s": 24.723,
+    "elapsed_s": 21.295,
     "payload": [
       {
         "description": "Target pixel files",
@@ -41749,11 +41679,11 @@
     "step": "products"
   },
   "report": {
-    "elapsed_s": 0.039,
+    "elapsed_s": 0.028,
     "payload": {
       "format": "json",
-      "generated_at": "2026-06-04T17:01:48.208248+00:00",
-      "report_id": "0e394d71-0074-42ed-9605-cc5a83628789",
+      "generated_at": "2026-06-05T08:30:05.528363+00:00",
+      "report_id": "1c204a5a-dbdf-4e44-8889-ae6164fe3ffe",
       "result": {
         "active_science_config_keys": [
           "aperture_percentiles",
@@ -48215,6 +48145,25 @@
         },
         "missing_science_config_keys": [],
         "mission": "TESS",
+        "period_window": {
+          "clamped": false,
+          "effective_max_period_days": 60.0,
+          "effective_min_period_days": 0.1,
+          "honored": false,
+          "min_transits_required": 2.0,
+          "profile_max_period_days": 60.0,
+          "profile_min_period_days": 0.1,
+          "requested_max_period_days": null,
+          "requested_min_period_days": null
+        },
+        "period_window_note": {
+          "baseline_days": 21.7293701171875,
+          "max_recoverable_period_days": 10.86468505859375,
+          "min_transits_required": 2.0,
+          "note": "Searched max period 60.00 d exceeds the 10.86 d that this 21.73 d baseline can yield with >= 2 transits; long-period candidates beyond 10.86 d are not recoverable from this data span and need a longer (e.g. multi-sector) baseline.",
+          "searched_max_period_days": 60.0,
+          "status": "baseline_limited"
+        },
         "periodogram": {
           "duration": [
             0.058666665107011795,
@@ -60585,7 +60534,7 @@
           "sigma_clip_kept_cadences": 967,
           "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences"
         },
-        "result_id": "0e394d71-0074-42ed-9605-cc5a83628789",
+        "result_id": "1c204a5a-dbdf-4e44-8889-ae6164fe3ffe",
         "schema_version": "orbitlab.analysis_result.v2",
         "science_config_hash": "95e37340cf6541a40d6db7a0be1ef167f3609db11ce8dc1b316a8abed4609edb",
         "science_readiness": {
@@ -61221,6 +61170,14 @@
                 "gaia_id": "5284517766615492736",
                 "query_target_id": null,
                 "ra": 97.0967865903209,
+                "stellar": {
+                  "logg": 4.80892,
+                  "luminosity_solar": 0.023624422,
+                  "mass_solar": 0.413261,
+                  "radius_solar": 0.419457,
+                  "source": "TIC",
+                  "teff": 3494.0
+                },
                 "target_id": 150428135,
                 "tmag": 10.9102
               }
@@ -61609,12 +61566,12 @@
                 "model_score": 0.3,
                 "model_training_domain": "Nigraha TESS CNN ensemble over global, local, odd/even views and stellar scalar features",
                 "out_of_distribution_reasons": [
-                  "many_imputed_stellar_features",
+                  "preprocessing_incompatible",
                   "fallback_stellar_context"
                 ],
                 "out_of_distribution_score": 0.5,
                 "status": "inconclusive",
-                "tensor_checksum": "0e64eeb9cde04d4d6694fed88cd3ab85754986ed1f61db8fba037f07fabb1868"
+                "tensor_checksum": "56dc7e73ac8a9887d87df0cb3d3d939c79d4f84d32124c8ba07b817207ee4eeb"
               },
               "evidence_conflicts": {
                 "conflicts": [],
@@ -61634,21 +61591,29 @@
                 ]
               },
               "imputed_features": [
-                "Teff",
-                "Radius",
-                "logg",
-                "Mass",
-                "lum",
                 "rho"
               ],
-              "input_tensor_checksum": "0e64eeb9cde04d4d6694fed88cd3ab85754986ed1f61db8fba037f07fabb1868",
+              "input_tensor_checksum": "56dc7e73ac8a9887d87df0cb3d3d939c79d4f84d32124c8ba07b817207ee4eeb",
               "label": "not-transit-like",
+              "mean_logit": -1030.0562965393067,
               "model_family": "Nigraha TESS CNN ensemble",
               "model_source": "ExoplanetML/Nigraha models/weights/global_nodropout/binary at c4365b41dd02b187c3210189ffe8e3ead584f4f5",
               "model_version": "c4365b41dd02b187c3210189ffe8e3ead584f4f5",
-              "preprocessing_compatible": true,
+              "preprocessing_compatible": false,
               "probability": 0.3,
               "raw_ml_probability": 0.3,
+              "saturated": true,
+              "score_caveat": "Nigraha ensemble logit is saturated (-1030); the released CNN expects standardized scalar features (Rao et al. 2021, MNRAS 502, 2845) and OrbitLab lacks the upstream normalization constants, so this probability does not discriminate between candidates and must not be trusted as ML evidence.",
+              "score_confidence": "degenerate_saturated",
+              "stellar_context_source": {
+                "catalog_lookup_status": "complete",
+                "density_solar": "imputed_solar_default",
+                "logg": "tic_catalog",
+                "luminosity_solar": "tic_catalog",
+                "mass_solar": "tic_catalog",
+                "radius_solar": "tic_catalog",
+                "teff": "tic_catalog"
+              },
               "threshold": 0.4,
               "threshold_source": "ExoplanetML/Nigraha gen_predict.sh"
             },
@@ -62615,6 +62580,14 @@
                 "gaia_id": "5284517766615492736",
                 "query_target_id": null,
                 "ra": 97.0967865903209,
+                "stellar": {
+                  "logg": 4.80892,
+                  "luminosity_solar": 0.023624422,
+                  "mass_solar": 0.413261,
+                  "radius_solar": 0.419457,
+                  "source": "TIC",
+                  "teff": 3494.0
+                },
                 "target_id": 150428135,
                 "tmag": 10.9102
               }
@@ -62970,12 +62943,12 @@
                 "model_score": 0.3,
                 "model_training_domain": "Nigraha TESS CNN ensemble over global, local, odd/even views and stellar scalar features",
                 "out_of_distribution_reasons": [
-                  "many_imputed_stellar_features",
+                  "preprocessing_incompatible",
                   "fallback_stellar_context"
                 ],
                 "out_of_distribution_score": 0.5,
                 "status": "inconclusive",
-                "tensor_checksum": "dbe9b988d6b47cd6bedcf2c2245f0cbb28ac74eea286b140445deedd6a907789"
+                "tensor_checksum": "199a38dd8a3c98c3c2c941810df35cdb912936a0c5f46c4cfe3a7a2fc038c522"
               },
               "evidence_conflicts": {
                 "conflicts": [],
@@ -62995,21 +62968,29 @@
                 ]
               },
               "imputed_features": [
-                "Teff",
-                "Radius",
-                "logg",
-                "Mass",
-                "lum",
                 "rho"
               ],
-              "input_tensor_checksum": "dbe9b988d6b47cd6bedcf2c2245f0cbb28ac74eea286b140445deedd6a907789",
+              "input_tensor_checksum": "199a38dd8a3c98c3c2c941810df35cdb912936a0c5f46c4cfe3a7a2fc038c522",
               "label": "not-transit-like",
+              "mean_logit": -1041.9037658691407,
               "model_family": "Nigraha TESS CNN ensemble",
               "model_source": "ExoplanetML/Nigraha models/weights/global_nodropout/binary at c4365b41dd02b187c3210189ffe8e3ead584f4f5",
               "model_version": "c4365b41dd02b187c3210189ffe8e3ead584f4f5",
-              "preprocessing_compatible": true,
+              "preprocessing_compatible": false,
               "probability": 0.3,
               "raw_ml_probability": 0.3,
+              "saturated": true,
+              "score_caveat": "Nigraha ensemble logit is saturated (-1042); the released CNN expects standardized scalar features (Rao et al. 2021, MNRAS 502, 2845) and OrbitLab lacks the upstream normalization constants, so this probability does not discriminate between candidates and must not be trusted as ML evidence.",
+              "score_confidence": "degenerate_saturated",
+              "stellar_context_source": {
+                "catalog_lookup_status": "complete",
+                "density_solar": "imputed_solar_default",
+                "logg": "tic_catalog",
+                "luminosity_solar": "tic_catalog",
+                "mass_solar": "tic_catalog",
+                "radius_solar": "tic_catalog",
+                "teff": "tic_catalog"
+              },
               "threshold": 0.4,
               "threshold_source": "ExoplanetML/Nigraha gen_predict.sh"
             },
@@ -63365,9 +63346,9 @@
     "step": "report"
   },
   "save_session": {
-    "elapsed_s": 0.009,
+    "elapsed_s": 0.011,
     "payload": {
-      "created_at": "2026-06-04T17:01:48.296477",
+      "created_at": "2026-06-05T08:30:05.586021",
       "name": "Operation Friday Beta - tess_multi_known",
       "payload": {
         "case": {
@@ -63378,16 +63359,16 @@
           "query": "TOI-700"
         },
         "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0001/5042/8135/hlsp_tess-spoc_tess_phot_0000000150428135-s0006_tess_v1_tp.fits",
-        "result_id": "0e394d71-0074-42ed-9605-cc5a83628789",
+        "result_id": "1c204a5a-dbdf-4e44-8889-ae6164fe3ffe",
         "target_id": "TOI-700"
       },
-      "session_id": "88ce8e5a-cfcc-4c70-81be-0244c658268f"
+      "session_id": "4f15a0eb-3b28-4df7-b2a4-707d03b31eed"
     },
     "status": 201,
     "step": "save_session"
   },
   "search": {
-    "elapsed_s": 4.654,
+    "elapsed_s": 3.292,
     "payload": [
       {
         "catalog": "NAME",
@@ -63635,8 +63616,213 @@
   },
   "selected_target": "TOI-700",
   "sessions": {
-    "elapsed_s": 0.009,
+    "elapsed_s": 0.008,
     "payload": [
+      {
+        "created_at": "2026-06-05T08:30:05.586021",
+        "name": "Operation Friday Beta - tess_multi_known",
+        "payload": {
+          "case": {
+            "case_id": "tess_multi_known",
+            "expected_context": "Multiple known planets may exist in external catalogs; OrbitLab should preserve TCE evidence and avoid overclaiming confirmation.",
+            "mission": "TESS",
+            "purpose": "Known multi-planet TESS target and alias/catalog context check.",
+            "query": "TOI-700"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0001/5042/8135/hlsp_tess-spoc_tess_phot_0000000150428135-s0006_tess_v1_tp.fits",
+          "result_id": "1c204a5a-dbdf-4e44-8889-ae6164fe3ffe",
+          "target_id": "TOI-700"
+        },
+        "session_id": "4f15a0eb-3b28-4df7-b2a4-707d03b31eed"
+      },
+      {
+        "created_at": "2026-06-05T08:26:46.259071",
+        "name": "Operation Friday Beta - tess_known_hot_jupiter",
+        "payload": {
+          "case": {
+            "case_id": "tess_known_hot_jupiter",
+            "expected_context": "Known planet host context may appear through target/catalog matching, but OrbitLab must still report candidates as follow-up evidence rather than confirmations.",
+            "mission": "TESS",
+            "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
+            "query": "TIC 307210830"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0003/0721/0830/hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+          "result_id": "590eda14-0ea3-489f-8076-7f5976fe33e1",
+          "target_id": "TIC 307210830"
+        },
+        "session_id": "5b151eac-616b-4d57-bae1-3baa28cecccc"
+      },
+      {
+        "created_at": "2026-06-05T08:22:34.277098",
+        "name": "Operation Friday Beta - tess_control_candidate",
+        "payload": {
+          "case": {
+            "case_id": "tess_control_candidate",
+            "expected_context": "If no strong TCE appears, OrbitLab should show no candidates or low-confidence/rejected signals clearly.",
+            "mission": "TESS",
+            "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
+            "query": "TIC 25155310"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
+          "result_id": "ddfbd89b-c411-4012-81c5-5aa90c381326",
+          "target_id": "TIC 25155310"
+        },
+        "session_id": "9cc3f58e-85eb-426e-b7d3-726eaf206b37"
+      },
+      {
+        "created_at": "2026-06-05T08:12:51.212817",
+        "name": "Operation Friday Beta - tess_control_candidate",
+        "payload": {
+          "case": {
+            "case_id": "tess_control_candidate",
+            "expected_context": "If no strong TCE appears, OrbitLab should show no candidates or low-confidence/rejected signals clearly.",
+            "mission": "TESS",
+            "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
+            "query": "TIC 25155310"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
+          "result_id": "2304780d-0fc1-4a36-aecd-4cf75a4fbcb3",
+          "target_id": "TIC 25155310"
+        },
+        "session_id": "08528098-3726-4e3c-b0d6-3ca535974074"
+      },
+      {
+        "created_at": "2026-06-05T08:09:51.017241",
+        "name": "Operation Friday Beta - tess_known_hot_jupiter",
+        "payload": {
+          "case": {
+            "case_id": "tess_known_hot_jupiter",
+            "expected_context": "Known planet host context may appear through target/catalog matching, but OrbitLab must still report candidates as follow-up evidence rather than confirmations.",
+            "mission": "TESS",
+            "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
+            "query": "TIC 307210830"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0003/0721/0830/hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+          "result_id": "6055cc66-ccbb-41a6-982e-a49c9234047b",
+          "target_id": "TIC 307210830"
+        },
+        "session_id": "33491384-07ba-4ba6-8013-fb49ec58d39f"
+      },
+      {
+        "created_at": "2026-06-05T08:02:28.362892",
+        "name": "Deep Payload",
+        "payload": {
+          "list": [
+            1,
+            2,
+            3
+          ],
+          "nested": {
+            "value": 42
+          }
+        },
+        "session_id": "1df6a906-71d8-4971-93ce-8f7c2e481248"
+      },
+      {
+        "created_at": "2026-06-05T08:02:28.337746",
+        "name": "My Session",
+        "payload": {
+          "mission": "TESS",
+          "stars": [
+            "TIC 100"
+          ]
+        },
+        "session_id": "033863d8-6d35-4f7f-87eb-7482b5717b96"
+      },
+      {
+        "created_at": "2026-06-05T07:43:09.364707",
+        "name": "Deep Payload",
+        "payload": {
+          "list": [
+            1,
+            2,
+            3
+          ],
+          "nested": {
+            "value": 42
+          }
+        },
+        "session_id": "a134af12-1ecf-4548-b94f-342e1f54a4c2"
+      },
+      {
+        "created_at": "2026-06-05T07:43:09.340645",
+        "name": "My Session",
+        "payload": {
+          "mission": "TESS",
+          "stars": [
+            "TIC 100"
+          ]
+        },
+        "session_id": "4f134ff7-441f-4715-8327-4d8120e403bd"
+      },
+      {
+        "created_at": "2026-06-04T17:19:33.038080",
+        "name": "Operation Friday Beta - kepler_multi_known",
+        "payload": {
+          "case": {
+            "case_id": "kepler_multi_known",
+            "expected_context": "Kepler target should exercise Kepler product retrieval, BLS preview, full analysis, and AstroNet readiness/result surfaces.",
+            "mission": "Kepler",
+            "purpose": "Kepler known-system check.",
+            "query": "Kepler-10"
+          },
+          "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
+          "result_id": "e978f73d-55e1-4b6d-bfd6-195cf200eb48",
+          "target_id": "Kepler-10"
+        },
+        "session_id": "ed274edd-8df3-482a-9d71-36a8bb6cfbf7"
+      },
+      {
+        "created_at": "2026-06-04T17:16:54.248224",
+        "name": "Operation Friday Beta - tess_control_candidate",
+        "payload": {
+          "case": {
+            "case_id": "tess_control_candidate",
+            "expected_context": "If no strong TCE appears, OrbitLab should show no candidates or low-confidence/rejected signals clearly.",
+            "mission": "TESS",
+            "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
+            "query": "TIC 25155310"
+          },
+          "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
+          "result_id": "eb79a275-caaa-42a3-bb56-94408e602171",
+          "target_id": "TIC 25155310"
+        },
+        "session_id": "b6dc4263-cebf-47d2-ad02-4da81bf451ed"
+      },
+      {
+        "created_at": "2026-06-04T17:12:13.063104",
+        "name": "Operation Friday Beta - k2_multi_known",
+        "payload": {
+          "case": {
+            "case_id": "k2_multi_known",
+            "expected_context": "K2 target should exercise K2 product retrieval and ExoMAC-KKT readiness/result surfaces.",
+            "mission": "K2",
+            "purpose": "K2/ExoMAC model path and multi-planet system check.",
+            "query": "EPIC 201367065"
+          },
+          "product_uri": "mast:K2/url/missions/k2/target_pixel_files/c1/201300000/67000/ktwo201367065-c01_lpd-targ.fits.gz",
+          "result_id": "d554731c-56f8-478f-8563-471f1481a208",
+          "target_id": "EPIC 201367065"
+        },
+        "session_id": "cbe18a10-9fbe-4d39-88ff-95b8ff891d50"
+      },
+      {
+        "created_at": "2026-06-04T17:03:19.808862",
+        "name": "Operation Friday Beta - kepler_multi_known",
+        "payload": {
+          "case": {
+            "case_id": "kepler_multi_known",
+            "expected_context": "Kepler target should exercise Kepler product retrieval, BLS preview, full analysis, and AstroNet readiness/result surfaces.",
+            "mission": "Kepler",
+            "purpose": "Kepler known-system check.",
+            "query": "Kepler-10"
+          },
+          "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
+          "result_id": "f336859c-da4e-4c8d-9002-e6089f55ba5a",
+          "target_id": "Kepler-10"
+        },
+        "session_id": "eba7ef7f-4e4c-4c2b-ad58-0274467b6172"
+      },
       {
         "created_at": "2026-06-04T17:01:48.296477",
         "name": "Operation Friday Beta - tess_multi_known",
@@ -64399,7 +64585,7 @@
     "step": "sessions"
   },
   "tpf_preview": {
-    "elapsed_s": 0.421,
+    "elapsed_s": 0.385,
     "payload": {
       "baseline": 21.7292663102005,
       "finite_max": 1356.3651123046875,

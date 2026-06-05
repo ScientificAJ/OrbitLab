@@ -55,6 +55,8 @@ def _ensure_analysis_job_columns() -> None:
         "stellar_luminosity_solar": "FLOAT",
         "stellar_density_solar": "FLOAT",
         "stellar_rotation_period": "FLOAT",
+        "min_period": "FLOAT",
+        "max_period": "FLOAT",
     }
 
     with engine.begin() as conn:
