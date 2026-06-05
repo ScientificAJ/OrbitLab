@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import math
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 
+from orbitlab.config import settings
 from orbitlab.science.bls import TransitCandidate
 from orbitlab.science.data_quality import clean_light_curve
 from orbitlab.science.folding import bin_phase_curve, phase_fold
 
-NIGRAHA_SCHEMA_VERSION = "orbitlab.nigraha.v1"
+NIGRAHA_SCHEMA_VERSION = "orbitlab.nigraha.v2-standardized"
 NIGRAHA_MODEL_ID = "nigraha-tess-global-nodropout-binary-ensemble"
 NIGRAHA_FEATURES = (
     "Depth",
@@ -26,6 +29,56 @@ NIGRAHA_FEATURES = (
     "DepthOdd",
 )
 
+# Upstream ExoplanetML/Nigraha standardizes only the stellar-catalog scalar
+# features before the dense head (subtract training median, divide by training
+# std); the transit features Depth/Duration/rp_rs/DepthEven/DepthOdd are in
+# upstream `raw_columns` and pass through unchanged. The standardization
+# constants are recovered from the committed upstream training catalog by
+# scripts/recover_nigraha_norm_stats.py (Rao et al. 2021, MNRAS 502, 2845).
+NIGRAHA_STANDARDIZED_FEATURES = ("Teff", "Radius", "logg", "Mass", "lum", "rho")
+
+
+# Cache of parsed norm-stats keyed by resolved artifact path. Mirrors the
+# service's _GLOBAL_NIGRAHA_CACHE so we parse the JSON once per process.
+_NORM_STATS_CACHE: dict[str, dict[str, tuple[float, float]] | None] = {}
+
+
+def load_norm_stats(path: Path | None = None) -> dict[str, tuple[float, float]] | None:
+    """Load per-feature (median, std) standardization constants.
+
+    Returns ``None`` when the artifact is absent (fresh checkout before
+    scripts/recover_nigraha_norm_stats.py has run) or unusable, so the caller can
+    fall back to the honest saturation gate rather than silently mis-scaling.
+    """
+    resolved = (path or settings.nigraha_norm_stats_path)
+    key = str(resolved)
+    if key in _NORM_STATS_CACHE:
+        return _NORM_STATS_CACHE[key]
+
+    stats: dict[str, tuple[float, float]] | None = None
+    try:
+        payload = json.loads(Path(resolved).read_text())
+        parsed: dict[str, tuple[float, float]] = {}
+        for name in NIGRAHA_STANDARDIZED_FEATURES:
+            entry = payload.get("features", {}).get(name)
+            if not entry or not entry.get("standardized"):
+                continue
+            std = float(entry["std"])
+            if math.isfinite(std) and std > 0:
+                parsed[name] = (float(entry["median"]), std)
+        if parsed:
+            stats = parsed
+    except (OSError, ValueError, KeyError, TypeError):
+        stats = None
+
+    _NORM_STATS_CACHE[key] = stats
+    return stats
+
+
+def clear_norm_stats_cache() -> None:
+    """Clear the parsed norm-stats cache (test hygiene)."""
+    _NORM_STATS_CACHE.clear()
+
 
 @dataclass(frozen=True)
 class NigrahaTensors:
@@ -36,6 +89,12 @@ class NigrahaTensors:
     imputed_features: tuple[str, ...]
     checksum: str
     schema_version: str = NIGRAHA_SCHEMA_VERSION
+    # True when upstream-recovered standardization was applied to the stellar
+    # scalar features. False means the norm-stats artifact was unavailable and
+    # raw values were fed (saturated regime) -> the service falls back to the
+    # honest saturation gate.
+    standardized: bool = False
+    standardized_features: tuple[str, ...] = ()
 
     def as_inputs(self) -> dict[str, np.ndarray]:
         inputs = {
@@ -101,6 +160,23 @@ def _scalar(value: float | None, name: str, imputed: list[str], default: float =
     return np.asarray([[float(value)]], dtype=np.float32)
 
 
+def _standardize(
+    tensor: np.ndarray,
+    name: str,
+    stats: dict[str, tuple[float, float]] | None,
+) -> np.ndarray:
+    """Apply upstream (median, std) standardization to a stellar scalar feature.
+
+    Standardization runs *after* imputation, so solar-fallback defaults are
+    z-scored exactly as upstream's median-filled values would be. No-op when
+    stats are unavailable or this feature was not standardized upstream.
+    """
+    if not stats or name not in stats:
+        return tensor
+    median, std = stats[name]
+    return ((tensor - median) / std).astype(np.float32)
+
+
 def _checksum(parts: list[np.ndarray]) -> str:
     digest = hashlib.sha256()
     for part in parts:
@@ -119,6 +195,7 @@ def build_nigraha_tensors(
     stellar_mass_solar: float | None = None,
     stellar_luminosity_solar: float | None = None,
     stellar_density_solar: float | None = None,
+    norm_stats_path: Path | None = None,
 ) -> NigrahaTensors:
     clean_time, clean_flux = clean_light_curve(time, flux)
     phase, folded_flux = phase_fold(clean_time, clean_flux, candidate.period, candidate.epoch)
@@ -159,6 +236,9 @@ def build_nigraha_tensors(
     depth_even, depth_odd = _transit_depths(clean_time, clean_flux, candidate)
     imputed: list[str] = []
     rp_rs = math.sqrt(candidate.depth) if candidate.depth > 0 else None
+    # Raw scalar tensors (post-imputation, pre-standardization). The five transit
+    # features stay raw (upstream `raw_columns`); the six stellar features are
+    # standardized below using the upstream-recovered (median, std) constants.
     scalars = {
         "Depth": _scalar(candidate.depth, "Depth", imputed, default=0.0),
         "Duration": _scalar(candidate.duration * 24.0, "Duration", imputed, default=0.0),
@@ -172,6 +252,17 @@ def build_nigraha_tensors(
         "DepthEven": _scalar(depth_even, "DepthEven", imputed, default=candidate.depth),
         "DepthOdd": _scalar(depth_odd, "DepthOdd", imputed, default=candidate.depth),
     }
+
+    stats = load_norm_stats(norm_stats_path)
+    standardized_features: tuple[str, ...] = ()
+    if stats:
+        applied = []
+        for name in NIGRAHA_STANDARDIZED_FEATURES:
+            if name in stats:
+                scalars[name] = _standardize(scalars[name], name, stats)
+                applied.append(name)
+        standardized_features = tuple(applied)
+
     parts = [global_view, local_view, odd_even_view] + [scalars[name] for name in NIGRAHA_FEATURES]
     if not all(np.isfinite(part).all() for part in parts):
         raise ValueError("Nigraha tensors contain NaN or infinite values")
@@ -182,6 +273,8 @@ def build_nigraha_tensors(
         scalar_features=scalars,
         imputed_features=tuple(imputed),
         checksum=_checksum(parts),
+        standardized=bool(standardized_features),
+        standardized_features=standardized_features,
     )
 
 

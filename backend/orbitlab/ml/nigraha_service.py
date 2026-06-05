@@ -39,17 +39,25 @@ class NigrahaVerdict:
     saturated: bool = False
     score_confidence: str = "nominal"
     score_caveat: str | None = None
+    standardized: bool = False
+    standardized_features: tuple[str, ...] = ()
 
 
-# The released Nigraha CNN expects its scalar features (Teff, R*, logg, mass,
-# luminosity, density, depth, duration, Rp/Rs, odd/even depths) to be
-# standardized per the training-set median/std before the dense head
-# (Rao et al. 2021, MNRAS 502, 2845, sec. 3). OrbitLab does not hold those
-# upstream normalization constants, so the raw physical scalars enter the dense
-# head unscaled. With features on the order of 1e3 (Teff) the final logit is
-# driven far past the sigmoid floor, so the probability saturates and stops
-# discriminating between candidates. We do NOT fabricate normalization; instead
-# we detect this saturated regime and gate the score's confidence honestly.
+# The released Nigraha CNN expects its stellar scalar features (Teff, R*, logg,
+# mass, luminosity, density) to be standardized per the training-set median/std
+# before the dense head (Rao et al. 2021, MNRAS 502, 2845, sec. 3). Those
+# constants are recovered from the committed upstream training catalog by
+# scripts/recover_nigraha_norm_stats.py and applied in build_nigraha_tensors, so
+# the normal path now feeds standardized scalars and the logit discriminates
+# (score_confidence="nominal", preprocessing_compatible=True).
+#
+# The saturation gate below is retained as a SAFETY NET, not the primary state:
+# if the norm-stats artifact is absent (fresh checkout before the recovery script
+# has run) raw physical scalars enter the dense head unscaled, the logit is driven
+# far past the sigmoid floor, and the probability saturates to a constant that
+# carries no discrimination. In that fallback regime we detect the saturated
+# logit (|logit| >= 50) and gate the score's confidence honestly rather than
+# trusting a degenerate value. We never fabricate normalization.
 _NIGRAHA_SATURATION_LOGIT = 50.0
 
 
@@ -111,19 +119,28 @@ class NigrahaService:
         probability = min(max(float(np.mean(scores)), 0.0), 1.0)
         mean_logit = float(np.mean(logits))
 
-        # Honest gating: when the ensemble logits are pushed past the sigmoid's
-        # numerically saturated region, the probability carries no real
-        # discrimination (it floors/ceils for essentially any candidate). This is
-        # a consequence of the missing upstream scalar standardization, not a real
-        # planet judgement, so we flag it rather than trusting it.
+        # Honest gating (safety net): when the ensemble logits are pushed past the
+        # sigmoid's numerically saturated region, the probability carries no real
+        # discrimination (it floors/ceils for essentially any candidate). On the
+        # normal path the upstream-recovered scalar standardization keeps the logit
+        # in the discriminating range; saturation here means the norm-stats artifact
+        # was unavailable so raw scalars entered the dense head. Either way it is not
+        # a real planet judgement, so we flag it rather than trusting it.
+        standardized = getattr(tensors, "standardized", False)
         saturated = bool(np.all(np.abs(np.asarray(logits)) >= _NIGRAHA_SATURATION_LOGIT))
         if saturated:
             score_confidence = "degenerate_saturated"
+            standardization_note = (
+                "the upstream scalar standardization constants were unavailable, so raw "
+                "physical scalars entered the dense head"
+                if not standardized
+                else "the standardized scalars still drove the logit into saturation"
+            )
             score_caveat = (
                 f"Nigraha ensemble logit is saturated ({mean_logit:.0f}); the released CNN expects "
-                "standardized scalar features (Rao et al. 2021, MNRAS 502, 2845) and OrbitLab "
-                "lacks the upstream normalization constants, so this probability does not "
-                "discriminate between candidates and must not be trusted as ML evidence."
+                "standardized scalar features (Rao et al. 2021, MNRAS 502, 2845) and "
+                f"{standardization_note}, so this probability does not discriminate between "
+                "candidates and must not be trusted as ML evidence."
             )
         else:
             score_confidence = "nominal"
@@ -144,6 +161,8 @@ class NigrahaService:
             saturated=saturated,
             score_confidence=score_confidence,
             score_caveat=score_caveat,
+            standardized=standardized,
+            standardized_features=getattr(tensors, "standardized_features", ()),
         )
 
 
