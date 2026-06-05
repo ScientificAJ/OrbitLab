@@ -183,3 +183,66 @@ the recovered period/depth/duration match published values. No false planet
 promotions occurred. The one real defect (Kepler AstroNet never running) is
 fixed and verified live. Two issues remain open for follow-up (Nigraha pinned
 probability; top-level depth provenance fields).
+
+## 2026-06-05 Follow-up fixes (Nigraha root cause, depth provenance, period/baseline)
+
+The three open follow-ups were investigated to root cause and fixed. All three
+were re-verified live against real MAST by re-running the three TESS cases in
+paper-grade mode (TIC 307210830, TOI-700, TIC 25155310) plus a direct
+custom-period-bounds job. All cases audit `pass` with 0 findings.
+
+### Finding 2 RE-DIAGNOSED + handled honestly: Nigraha 0.3 was NOT just missing context
+The deeper investigation found the pinned probability is a **preprocessing
+defect, not a context gap**. The released Nigraha CNN expects its scalar features
+(Teff, R*, logg, mass, luminosity, density, depth, duration, Rp/Rs, odd/even
+depths) to be standardized — subtract median, divide by std — before the dense
+head (Rao et al. 2021, MNRAS 502, 2845, sec. 3;
+https://academic.oup.com/mnras/article/502/2/2845/6121433). OrbitLab's numpy
+reimplementation fed the **raw physical values** (e.g. Teff ≈ 5778) straight into
+the dense layers, driving the final logit to ≈ -900 to -4000, so the sigmoid
+saturates to a constant (~8.8e-27 → 0.3 after calibration) for essentially any
+input. Our golden test fixture had captured this same un-normalized forward pass,
+so the bug looked "validated."
+
+We do NOT hold the upstream training-set median/std constants, and fabricating
+our own normalization would produce scores not validated against the published
+model. So, per the chosen NASA-rigorous path, we **did not invent normalization**.
+Instead:
+- The job→known_target→TIC stellar-context wiring was still landed (it is correct
+  and improves provenance): real TIC Teff/R*/mass/logg/lum now flow into the ML
+  surface, recorded as `ml.stellar_context_source` (verified live: all five
+  stellar fields source from `tic_catalog`, lookup `complete`).
+- The service now **detects the saturated regime** (ensemble |logit| ≥ 50) and
+  flags it honestly: `ml.saturated=true`, `ml.score_confidence=degenerate_saturated`,
+  `ml.preprocessing_compatible=false`, with a paper-cited `ml.score_caveat`. Because
+  the existing evidence-fusion keys OOD off `preprocessing_compatible`, the score is
+  automatically routed to `domain_awareness: inconclusive` and cannot override
+  BLS/physics/catalog evidence. The pinned 0.3 is now exposed as degenerate, not
+  trusted — which is the correct, conservative behavior.
+
+### Finding 3 FIXED: top-level depth provenance fields
+`depth_source` / `model_depth_fraction` / `measured_depth_fraction` were computed
+into the candidate dict but dropped by Pydantic because `TcePayload` never declared
+them. The schema now declares all three. Verified live: every TESS TCE now reports
+`depth_source: phase_window_median` (or `astropy_box_least_squares`) and a non-null
+`measured_depth_fraction` at the top level, matching the `detection_metrics` copy.
+
+### Method limitation RESOLVED into an explicit diagnostic: TOI-700 baseline
+The earlier "30-day window" note was wrong — paper-grade already searches to 60 d.
+The real reason single-sector TESS cannot recover TOI-700 d (37.4 d) is the
+~22–27 d baseline: ≥2 transits requires P ≤ baseline/2. This is now surfaced, not
+hidden: every result carries `period_window` (request vs profile vs effective
+window) and a `period_window_note` of status `baseline_limited` stating the max
+recoverable period for the observed baseline (verified live: ~10.9–12.3 d for the
+TESS cases) and that long-period recovery needs a multi-sector baseline. The
+analysis request now also honors `min_period`/`max_period` (verified live: a job
+with `min_period=2, max_period=8` produced an effective 2–8 d window,
+`honored: true`). True multi-sector stitching remains a separate, deferred feature.
+
+### Final verdict (post-fix)
+All five products remain internally consistent with no false planet promotions.
+Kepler-10 b and K2-3 b recoveries are unchanged and still correctly held. The
+Nigraha defect is now understood (missing upstream scalar standardization) and
+gated honestly rather than silently trusted; depth provenance is visible at the
+contract top level; and the baseline limitation is an explicit, paper-grounded
+diagnostic instead of a silent rejection.

@@ -86,6 +86,8 @@ def run_analysis_job(self, job_id: str) -> str:
                 stellar_luminosity_solar=float(job.stellar_luminosity_solar) if job.stellar_luminosity_solar else None,
                 stellar_density_solar=float(job.stellar_density_solar) if job.stellar_density_solar else None,
                 stellar_rotation_period=float(job.stellar_rotation_period) if job.stellar_rotation_period else None,
+                request_min_period=float(job.min_period) if job.min_period else None,
+                request_max_period=float(job.max_period) if job.max_period else None,
                 max_candidates=job.max_candidates,
                 vetting_mode=job.vetting_mode,
                 pixel_flux=diagnostic_pixel_flux,

@@ -145,6 +145,47 @@ def _query_nasa_archive_context(tic_id: int | None) -> dict[str, Any]:
     }
 
 
+def query_tic_stellar_context(target_id: str) -> dict[str, Any]:
+    """Fast, depth-independent TIC stellar lookup.
+
+    Returns only the host-star scalar parameters needed to give the TESS ML
+    surface (Nigraha) real stellar context, without the full neighbor/dilution
+    sweep or the NASA Exoplanet Archive crossmatch that
+    ``query_tic_catalog_context`` performs. This keeps the pre-loop stellar
+    enrichment cheap while still supplying real Teff/radius/mass/logg/lum.
+    """
+    from astropy import units as u
+    from astroquery.mast import Catalogs
+
+    requested_tic_id = parse_tic_id(target_id)
+    query = f"TIC {requested_tic_id}" if requested_tic_id is not None else str(target_id)
+    table = Catalogs.query_object(query, catalog="TIC", radius=21.0 * u.arcsec)
+    rows = _table_rows(table)
+    if not rows:
+        raise RuntimeError(f"TIC catalog returned no rows for {target_id}")
+
+    target_row = None
+    if requested_tic_id is not None:
+        for row in rows:
+            row_id = _text(row, "ID", "TICID", "tic_id")
+            if row_id and row_id.isdigit() and int(row_id) == requested_tic_id:
+                target_row = row
+                break
+    target_row = target_row or rows[0]
+    target_row_id = _text(target_row, "ID", "TICID", "tic_id")
+    resolved_tic_id = int(target_row_id) if target_row_id and target_row_id.isdigit() else requested_tic_id
+    return {
+        "target_id": resolved_tic_id,
+        "query_target_id": requested_tic_id,
+        "teff": _number(target_row, "Teff", "teff"),
+        "radius_solar": _number(target_row, "rad", "Radius", "radius"),
+        "mass_solar": _number(target_row, "mass", "Mass"),
+        "logg": _number(target_row, "logg", "logG"),
+        "luminosity_solar": _number(target_row, "lum", "luminosity"),
+        "source": "TIC",
+    }
+
+
 def query_tic_catalog_context(
     target_id: str,
     *,
@@ -174,6 +215,11 @@ def query_tic_catalog_context(
     target_ra = _number(target_row, "ra", "RAJ2000", "RA")
     target_dec = _number(target_row, "dec", "DEJ2000", "DEC")
     target_tmag = _number(target_row, "Tmag", "tmag", "TESSmag")
+    target_teff = _number(target_row, "Teff", "teff")
+    target_radius = _number(target_row, "rad", "Radius", "radius")
+    target_mass = _number(target_row, "mass", "Mass")
+    target_logg = _number(target_row, "logg", "logG")
+    target_lum = _number(target_row, "lum", "luminosity")
     if target_ra is None or target_dec is None:
         raise RuntimeError(f"TIC catalog row for {target_id} does not include coordinates")
 
@@ -229,6 +275,14 @@ def query_tic_catalog_context(
             "dec": target_dec,
             "tmag": target_tmag,
             "gaia_id": _text(target_row, "GAIA", "gaia", "GAIA_DR3"),
+            "stellar": {
+                "teff": target_teff,
+                "radius_solar": target_radius,
+                "mass_solar": target_mass,
+                "logg": target_logg,
+                "luminosity_solar": target_lum,
+                "source": "TIC",
+            },
         },
         "gaia": {
             "status": "complete",

@@ -13,7 +13,7 @@ from orbitlab.ml.nigraha_adapter import build_nigraha_tensors
 from orbitlab.ml.nigraha_service import NigrahaService
 from orbitlab.ml.service import AstroNetService, KeplerAstroNetService
 from orbitlab.science.bls import TransitCandidate, find_multi_planet_candidates, run_bls
-from orbitlab.science.catalog_context import query_tic_catalog_context
+from orbitlab.science.catalog_context import query_tic_catalog_context, query_tic_stellar_context
 from orbitlab.science.data_quality import clean_light_curve
 from orbitlab.science.dave_vetting import run_model_shift, run_sweet_test
 from orbitlab.science.detrending import detrend_with_wotan
@@ -336,6 +336,158 @@ def _select_primary_candidate(
     )
     primary = guided_candidates[0] if guided_candidates else blind_candidate
     return primary, bls_result, guided_candidates
+
+
+def _positive(value: float | None) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if np.isfinite(number) and number > 0 else None
+
+
+def _effective_stellar_context(
+    *,
+    job_stellar: dict[str, float | None],
+    known_target: KnownTarget | None,
+    catalog_stellar: dict[str, Any] | None,
+) -> tuple[dict[str, float | None], dict[str, str]]:
+    """Merge stellar parameters from the highest-trust available source.
+
+    Priority per field: (1) the analysis-job value (an explicit user override),
+    (2) the curated ``known_targets`` entry when the target resolves to one, and
+    (3) the live TIC catalog row. Solar defaults are NOT applied here; that
+    imputation stays inside ``build_nigraha_tensors`` so its ``imputed_features``
+    list keeps reporting honestly. Returns the merged values plus a per-field
+    provenance map so the report can show where each scalar came from.
+    """
+    fields = ("teff", "radius_solar", "logg", "mass_solar", "luminosity_solar", "density_solar")
+    known_map: dict[str, float | None] = {}
+    if known_target is not None:
+        known_map = {
+            "teff": getattr(known_target, "stellar_teff", None),
+            "radius_solar": getattr(known_target, "stellar_radius_solar", None),
+            "mass_solar": getattr(known_target, "stellar_mass_solar", None),
+        }
+    catalog_map = catalog_stellar or {}
+    merged: dict[str, float | None] = {}
+    provenance: dict[str, str] = {}
+    for field in fields:
+        job_value = _positive(job_stellar.get(field))
+        if job_value is not None:
+            merged[field] = job_value
+            provenance[field] = "job_request"
+            continue
+        known_value = _positive(known_map.get(field))
+        if known_value is not None:
+            merged[field] = known_value
+            provenance[field] = "known_target"
+            continue
+        catalog_value = _positive(catalog_map.get(field))
+        if catalog_value is not None:
+            merged[field] = catalog_value
+            provenance[field] = "tic_catalog"
+            continue
+        merged[field] = None
+        provenance[field] = "imputed_solar_default"
+    return merged, provenance
+
+
+_PERIOD_FLOOR_DAYS = 0.05
+_PERIOD_CEILING_DAYS = 120.0
+
+
+def _apply_request_period_window(
+    profile,
+    *,
+    request_min_period: float | None,
+    request_max_period: float | None,
+) -> tuple[Any, dict[str, Any]]:
+    """Honor the analysis request's period bounds against the active profile.
+
+    The user may *narrow* the search window or *extend* it within safe absolute
+    bounds (period floor/ceiling). Grid size stays bounded by the profile's
+    ``max_period_samples`` regardless of the window, so widening the window never
+    explodes runtime. When no request bounds are given, the profile is returned
+    unchanged. Returns the (possibly replaced) profile and a provenance dict that
+    records what was requested, applied, and why.
+    """
+    req_min = _positive(request_min_period)
+    req_max = _positive(request_max_period)
+    request = {
+        "requested_min_period_days": req_min,
+        "requested_max_period_days": req_max,
+        "profile_min_period_days": profile.min_period,
+        "profile_max_period_days": profile.max_period,
+        "honored": False,
+        "clamped": False,
+    }
+    if req_min is None and req_max is None:
+        request["effective_min_period_days"] = profile.min_period
+        request["effective_max_period_days"] = profile.max_period
+        return profile, request
+
+    effective_min = req_min if req_min is not None else profile.min_period
+    effective_max = req_max if req_max is not None else profile.max_period
+
+    clamped = False
+    if effective_min < _PERIOD_FLOOR_DAYS:
+        effective_min = _PERIOD_FLOOR_DAYS
+        clamped = True
+    if effective_max > _PERIOD_CEILING_DAYS:
+        effective_max = _PERIOD_CEILING_DAYS
+        clamped = True
+    if effective_min >= effective_max:
+        # Incoherent request after clamping: fall back to the profile window.
+        request["effective_min_period_days"] = profile.min_period
+        request["effective_max_period_days"] = profile.max_period
+        request["honored"] = False
+        request["clamped"] = clamped
+        request["detail"] = "request period window collapsed after clamping; profile window retained"
+        return profile, request
+
+    request["effective_min_period_days"] = effective_min
+    request["effective_max_period_days"] = effective_max
+    request["honored"] = True
+    request["clamped"] = clamped
+    return replace(profile, min_period=effective_min, max_period=effective_max), request
+
+
+def _baseline_period_note(
+    *,
+    baseline_days: float,
+    max_period: float,
+    min_transits: float,
+) -> dict[str, Any] | None:
+    """Explain when the searched long-period end cannot yield enough transits.
+
+    A periodic transit needs the observed baseline to span at least
+    ``min_transits`` cycles. When ``max_period`` exceeds
+    ``baseline_days / min_transits`` the long-period end of the search is
+    physically unrecoverable from this data span (e.g. a single-sector TESS
+    light curve cannot confirm a 37-day planet). Surfaced as an honest
+    diagnostic rather than a silent rejection.
+    """
+    if not (np.isfinite(baseline_days) and baseline_days > 0):
+        return None
+    if not (np.isfinite(min_transits) and min_transits > 0):
+        return None
+    recoverable_max = baseline_days / min_transits
+    if max_period <= recoverable_max:
+        return None
+    return {
+        "status": "baseline_limited",
+        "baseline_days": float(baseline_days),
+        "min_transits_required": float(min_transits),
+        "searched_max_period_days": float(max_period),
+        "max_recoverable_period_days": float(recoverable_max),
+        "note": (
+            f"Searched max period {float(max_period):.2f} d exceeds the {float(recoverable_max):.2f} d that this "
+            f"{float(baseline_days):.2f} d baseline can yield with >= {float(min_transits):g} transits; long-period "
+            f"candidates beyond {float(recoverable_max):.2f} d are not recoverable from this data span "
+            "and need a longer (e.g. multi-sector) baseline."
+        ),
+    }
 
 
 def _stellar_context_for_physics(
@@ -992,6 +1144,8 @@ def analyze_light_curve_arrays(
     stellar_luminosity_solar: float | None = None,
     stellar_density_solar: float | None = None,
     stellar_rotation_period: float | None = None,
+    request_min_period: float | None = None,
+    request_max_period: float | None = None,
     max_candidates: int = 4,
     vetting_mode: str = "paper",
     search_profile: str | None = None,
@@ -1014,6 +1168,11 @@ def analyze_light_curve_arrays(
     else:
         profile_name = "science_standard"
     profile = get_search_profile(config, profile_name)
+    profile, period_window_request = _apply_request_period_window(
+        profile,
+        request_min_period=request_min_period,
+        request_max_period=request_max_period,
+    )
     clean_time, clean_flux = clean_light_curve(time, flux, quality)
     detrending = {"status": "skipped", "engine": "wotan"}
     if paper_grade_mode:
@@ -1114,6 +1273,45 @@ def analyze_light_curve_arrays(
     primary_signal_to_noise = ledger_candidates[0].signal_to_noise if ledger_candidates else 0.0
     tls_results: dict[str, dict] = {}
 
+    # Resolve the host-star scalar context once (job -> known_target -> TIC), so
+    # the TESS ML surface (Nigraha) receives real stellar features instead of
+    # collapsing on solar-default imputation. A live TIC stellar lookup runs only
+    # for TESS, only when something is still missing, and never fails the run.
+    job_stellar_context = {
+        "teff": stellar_teff,
+        "radius_solar": stellar_radius_solar,
+        "logg": stellar_logg,
+        "mass_solar": stellar_mass_solar,
+        "luminosity_solar": stellar_luminosity_solar,
+        "density_solar": stellar_density_solar,
+    }
+    catalog_stellar: dict[str, Any] | None = None
+    catalog_stellar_status = "not_queried"
+    if mission_upper == "TESS":
+        needs_catalog = any(
+            _positive(value) is None
+            for value in (stellar_teff, stellar_radius_solar, stellar_mass_solar, stellar_logg)
+        )
+        known_has_all = bool(
+            known_target is not None
+            and _positive(getattr(known_target, "stellar_teff", None)) is not None
+            and _positive(getattr(known_target, "stellar_radius_solar", None)) is not None
+            and _positive(getattr(known_target, "stellar_mass_solar", None)) is not None
+        )
+        if needs_catalog and not known_has_all:
+            try:
+                catalog_stellar = query_tic_stellar_context(target_id)
+                catalog_stellar_status = "complete"
+            except Exception as exc:  # network/catalog failures must not break analysis
+                catalog_stellar = None
+                catalog_stellar_status = f"unavailable: {exc}"
+    effective_stellar, stellar_context_source = _effective_stellar_context(
+        job_stellar=job_stellar_context,
+        known_target=known_target,
+        catalog_stellar=catalog_stellar,
+    )
+    stellar_context_source["catalog_lookup_status"] = catalog_stellar_status
+
     for index, candidate in enumerate(ledger_candidates, start=1):
         candidate_id = f"{mission.lower()}-{target_id}-tce-{index}"
         phase, folded_flux = phase_fold(
@@ -1189,17 +1387,18 @@ def analyze_light_curve_arrays(
             clean_flux=clean_flux,
             candidate=candidate,
             physics=physics,
-            stellar_teff=stellar_teff,
-            stellar_radius_solar=stellar_radius_solar,
-            stellar_logg=stellar_logg,
-            stellar_mass_solar=stellar_mass_solar,
-            stellar_luminosity_solar=stellar_luminosity_solar,
-            stellar_density_solar=stellar_density_solar,
+            stellar_teff=effective_stellar["teff"],
+            stellar_radius_solar=effective_stellar["radius_solar"],
+            stellar_logg=effective_stellar["logg"],
+            stellar_mass_solar=effective_stellar["mass_solar"],
+            stellar_luminosity_solar=effective_stellar["luminosity_solar"],
+            stellar_density_solar=effective_stellar["density_solar"],
             service=service,
             tess_service=tess_service,
             k2_service=k2_service,
             nigraha_threshold=config.paper_ml_threshold if paper_grade_mode and mission_upper == "TESS" else None,
         )
+        ml["stellar_context_source"] = dict(stellar_context_source)
         model_shift = {"status": "skipped", "engine": "dave_model_shift"}
         sweet = {"status": "skipped", "engine": "sweet"}
         catalog_context = {
@@ -1553,6 +1752,14 @@ def analyze_light_curve_arrays(
             "sector_consistency",
             "injection_recovery",
         ]
+    operative_min_transits = config.paper_min_transits if paper_grade_mode else profile.min_transits
+    period_window_note = _baseline_period_note(
+        baseline_days=data_quality["baseline_days"],
+        max_period=profile.max_period,
+        min_transits=operative_min_transits,
+    )
+    period_window = dict(period_window_request)
+    period_window["min_transits_required"] = float(operative_min_transits)
     return {
         "schema_version": "orbitlab.analysis_result.v2",
         "pipeline_version": "orbitlab-stormbreaker-0.2.0",
@@ -1562,6 +1769,8 @@ def analyze_light_curve_arrays(
         "mission": mission,
         "vetting_mode": vetting_mode,
         "search_profile": profile.name,
+        "period_window": period_window,
+        "period_window_note": period_window_note,
         "data_quality": data_quality,
         "tces": tce_payloads,
         "planet_candidates": planet_candidate_payloads,

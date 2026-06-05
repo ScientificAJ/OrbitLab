@@ -1,6 +1,126 @@
 {
-  "elapsed_s": 0.011,
+  "elapsed_s": 0.005,
   "payload": [
+    {
+      "created_at": "2026-06-05T08:22:34.277098",
+      "name": "Operation Friday Beta - tess_control_candidate",
+      "payload": {
+        "case": {
+          "case_id": "tess_control_candidate",
+          "expected_context": "If no strong TCE appears, OrbitLab should show no candidates or low-confidence/rejected signals clearly.",
+          "mission": "TESS",
+          "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
+          "query": "TIC 25155310"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
+        "result_id": "ddfbd89b-c411-4012-81c5-5aa90c381326",
+        "target_id": "TIC 25155310"
+      },
+      "session_id": "9cc3f58e-85eb-426e-b7d3-726eaf206b37"
+    },
+    {
+      "created_at": "2026-06-05T08:12:51.212817",
+      "name": "Operation Friday Beta - tess_control_candidate",
+      "payload": {
+        "case": {
+          "case_id": "tess_control_candidate",
+          "expected_context": "If no strong TCE appears, OrbitLab should show no candidates or low-confidence/rejected signals clearly.",
+          "mission": "TESS",
+          "purpose": "Control-style real TESS target where no confirmed planet is assumed by this operation.",
+          "query": "TIC 25155310"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0006/target/0000/0000/2515/5310/hlsp_tess-spoc_tess_phot_0000000025155310-s0006_tess_v1_tp.fits",
+        "result_id": "2304780d-0fc1-4a36-aecd-4cf75a4fbcb3",
+        "target_id": "TIC 25155310"
+      },
+      "session_id": "08528098-3726-4e3c-b0d6-3ca535974074"
+    },
+    {
+      "created_at": "2026-06-05T08:09:51.017241",
+      "name": "Operation Friday Beta - tess_known_hot_jupiter",
+      "payload": {
+        "case": {
+          "case_id": "tess_known_hot_jupiter",
+          "expected_context": "Known planet host context may appear through target/catalog matching, but OrbitLab must still report candidates as follow-up evidence rather than confirmations.",
+          "mission": "TESS",
+          "purpose": "Known TESS demo target and hot-Jupiter style signal check.",
+          "query": "TIC 307210830"
+        },
+        "product_uri": "mast:HLSP/tess-spoc/s0008/target/0000/0003/0721/0830/hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+        "result_id": "6055cc66-ccbb-41a6-982e-a49c9234047b",
+        "target_id": "TIC 307210830"
+      },
+      "session_id": "33491384-07ba-4ba6-8013-fb49ec58d39f"
+    },
+    {
+      "created_at": "2026-06-05T08:02:28.362892",
+      "name": "Deep Payload",
+      "payload": {
+        "list": [
+          1,
+          2,
+          3
+        ],
+        "nested": {
+          "value": 42
+        }
+      },
+      "session_id": "1df6a906-71d8-4971-93ce-8f7c2e481248"
+    },
+    {
+      "created_at": "2026-06-05T08:02:28.337746",
+      "name": "My Session",
+      "payload": {
+        "mission": "TESS",
+        "stars": [
+          "TIC 100"
+        ]
+      },
+      "session_id": "033863d8-6d35-4f7f-87eb-7482b5717b96"
+    },
+    {
+      "created_at": "2026-06-05T07:43:09.364707",
+      "name": "Deep Payload",
+      "payload": {
+        "list": [
+          1,
+          2,
+          3
+        ],
+        "nested": {
+          "value": 42
+        }
+      },
+      "session_id": "a134af12-1ecf-4548-b94f-342e1f54a4c2"
+    },
+    {
+      "created_at": "2026-06-05T07:43:09.340645",
+      "name": "My Session",
+      "payload": {
+        "mission": "TESS",
+        "stars": [
+          "TIC 100"
+        ]
+      },
+      "session_id": "4f134ff7-441f-4715-8327-4d8120e403bd"
+    },
+    {
+      "created_at": "2026-06-04T17:19:33.038080",
+      "name": "Operation Friday Beta - kepler_multi_known",
+      "payload": {
+        "case": {
+          "case_id": "kepler_multi_known",
+          "expected_context": "Kepler target should exercise Kepler product retrieval, BLS preview, full analysis, and AstroNet readiness/result surfaces.",
+          "mission": "Kepler",
+          "purpose": "Kepler known-system check.",
+          "query": "Kepler-10"
+        },
+        "product_uri": "mast:KEPLER/url/missions/kepler/target_pixel_files/0119/011904151/kplr011904151-2009131105131_lpd-targ.fits.gz",
+        "result_id": "e978f73d-55e1-4b6d-bfd6-195cf200eb48",
+        "target_id": "Kepler-10"
+      },
+      "session_id": "ed274edd-8df3-482a-9d71-36a8bb6cfbf7"
+    },
     {
       "created_at": "2026-06-04T17:16:54.248224",
       "name": "Operation Friday Beta - tess_control_candidate",
