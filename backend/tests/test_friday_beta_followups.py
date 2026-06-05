@@ -199,3 +199,37 @@ def test_effective_stellar_context_priority_job_over_known_over_catalog():
     # nothing supplies density -> stays None, imputation deferred to the adapter
     assert merged["density_solar"] is None
     assert provenance["density_solar"] == "imputed_solar_default"
+
+
+def test_effective_stellar_context_honours_density_source_hint():
+    """When the catalog context supplies a density_solar_source hint (e.g.
+    'derived_from_mass_radius'), the merged provenance must use that hint rather
+    than the generic 'tic_catalog' label.
+    """
+    merged, provenance = _effective_stellar_context(
+        job_stellar={"teff": None, "radius_solar": None, "logg": None,
+                     "mass_solar": None, "luminosity_solar": None, "density_solar": None},
+        known_target=None,
+        catalog_stellar={
+            "radius_solar": 1.0,
+            "mass_solar": 1.0,
+            "density_solar": 1.0,
+            "density_solar_source": "derived_from_mass_radius",
+        },
+    )
+    assert merged["density_solar"] == pytest.approx(1.0)
+    assert provenance["density_solar"] == "derived_from_mass_radius"
+
+
+def test_effective_stellar_context_tic_catalog_density_when_no_hint():
+    """When the catalog returns density_solar without a source hint the provenance
+    defaults to 'tic_catalog' (direct catalog measurement assumed).
+    """
+    merged, provenance = _effective_stellar_context(
+        job_stellar={"teff": None, "radius_solar": None, "logg": None,
+                     "mass_solar": None, "luminosity_solar": None, "density_solar": None},
+        known_target=None,
+        catalog_stellar={"density_solar": 0.5},
+    )
+    assert merged["density_solar"] == pytest.approx(0.5)
+    assert provenance["density_solar"] == "tic_catalog"

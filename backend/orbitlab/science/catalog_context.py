@@ -174,14 +174,31 @@ def query_tic_stellar_context(target_id: str) -> dict[str, Any]:
     target_row = target_row or rows[0]
     target_row_id = _text(target_row, "ID", "TICID", "tic_id")
     resolved_tic_id = int(target_row_id) if target_row_id and target_row_id.isdigit() else requested_tic_id
+
+    radius_solar = _number(target_row, "rad", "Radius", "radius")
+    mass_solar = _number(target_row, "mass", "Mass")
+
+    # Stellar density: prefer the catalog's own rho column; if absent, derive
+    # from mass and radius (rho = M/R^3 in solar units). Label the source so
+    # downstream provenance maps can distinguish measured from derived.
+    density_solar = _number(target_row, "rho", "density", "Rho")
+    density_solar_source = "tic_catalog"
+    if density_solar is None and radius_solar is not None and mass_solar is not None:
+        r3 = radius_solar ** 3
+        if math.isfinite(r3) and r3 > 0:
+            density_solar = mass_solar / r3
+            density_solar_source = "derived_from_mass_radius"
+
     return {
         "target_id": resolved_tic_id,
         "query_target_id": requested_tic_id,
         "teff": _number(target_row, "Teff", "teff"),
-        "radius_solar": _number(target_row, "rad", "Radius", "radius"),
-        "mass_solar": _number(target_row, "mass", "Mass"),
+        "radius_solar": radius_solar,
+        "mass_solar": mass_solar,
         "logg": _number(target_row, "logg", "logG"),
         "luminosity_solar": _number(target_row, "lum", "luminosity"),
+        "density_solar": density_solar,
+        "density_solar_source": density_solar_source,
         "source": "TIC",
     }
 

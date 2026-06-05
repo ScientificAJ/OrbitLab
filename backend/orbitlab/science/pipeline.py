@@ -386,7 +386,11 @@ def _effective_stellar_context(
         catalog_value = _positive(catalog_map.get(field))
         if catalog_value is not None:
             merged[field] = catalog_value
-            provenance[field] = "tic_catalog"
+            # Honour an explicit source hint from the catalog context (e.g.
+            # density_solar derived from mass/radius rather than a direct
+            # catalog measurement).
+            source_hint = catalog_map.get(f"{field}_source")
+            provenance[field] = source_hint if isinstance(source_hint, str) else "tic_catalog"
             continue
         merged[field] = None
         provenance[field] = "imputed_solar_default"

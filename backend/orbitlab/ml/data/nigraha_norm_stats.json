@@ -1,0 +1,111 @@
+{
+  "schema_version": "orbitlab.nigraha.norm_stats.v1",
+  "provenance": "Per-feature median/std recomputed from the committed upstream ExoplanetML/Nigraha catalog at the pinned commit, reproducing data/preprocess.py training-path filtering exactly (duplicate drop, KEYS projection, dropna for enableImputation=False, [-2,2] skip guard, pandas std ddof=1). These are the exact upstream statistics, not a fabricated scaler.",
+  "upstream_commit": "c4365b41dd02b187c3210189ffe8e3ead584f4f5",
+  "model_id": "nigraha-tess-global-nodropout-binary-ensemble",
+  "catalog_source": "period_info-tces-dl3.csv",
+  "citation": "Rao et al. 2021, MNRAS 502, 2845; ExoplanetML/Nigraha",
+  "ddof": 1,
+  "raw_columns_left_unstandardized": [
+    "Depth",
+    "Duration",
+    "rp_rs",
+    "DepthEven",
+    "DepthOdd"
+  ],
+  "population_size": 3015,
+  "features": {
+    "Teff": {
+      "standardized": true,
+      "median": 6134.0,
+      "std": 2862.391107936916,
+      "min": 2755.0,
+      "max": 50000.0
+    },
+    "Radius": {
+      "standardized": true,
+      "median": 1.4273,
+      "std": 0.8284352352192504,
+      "min": 0.123994,
+      "max": 4.98755
+    },
+    "logg": {
+      "standardized": true,
+      "median": 4.19037008,
+      "std": 0.3988063118117586,
+      "min": 0.0279999999999999,
+      "max": 5.80276012
+    },
+    "Mass": {
+      "standardized": true,
+      "median": 1.189,
+      "std": 0.5121825663701082,
+      "min": 0.0994794,
+      "max": 3.18
+    },
+    "lum": {
+      "standardized": true,
+      "median": 2.89818621,
+      "std": 16.65835663550765,
+      "min": 0.0,
+      "max": 244.592728
+    },
+    "rho": {
+      "standardized": true,
+      "median": 0.457611,
+      "std": 8.75686311491366,
+      "min": 0.0102746,
+      "max": 157.405
+    }
+  },
+  "reference_catalogs": {
+    "period_info-toi-exofop.csv": {
+      "population_size": 557,
+      "features": {
+        "Teff": {
+          "standardized": true,
+          "median": 5688.0,
+          "std": 2511.572965207686,
+          "min": 2808.0,
+          "max": 50000.0
+        },
+        "Radius": {
+          "standardized": true,
+          "median": 1.03195,
+          "std": 0.6222727045060559,
+          "min": 0.140853,
+          "max": 4.72499
+        },
+        "logg": {
+          "standardized": true,
+          "median": 4.39249992,
+          "std": 0.36635384751542344,
+          "min": 0.2,
+          "max": 5.80276012
+        },
+        "Mass": {
+          "standardized": true,
+          "median": 1.01,
+          "std": 0.4077766990026972,
+          "min": 0.114299,
+          "max": 2.565
+        },
+        "lum": {
+          "standardized": true,
+          "median": 1.07602763,
+          "std": 10.920496091705775,
+          "min": 0.0,
+          "max": 140.740936
+        },
+        "rho": {
+          "standardized": true,
+          "median": 0.942771,
+          "std": 8.237303966078176,
+          "min": 0.0209261,
+          "max": 157.405
+        }
+      }
+    }
+  },
+  "generated_at": "2026-06-05T17:25:38.859698+00:00"
+}

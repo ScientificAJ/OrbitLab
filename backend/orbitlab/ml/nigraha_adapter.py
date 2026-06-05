@@ -43,14 +43,26 @@ NIGRAHA_STANDARDIZED_FEATURES = ("Teff", "Radius", "logg", "Mass", "lum", "rho")
 _NORM_STATS_CACHE: dict[str, dict[str, tuple[float, float]] | None] = {}
 
 
+# Committed norm-stats artifact bundled with the package — available in all
+# environments including CI without needing to run the recovery script first.
+_BUNDLED_NORM_STATS = Path(__file__).parent / "data" / "nigraha_norm_stats.json"
+
+
 def load_norm_stats(path: Path | None = None) -> dict[str, tuple[float, float]] | None:
     """Load per-feature (median, std) standardization constants.
 
-    Returns ``None`` when the artifact is absent (fresh checkout before
-    scripts/recover_nigraha_norm_stats.py has run) or unusable, so the caller can
-    fall back to the honest saturation gate rather than silently mis-scaling.
+    Resolution order:
+    1. Explicit ``path`` argument (for tests / overrides).
+    2. ``settings.nigraha_norm_stats_path`` if it exists on disk.
+    3. ``_BUNDLED_NORM_STATS`` — the committed fallback that works in CI.
+
+    Returns ``None`` only when all three are absent or unreadable, at which
+    point the caller falls back to the honest saturation gate.
     """
-    resolved = (path or settings.nigraha_norm_stats_path)
+    if path is None:
+        settings_path = settings.nigraha_norm_stats_path
+        path = settings_path if settings_path.exists() else _BUNDLED_NORM_STATS
+    resolved = path
     key = str(resolved)
     if key in _NORM_STATS_CACHE:
         return _NORM_STATS_CACHE[key]
