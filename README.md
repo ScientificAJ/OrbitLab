@@ -3,7 +3,7 @@
 ![OrbitLab satellite-imagery header](docs/assets/ORBITLAB.png)
 
 [![CI](https://github.com/ScientificAJ/OrbitLab/actions/workflows/ci.yml/badge.svg)](https://github.com/ScientificAJ/OrbitLab/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/ScientificAJ/OrbitLab/actions/workflows/codeql.yml/badge.svg)](https://github.com/ScientificAJ/OrbitLab/actions/workflows/codeql.yml)
+[![CodeQL](https://github.com/ScientificAJ/OrbitLab/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/ScientificAJ/OrbitLab/security/code-scanning)
 [![Release](https://img.shields.io/github/v/release/ScientificAJ/OrbitLab?include_prereleases&label=release)](https://github.com/ScientificAJ/OrbitLab/releases/latest)
 [![Coverage](https://codecov.io/gh/ScientificAJ/OrbitLab/branch/main/graph/badge.svg)](https://codecov.io/gh/ScientificAJ/OrbitLab)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -175,7 +175,7 @@ Base prefix: `/api/v1`
 - `frontend/src/` - React/Vite application.
 - `scripts/` - repeatable artifact, startup, and operational scripts.
 - `docs/` - architecture, model cards, artifact policy, and repo notes.
-- `.github/workflows/` - CI, CodeQL, and release-room automation.
+- `.github/workflows/` - CI and release-room automation. CodeQL code scanning runs via GitHub default setup (managed in repo Settings → Code security, not a checked-in workflow file).
 - `.agents/task-log/` - rolling task logs for agent handoffs and verification cadence.
 - `.orbitlab/` - ignored local runtime state: cached MAST products, model artifacts, logs, pid files, and the default SQLite database.
 

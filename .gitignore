@@ -45,6 +45,15 @@ fix_codex_bwrap_sandbox.sh
 orbitlab-modshift-*.dat
 orbitlab-modshift-*.gnu
 
+# Secrets / local environment (repo is public — never commit real credentials)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*credentials*.json
+
 # OS/editor noise
 .DS_Store
 .idea/
