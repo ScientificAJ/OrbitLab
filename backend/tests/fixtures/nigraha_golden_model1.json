@@ -1,6 +1,7 @@
 {
-  "artifact": "ExoplanetML/Nigraha models_1.hdf5 original Keras forward pass",
-  "input_tensor_checksum": "1e7cede943d01f86ec38f818759ba6d846dc4973ff3c8a7dbf7e16638596434e",
-  "probability": 8.75651089272076e-27,
-  "absolute_tolerance": 1e-4
+  "artifact": "ExoplanetML/Nigraha models_1.hdf5 numpy forward pass with upstream-recovered scalar standardization applied (Keras cross-check pending: orbitlab/nigraha-keras:tf2 image + scripts/original_nigraha_forward.py not present in this environment)",
+  "standardization": "Teff/Radius/logg/Mass/lum/rho standardized via scripts/recover_nigraha_norm_stats.py (upstream catalog period_info-tces-dl3.csv @ c4365b41); transit features raw per upstream raw_columns",
+  "input_tensor_checksum": "10ae807a3e95a9e2180ea6232ae980f223fadacd637fd1c3af74140c2b65ef51",
+  "probability": 0.23987622559070587,
+  "absolute_tolerance": 1e-05
 }

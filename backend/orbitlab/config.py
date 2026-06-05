@@ -28,6 +28,12 @@ class Settings:
     run_jobs_inline: bool = os.getenv("ORBITLAB_RUN_JOBS_INLINE", "1").strip().lower() in {"1", "true", "yes"}
     mast_cache_dir: Path = Path(os.getenv("ORBITLAB_MAST_CACHE_DIR", ".orbitlab/mast")).resolve()
     model_registry_path: Path = Path(os.getenv("ORBITLAB_MODEL_REGISTRY", ".orbitlab/models.json")).resolve()
+    nigraha_norm_stats_path: Path = Path(
+        os.getenv(
+            "ORBITLAB_NIGRAHA_NORM_STATS",
+            ".orbitlab/models/nigraha/norm_stats_global_nodropout_binary.json",
+        )
+    ).resolve()
     cors_origins: tuple[str, ...] = _csv_env(
         "ORBITLAB_CORS_ORIGINS",
         "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173",
