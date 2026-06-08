@@ -12,40 +12,38 @@
 [![React + Vite](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-646CFF.svg)](frontend/package.json)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](docker-compose.yml)
 
-Research-grade exoplanet candidate workbench for real TESS, Kepler, and K2 target pixel files.
+OrbitLab is an open source tool for analyzing transit lightcurves from stars for real TESS, Kepler, and K2 target pixel files.
+OrbitLab helps users to inspect candidate transits from NASA mission data. It searches MAST products, extracts light curves from target pixel files, runs BLS transit searches, applies basic validation and physics checks, and reports mission-aware pretrained ML readiness through a public API.
+The project is intentionally strict: the backend does not fabricate planets, light curves, model scores, charts, screenshots, or downloaded artifacts. If data or a checksum-verified model artifact is missing, OrbitLab uses real MAST database data to provide an as accurate as possible result.
 
-OrbitLab helps students, judges, and citizen-science teams inspect candidate transits from NASA mission data without pretending certainty. It searches MAST products, extracts light curves from target pixel files, runs BLS transit searches, applies basic validation and physics checks, and reports mission-aware pretrained ML readiness through a public API.
-
-The project is intentionally strict: the backend does not fabricate planets, light curves, model scores, charts, screenshots, or downloaded artifacts. If data or a checksum-verified model artifact is missing, OrbitLab says so.
-
-Tiny One Piece nod: OrbitLab sails by a crew rule of protecting the evidence before chasing the discovery.
 
 ## Current Release And Trust Packet
 
 Latest release: [`v0.2.0`](https://github.com/ScientificAJ/OrbitLab/releases/tag/v0.2.0).
 
 Every public release is expected to ship a Science Provenance Release Room: a generated audit packet with source commit metadata, model artifact checksums, calibration/source checksums, science benchmark results and deltas, SPDX SBOM, release-room asset checksums, a zipped release packet, and GitHub artifact attestations when the release workflow runs. The packet helps reviewers verify what was built and what evidence existed at release time.
-
 Trust boundary: a release-room packet proves provenance, checksums, benchmarks, dependency inventory, and release assets. It does not turn BLS detections, ML scores, or promoted TCEs into confirmed planets. OrbitLab's strongest in-app claim is still follow-up candidate under the current evidence gates.
 
 ## Problem
 
-Public exoplanet archives are powerful, but a reproducible target-to-candidate workflow usually requires astronomy tooling, Python environment setup, model-artifact discipline, and careful caveats. Hackathon demos often skip those details and show polished but synthetic results.
-
-OrbitLab is the opposite tradeoff: a usable full-stack workbench that keeps the scientific chain visible.
+Public exoplanet archives are powerful, but a reproducible target-to-candidate workflow usually requires astronomy tooling, Python environment setup, model-artifact discipline, and careful caveats.
+OrbitLab is the opposite tradeoff: a usable, beginner friendly and easy to understand full-stack workbench that keeps the scientific chain visible.
 
 ## What It Does
 
-- Searches real MAST TESS, Kepler, and K2 products.
+- Searches real MAST TESS, Kepler, and K2 products based on a user search prompt.
 - Extracts light curves from target pixel files with optional aperture and artifact masks.
+    Lightcurves are graphs that plot the amount of light a star produces. When a planet passes in front, the light gets         dimmer. Therefore, by analyzing repeating patterns, scientists can find planets.
 - Runs BLS candidate detection and multi-candidate previews.
 - Produces folded light curves, periodograms, candidate metadata, and validation context.
-- Defaults to paper-grade vetting for accuracy, with explicit `deep` and `fast` modes available when speed is more important; paper-grade mode applies stricter Nigraha/TLS/DAVE/Kopparapu-style evidence gates before promotion.
-- Stress-tests candidates across detrending variants and box/TLS-like injection-recovery grids.
-- Emits sector-consistency evidence so single-sector analyses fail loudly as `single_sector_only` and multi-sector inputs can be compared by period, depth, SNR, centroid, and aperture stability.
-- Passes selected aperture pixels into TRICERATOPS depth calculations when the installed API supports it, and records whether aperture depth context, scenario probabilities, and contrast-curve constraints were used.
-- Provides a science benchmark harness for known-planet, injected-transit, false-positive, scrambled-control, and variability cases.
-- Exports reproducible evidence packets with light curves, periodograms, folded curves, vetting JSON, catalog context, ML evidence, and final disposition notes.
+    Folded lightcurve = a lightcurve repeatedly folded atop itself at the planet period length (time for a planet to            complete one full orbit)
+    Periodograph = a graph that shows the period of a dominant pattern within the lightcurve.
+    Candidates are defined as patterns that have a high possibility of being an actual planet.
+- Defaults to paper-grade vetting for accuracy, with explicit deep and fast modes available when speed is more important;     paper-grade mode applies stricter Nigraha/TLS/DAVE/Kopparapu-style evidence gates before promotion.
+- Passes selected aperture pixels into TRICERATOPS depth calculations when the installed API supports it, and records         whether aperture depth context, scenario probabilities, and contrast-curve constraints were used.
+- Provides a science benchmark harness for known-planet, injected-transit, false-positive, scrambled-control, and             variability cases.
+- Exports reproducible evidence packets with light curves, periodograms, folded curves, vetting JSON, catalog context, ML     evidence, and final disposition notes.
+
 - Reports model availability at `GET /api/v1/models` using local artifact checksums.
 - Keeps model downloads reproducible through pinned fetch scripts.
 - Publishes release-room provenance assets for public releases so benchmark, model, calibration, SBOM, and attestation evidence are inspectable outside the app.
