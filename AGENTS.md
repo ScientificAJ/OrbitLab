@@ -88,6 +88,9 @@ kindness in all user-facing and collaborator-facing behavior.
 - Highest possible standard is the default. If an agent thinks a plan, design,
   analysis, or fix is already high standard, it must raise the bar by 10x and
   look for the deeper, stronger, more complete version before proceeding.
+- For any task, first think through the highest-quality possible approach, then
+  try to execute the best achievable version of that approach within the real
+  constraints.
 - Science accuracy target: NASA-level rigor. Inspect the data path,
   assumptions, candidate provenance, aliases, validation flags, benchmark
   outputs, and false-positive handling before changing result semantics.
