@@ -12,6 +12,7 @@ import {
   fetchResult,
   fetchSessions,
   fetchTpfPreview,
+  formatApiErrorDetail,
   saveSession,
   searchTargets,
 } from './api';
@@ -415,5 +416,69 @@ describe('error detail parsing', () => {
   it('surfaces plain text error when body is not JSON', async () => {
     mockFetch.mockResolvedValueOnce(errorText(500, 'Internal Server Error'));
     await expect(fetchHealth()).rejects.toThrow('Internal Server Error');
+  });
+
+  it('stringifies an object-shaped detail', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: { code: 'BOOM', hint: 'retry' } }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    await expect(fetchHealth()).rejects.toThrow(/BOOM/);
+  });
+
+  it('handles a validation array item that is not an object', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: ['plain string item', 42] }), {
+        status: 422,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    await expect(fetchHealth()).rejects.toThrow(/plain string item; 42/);
+  });
+
+  it('handles a validation array item without a loc field', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: [{ msg: 'no location here' }] }), {
+        status: 422,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    await expect(fetchHealth()).rejects.toThrow(/no location here/);
+  });
+
+  it('stringifies an array item object that has no msg string', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: [{ loc: ['body', 'x'], type: 'value_error' }] }), {
+        status: 422,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    await expect(fetchHealth()).rejects.toThrow(/body\.x/);
+  });
+
+  it('returns the raw text fallback when detail key is absent', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ message: 'no detail key' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    await expect(fetchHealth()).rejects.toThrow('no detail key');
+  });
+
+  it('uses status-based message when error body text is empty and not JSON', async () => {
+    mockFetch.mockResolvedValueOnce(new Response('', { status: 503 }));
+    await expect(fetchHealth()).rejects.toThrow('Request failed with status 503');
+  });
+
+  // Direct unit coverage of the pure helper, including the final generic
+  // fallback branch which is unreachable via readJson (empty text throws first).
+  it('formatApiErrorDetail returns the generic fallback for nullish detail and empty fallback', () => {
+    expect(formatApiErrorDetail(undefined, '')).toBe('Request failed');
+    expect(formatApiErrorDetail(null, '')).toBe('Request failed');
+    expect(formatApiErrorDetail(undefined, 'custom fallback')).toBe('custom fallback');
+    expect(formatApiErrorDetail('already a string', 'x')).toBe('already a string');
   });
 });
