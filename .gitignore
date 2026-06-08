@@ -6,6 +6,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .coverage
+coverage.xml
 
 # Virtual environments
 .venv/
@@ -17,6 +18,7 @@ frontend/dist/
 frontend/*.tsbuildinfo
 frontend/playwright-report/
 frontend/test-results/
+frontend/coverage/
 
 # OrbitLab local runtime state
 .orbitlab/

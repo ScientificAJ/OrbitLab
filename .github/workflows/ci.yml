@@ -60,7 +60,9 @@ jobs:
         with:
           files: coverage.xml
           flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+          verbose: true
 
   frontend:
     name: Frontend build
@@ -86,8 +88,17 @@ jobs:
       - name: Lint frontend
         run: npm run lint --prefix frontend
 
-      - name: Run frontend unit tests
-        run: npm run test:unit --prefix frontend
+      - name: Run frontend unit tests with coverage
+        run: npm run test:unit:coverage --prefix frontend
+
+      - name: Upload frontend coverage to Codecov
+        uses: codecov/codecov-action@v6
+        with:
+          files: frontend/coverage/lcov.info
+          flags: frontend
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+          verbose: true
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
