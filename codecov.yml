@@ -28,6 +28,5 @@ ignore:
   - "backend/tests/"
   - "frontend/src/**/*.test.ts"
   - "frontend/src/**/*.test.tsx"
-  - "frontend/src/main.tsx"
   - "scripts/"
   - "docs/"

@@ -3,12 +3,14 @@ from __future__ import annotations
 import math
 
 import numpy as np
+import orbitlab.science.dave_vetting as dave_module
 import pytest
 from orbitlab.science.bls import TransitCandidate
 from orbitlab.science.dave_vetting import (
     _box_model_for_modshift,
     _brightening_significance,
     _dave_sigma_thresholds,
+    _default_modshift_binary,
     _depth_significance,
     _erfcinv,
     _false_alarm_sigma,
@@ -17,9 +19,11 @@ from orbitlab.science.dave_vetting import (
     _phase_time,
     _red_noise_factor,
     _robust_scatter,
+    _run_official_modshift,
     _safe_float,
     _transit_depth_series,
     _window_mask,
+    run_model_shift,
     run_sweet_test,
 )
 
@@ -133,6 +137,12 @@ def test_false_alarm_sigma_grows_with_smaller_probability():
     assert sigma_small > sigma_large
 
 
+def test_false_alarm_sigma_uses_default_when_inverse_is_nonfinite(monkeypatch):
+    monkeypatch.setattr(dave_module, "_erfcinv", lambda probability: float("inf"))
+
+    assert _false_alarm_sigma(0.01) == pytest.approx(3.0)
+
+
 # ---------------------------------------------------------------------------
 # _dave_sigma_thresholds
 # ---------------------------------------------------------------------------
@@ -174,6 +184,32 @@ def test_box_model_returns_baseline_for_zero_depth_candidate():
     assert np.all(model >= 0)
 
 
+def test_modshift_binary_guards_and_incomplete_output(tmp_path, monkeypatch):
+    monkeypatch.delenv("ORBITLAB_DAVE_MODSHIFT", raising=False)
+    assert _default_modshift_binary().name == "modshift"
+
+    monkeypatch.setenv("ORBITLAB_DAVE_MODSHIFT", str(tmp_path / "env-modshift"))
+    assert _default_modshift_binary() == tmp_path / "env-modshift"
+
+    c = _candidate(period=2.0, epoch=0.0, duration=0.1)
+    time = np.linspace(0, 4, 100)
+    flux = np.ones(100)
+
+    with pytest.raises(RuntimeError, match="missing"):
+        _run_official_modshift(time, flux, c, modshift_binary=tmp_path / "missing-modshift")
+
+    not_executable = tmp_path / "not-executable"
+    not_executable.write_text("#!/bin/sh\n", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="not executable"):
+        _run_official_modshift(time, flux, c, modshift_binary=not_executable)
+
+    incomplete = tmp_path / "incomplete"
+    incomplete.write_text("#!/bin/sh\nprintf '%s\\n' 'plot 1 2'\n", encoding="utf-8")
+    incomplete.chmod(0o755)
+    with pytest.raises(RuntimeError, match="incomplete"):
+        _run_official_modshift(time, flux, c, modshift_binary=incomplete)
+
+
 # ---------------------------------------------------------------------------
 # _depth_significance and _brightening_significance
 # ---------------------------------------------------------------------------
@@ -203,6 +239,18 @@ def test_brightening_significance_nonzero_for_sinusoid_peak():
     scatter = _robust_scatter(flux) or 0.001
     height, sig, count = _brightening_significance(time, flux, c, center_days=0.0, baseline=1.0, scatter=scatter)
     assert count >= 0
+
+
+def test_brightening_significance_returns_zeros_when_scatter_invalid():
+    c = _candidate(period=2.0, epoch=0.0, duration=0.08)
+    time = np.linspace(0, 4, 100)
+    flux = np.ones(100)
+
+    height, sig, count = _brightening_significance(time, flux, c, center_days=0.0, baseline=1.0, scatter=0.0)
+
+    assert height == 0.0
+    assert sig == 0.0
+    assert count > 0
 
 
 # ---------------------------------------------------------------------------
@@ -244,6 +292,20 @@ def test_red_noise_factor_returns_one_for_tiny_data():
     assert factor == pytest.approx(1.0)
 
 
+def test_red_noise_factor_defensive_cadence_and_scatter_paths():
+    c = _candidate(duration=0.0001)
+    assert _red_noise_factor(np.ones(12), np.ones(12), c, 0.001) == pytest.approx(1.0)
+    assert _red_noise_factor(np.linspace(0, 1, 12), np.ones(12), c, 0.001) == pytest.approx(1.0)
+    assert _red_noise_factor(np.linspace(0, 1, 12), np.ones(12), _candidate(duration=10.0), 0.001) == pytest.approx(1.0)
+    assert _red_noise_factor(np.linspace(0, 1, 12), np.ones(12), _candidate(duration=0.2), 0.001) == pytest.approx(1.0)
+
+
+def test_red_noise_factor_returns_one_when_binned_scatter_is_invalid(monkeypatch):
+    monkeypatch.setattr(dave_module, "_robust_scatter", lambda values: float("nan"))
+
+    assert _red_noise_factor(np.linspace(0, 1, 12), np.ones(12), _candidate(duration=0.2), 0.001) == pytest.approx(1.0)
+
+
 # ---------------------------------------------------------------------------
 # run_sweet_test
 # ---------------------------------------------------------------------------
@@ -280,6 +342,20 @@ def test_sweet_test_returns_insufficient_data_for_zero_period():
     flux = np.ones(600)
     result = run_sweet_test(time, flux, c)
     assert result["status"] == "insufficient_data"
+
+
+def test_sweet_test_handles_too_little_out_of_transit_data_and_lstsq_failure(monkeypatch):
+    c = _candidate(period=2.0, epoch=0.0, duration=1.9)
+    assert run_sweet_test(np.linspace(0, 4, 80), np.ones(80), c)["status"] == "insufficient_data"
+
+    def fail_lstsq(*args, **kwargs):
+        raise np.linalg.LinAlgError("singular")
+
+    monkeypatch.setattr(np.linalg, "lstsq", fail_lstsq)
+    failed_rows = run_sweet_test(np.linspace(0, 27, 600), np.ones(600), _candidate(period=2.0))
+
+    assert failed_rows["status"] == "pass"
+    assert failed_rows["periods"] == []
 
 
 def test_sweet_test_detects_half_period_sinusoid():
@@ -339,9 +415,7 @@ def test_robovet_flags_sinusoidal_shape_metric():
 
 
 def test_robovet_flags_secondary_eclipse_detected():
-    flags, robovet = _official_robovet_flags(
-        _clean_modshift(mod_sig_sec=12.0, mod_sig_ter=2.0, mod_sig_pri=14.0)
-    )
+    flags, robovet = _official_robovet_flags(_clean_modshift(mod_sig_sec=12.0, mod_sig_ter=2.0, mod_sig_pri=14.0))
     assert "sig_sec_in_model_shift" in flags
     assert robovet["sig_sec"] == 1
     assert robovet["disp"] == "false positive"
@@ -351,3 +425,24 @@ def test_robovet_flags_odd_even_diff():
     flags, robovet = _official_robovet_flags(_clean_modshift(mod_sig_oe=8.0))
     assert "odd_even_diff" in flags
     assert robovet["sig_sec"] == 1
+
+
+def test_robovet_flags_cover_primary_tertiary_positive_failures_and_run_model_shift_insufficient():
+    flags, robovet = _official_robovet_flags(
+        _clean_modshift(
+            mod_sig_pri=8.0,
+            mod_sig_ter=7.0,
+            mod_sig_pos=7.0,
+            mod_sig_fa1=5.0,
+            mod_sig_fa2=3.0,
+            mod_Fred=2.0,
+        )
+    )
+
+    assert "sig_pri_over_fred_too_low" in flags
+    assert "sig_pri_minus_sig_ter_too_low" in flags
+    assert "sig_pri_minus_sig_pos_too_low" in flags
+    assert robovet["disp"] == "false positive"
+
+    short = run_model_shift(np.arange(8), np.ones(8), _candidate())
+    assert short["status"] == "insufficient_data"

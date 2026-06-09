@@ -2,10 +2,17 @@ import json
 from pathlib import Path
 
 import numpy as np
+import pytest
 from orbitlab.ml.nigraha_adapter import (
     NIGRAHA_STANDARDIZED_FEATURES,
+    _centered_local_view,
+    _nigraha_scale,
+    _standardize,
+    _transit_depths,
     build_nigraha_tensors,
     clear_norm_stats_cache,
+    load_norm_stats,
+    nigraha_tensor_schema,
 )
 from orbitlab.ml.nigraha_service import NigrahaNumpyModel, NigrahaService
 from orbitlab.science.bls import TransitCandidate
@@ -223,3 +230,52 @@ def test_nigraha_saturation_gate_still_fires_when_stats_missing():
     assert verdict.preprocessing_compatible is False
     assert verdict.mean_logit is not None and abs(verdict.mean_logit) >= 50.0
     assert verdict.score_caveat and "MNRAS 502, 2845" in verdict.score_caveat
+
+
+def test_nigraha_adapter_edge_guards_and_partial_norm_stats(tmp_path, monkeypatch):
+    clear_norm_stats_cache()
+    stats_path = tmp_path / "stats.json"
+    stats_path.write_text(
+        json.dumps(
+            {
+                "features": {
+                    "Teff": {"standardized": True, "median": 5000.0, "std": 100.0},
+                    "Radius": {"standardized": False, "median": 1.0, "std": 0.1},
+                    "Mass": {"standardized": True, "median": 1.0, "std": 0.0},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert load_norm_stats(stats_path) == {"Teff": (5000.0, 100.0)}
+    assert load_norm_stats(tmp_path / "missing.json") is None
+    no_parsed_path = tmp_path / "no-parsed.json"
+    no_parsed_path.write_text(json.dumps({"features": {"Teff": {"standardized": False}}}), encoding="utf-8")
+    assert load_norm_stats(no_parsed_path) is None
+
+    tensor = np.asarray([[5778.0]], dtype=np.float32)
+    assert np.array_equal(_standardize(tensor, "Teff", None), tensor)
+    assert np.array_equal(_standardize(tensor, "Radius", {"Teff": (5000.0, 100.0)}), tensor)
+    assert nigraha_tensor_schema()["inputs"]["Depth"] == [1, 1]
+
+    with pytest.raises(ValueError, match="flat curve"):
+        _nigraha_scale(np.ones(8, dtype=np.float32))
+
+    scaled = _nigraha_scale(np.array([-1.0, 0.0, 1.0], dtype=np.float32))
+    assert np.isfinite(scaled).all()
+
+    with pytest.raises(ValueError, match="too few"):
+        _centered_local_view(np.linspace(-0.5, 0.5, 10), np.ones(10), duration_days=0.01, period_days=10.0, bins=81)
+
+    candidate = TransitCandidate(period=2.0, epoch=0.0, duration=0.01, depth=0.001, power=1.0, signal_to_noise=8.0)
+    depths = _transit_depths(np.array([0.0, 0.2, 0.4, 0.8]), np.ones(4), candidate)
+    assert np.isnan(depths[0]) or np.isnan(depths[1])
+
+    time, flux, candidate = transit_curve()
+    tensors = build_nigraha_tensors(time, flux, candidate, norm_stats_path=stats_path)
+    assert tensors.standardized is True
+    assert tensors.standardized_features == ("Teff",)
+
+    monkeypatch.setattr("orbitlab.ml.nigraha_adapter._nigraha_scale", lambda flux: np.full_like(flux, np.nan))
+    with pytest.raises(ValueError, match="contain NaN"):
+        build_nigraha_tensors(time, flux, candidate, norm_stats_path=_MISSING_STATS)

@@ -29,6 +29,9 @@ def test_manual_jitter_mask_requires_audit_reason():
     flux = np.linspace(0.9, 1.1, 8, dtype=np.float32)
     mask = np.array([False, True, False, False, False, False, False, False])
 
+    with pytest.raises(ValueError, match="audit reason"):
+        apply_manual_jitter_mask(time, flux, mask, reason=" ")
+
     kept_time, kept_flux, audit = apply_manual_jitter_mask(time, flux, mask, reason="reaction wheel event")
 
     assert kept_time.size == 7
