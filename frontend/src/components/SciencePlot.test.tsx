@@ -30,9 +30,7 @@ describe('SciencePlot', () => {
 
   it('renders the Plot frame with populated data and default line mode', () => {
     plotProps.length = 0;
-    render(
-      <SciencePlot title="Light curve" x={[0, 1, 2]} y={[1, 0.99, 1]} xLabel="Time" yLabel="Flux" testId="lc" />,
-    );
+    render(<SciencePlot title="Light curve" x={[0, 1, 2]} y={[1, 0.99, 1]} xLabel="Time" yLabel="Flux" testId="lc" />);
     const frame = screen.getByTestId('lc');
     expect(frame).toHaveClass('plot-frame');
     expect(screen.getByTestId('mock-plot')).toBeInTheDocument();

@@ -1,3 +1,4 @@
+import json
 import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
@@ -8,6 +9,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
 
 import fetch_kepler_astronet
+from orbitlab.exceptions import ModelArtifactError
 from orbitlab.ml.artifact_registry import (
     K2_EXOMAC_MODEL_ID,
     artifact_status,
@@ -260,6 +262,170 @@ def test_register_artifact_records_exomac_bundle_format(tmp_path: Path):
 
     assert artifact.format == "sklearn-joblib-bundle"
     assert artifact_status(K2_EXOMAC_MODEL_ID, registry_path)["status"] == "ready"
+
+
+def test_register_artifact_rejects_missing_path(tmp_path: Path):
+    with pytest.raises(FileNotFoundError, match="model artifact path does not exist"):
+        register_artifact(
+            model_id="missing-model",
+            mission="Kepler",
+            path=tmp_path / "missing.onnx",
+            source="unit-test",
+            version="missing",
+            registry_path=tmp_path / "models.json",
+        )
+
+
+@pytest.mark.parametrize(
+    ("name", "files", "expected_format"),
+    [
+        ("tf-checkpoint", ("model.ckpt-42.index", "model.ckpt-42.data-00000-of-00001"), "tensorflow-checkpoint"),
+        ("keras-ensemble", ("fold-1.hdf5", "fold-2.hdf5"), "keras-hdf5-ensemble"),
+    ],
+)
+def test_register_artifact_detects_directory_formats(
+    tmp_path: Path, name: str, files: tuple[str, ...], expected_format: str
+):
+    artifact_path = tmp_path / name
+    artifact_path.mkdir()
+    for filename in files:
+        (artifact_path / filename).write_bytes(f"bytes for {filename}".encode())
+
+    artifact = register_artifact(
+        model_id=f"{name}-model",
+        mission="Kepler",
+        path=artifact_path,
+        source="unit-test",
+        version="format",
+        registry_path=tmp_path / f"{name}-registry.json",
+    )
+
+    assert artifact.format == expected_format
+
+
+@pytest.mark.parametrize(
+    ("filename", "expected_format"),
+    [
+        ("forest.joblib", "sklearn-joblib"),
+        ("model.h5", "keras-hdf5"),
+        ("model.hdf5", "keras-hdf5"),
+        ("model.keras", "keras-hdf5"),
+        ("saved_model_dir_without_known_markers", "savedmodel"),
+    ],
+)
+def test_register_artifact_detects_file_and_savedmodel_formats(tmp_path: Path, filename: str, expected_format: str):
+    artifact_path = tmp_path / filename
+    if "." in filename:
+        artifact_path.write_bytes(b"model bytes")
+    else:
+        artifact_path.mkdir()
+        (artifact_path / "saved_model.pb").write_bytes(b"savedmodel bytes")
+
+    artifact = register_artifact(
+        model_id=f"{filename}-model",
+        mission="Kepler",
+        path=artifact_path,
+        source="unit-test",
+        version="format",
+        registry_path=tmp_path / f"{filename}-registry.json",
+    )
+
+    assert artifact.format == expected_format
+
+
+def test_artifact_status_reports_unregistered_and_corrupt_registry(tmp_path: Path):
+    registry_path = tmp_path / "models.json"
+
+    missing = artifact_status("not-registered", registry_path)
+    assert missing["status"] == "unavailable"
+    assert "not registered" in missing["detail"]
+
+    registry_path.write_text("{not-json", encoding="utf-8")
+    corrupt = artifact_status("not-registered", registry_path)
+    assert corrupt["status"] == "unavailable"
+
+
+def test_get_registered_artifact_skips_non_matching_registry_entries(tmp_path: Path):
+    artifact_path = tmp_path / "target.onnx"
+    artifact_path.write_bytes(b"target bytes")
+    registry_path = tmp_path / "models.json"
+    registry_path.write_text(
+        json.dumps(
+            {
+                "artifacts": [
+                    {
+                        "model_id": "other-model",
+                        "mission": "Kepler",
+                        "path": str(tmp_path / "other.onnx"),
+                        "sha256": "0" * 64,
+                        "source": "unit-test",
+                        "version": "other",
+                        "format": "onnx",
+                    },
+                    {
+                        "model_id": "target-model",
+                        "mission": "Kepler",
+                        "path": str(artifact_path),
+                        "sha256": sha256_path(artifact_path),
+                        "source": "unit-test",
+                        "version": "target",
+                        "format": "onnx",
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    artifact = get_registered_artifact("target-model", registry_path)
+
+    assert artifact.path == str(artifact_path)
+    assert artifact.version == "target"
+
+
+def test_artifact_status_reports_deleted_checksum_failure_and_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    artifact_path = tmp_path / "model.onnx"
+    artifact_path.write_bytes(b"original bytes")
+    registry_path = tmp_path / "models.json"
+    artifact = register_artifact(
+        model_id="kepler-status-test",
+        mission="Kepler",
+        path=artifact_path,
+        source="unit-test",
+        version="status",
+        registry_path=registry_path,
+    )
+
+    artifact_path.unlink()
+    deleted = artifact_status(artifact.model_id, registry_path)
+    assert deleted["status"] == "unavailable"
+    assert "does not exist" in deleted["detail"]
+
+    artifact_path.write_bytes(b"original bytes")
+
+    def fail_checksum(path: Path) -> str:
+        raise OSError(f"cannot hash {path.name}")
+
+    monkeypatch.setattr("orbitlab.ml.artifact_registry.sha256_path", fail_checksum)
+    failed = artifact_status(artifact.model_id, registry_path)
+    assert failed["status"] == "unavailable"
+    assert "cannot hash" in failed["detail"]
+
+    monkeypatch.setattr("orbitlab.ml.artifact_registry.sha256_path", lambda path: "0" * 64)
+    mismatch = artifact_status(artifact.model_id, registry_path)
+    assert mismatch == {
+        "model_id": artifact.model_id,
+        "status": "unavailable",
+        "detail": "artifact checksum mismatch",
+    }
+
+
+def test_sha256_path_rejects_empty_model_directory(tmp_path: Path):
+    (tmp_path / "empty-model").mkdir()
+    with pytest.raises(ModelArtifactError, match="model directory is empty"):
+        sha256_path(tmp_path / "empty-model")
 
 
 def test_kepler_fetcher_rejects_lfs_pointer():

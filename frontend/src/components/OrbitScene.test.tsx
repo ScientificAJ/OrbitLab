@@ -6,9 +6,21 @@ import type { Candidate } from '../lib/api';
 
 vi.mock('three', () => threeMock);
 
-import { OrbitScene } from './OrbitScene';
+import { hasOrbitMount, OrbitScene, resolveModeValue } from './OrbitScene';
 
 const WebGLRendererMock = threeMock.__WebGLRenderer;
+
+it('preserves defensive mount and mode-value fallbacks', () => {
+  expect(hasOrbitMount(null)).toBe(false);
+  expect(hasOrbitMount(document.createElement('div'))).toBe(true);
+  expect(resolveModeValue([0.5, 2], 1)).toBe(2);
+  expect(resolveModeValue([0.5, 2], 99)).toBe(1);
+});
+
+it('does not initialize WebGL when a host resolver reports no mount', () => {
+  render(<OrbitScene candidates={[]} mountResolver={() => null} />);
+  expect(WebGLRendererMock.instances).toHaveLength(0);
+});
 
 // ---------------------------------------------------------------------------
 // Canvas context plumbing. jsdom returns null for getContext, which would push
@@ -233,9 +245,7 @@ describe('OrbitScene WebGL path', () => {
   it('ignores a click that hits an object without a candidate id', async () => {
     const onSelect = vi.fn();
     const bare = new threeMock.Object3D();
-    const raycastSpy = vi
-      .spyOn(threeMock.Raycaster.prototype, 'intersectObjects')
-      .mockReturnValue([{ object: bare }]);
+    const raycastSpy = vi.spyOn(threeMock.Raycaster.prototype, 'intersectObjects').mockReturnValue([{ object: bare }]);
     render(<OrbitScene candidates={[readyHabitable]} selectedId="ready-hz" onSelectCandidate={onSelect} />);
     await screen.findByTestId('orbit-canvas');
     const canvas = document.querySelector('canvas')!;
@@ -308,6 +318,17 @@ describe('OrbitScene WebGL path', () => {
     expect(renderer.dispose).toHaveBeenCalled();
   });
 
+  it('skips canvas removal during cleanup if it was already detached externally', async () => {
+    const { unmount } = render(<OrbitScene candidates={[readyHabitable]} selectedId="ready-hz" />);
+    const canvas = await screen.findByTestId('orbit-canvas');
+    // Simulate an external actor detaching the canvas before React unmounts:
+    // the cleanup's parentElement === mount guard should then take its false path.
+    canvas.parentElement?.removeChild(canvas);
+    const renderer = WebGLRendererMock.instances.at(-1)!;
+    unmount();
+    expect(renderer.dispose).toHaveBeenCalled();
+  });
+
   it('covers candidate-evidence, no-validation and temperature-habitable branches', async () => {
     render(
       <OrbitScene
@@ -350,7 +371,11 @@ describe('OrbitScene fallback (no WebGL) path', () => {
     const onSelect = vi.fn();
     const user = userEvent.setup();
     render(
-      <OrbitScene candidates={[readyHabitable, reviewSignal, blockedSignal]} selectedId="ready-hz" onSelectCandidate={onSelect} />,
+      <OrbitScene
+        candidates={[readyHabitable, reviewSignal, blockedSignal]}
+        selectedId="ready-hz"
+        onSelectCandidate={onSelect}
+      />,
     );
     await waitFor(() => expect(screen.getByLabelText('Static orbit overview')).toBeInTheDocument());
     await user.click(screen.getByTestId('fallback-orbit-review-1'));

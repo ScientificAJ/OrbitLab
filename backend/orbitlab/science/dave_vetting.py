@@ -267,8 +267,7 @@ def _transit_depth_series(
     depths: list[float] = []
     for number in np.unique(transit_number[primary_mask]):
         mask = primary_mask & (transit_number == number)
-        if np.count_nonzero(mask):
-            depths.append(max(0.0, baseline - float(np.nanmedian(flux[mask]))))
+        depths.append(max(0.0, baseline - float(np.nanmedian(flux[mask]))))
     return depths
 
 
@@ -284,8 +283,6 @@ def _red_noise_factor(time: np.ndarray, flux: np.ndarray, candidate: TransitCand
         return 1.0
     residual = flux - float(np.nanmedian(flux))
     usable = residual[: residual.size - residual.size % bin_size]
-    if usable.size == 0:
-        return 1.0
     binned = np.nanmean(usable.reshape(-1, bin_size), axis=1)
     expected = scatter / math.sqrt(bin_size)
     measured = _robust_scatter(binned)
@@ -316,8 +313,6 @@ def run_sweet_test(
         ("period", candidate.period),
         ("double_period", candidate.period * 2.0),
     ):
-        if period <= 0:
-            continue
         omega = 2.0 * math.pi / period
         design = np.column_stack((np.sin(omega * oot_time), np.cos(omega * oot_time), np.ones_like(oot_time)))
         try:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -271,6 +272,53 @@ def test_run_analysis_job_rejects_out_of_bounds_artifact_mask_indices(monkeypatc
     with SessionLocal() as db:
         job = db.get(AnalysisJobRecord, job_id)
         assert job.status == "failed"
+
+
+def test_run_analysis_job_fails_when_artifact_mask_missing(monkeypatch):
+    bundle = _fake_bundle()
+    monkeypatch.setattr("orbitlab.worker.extract_light_curve_bundle_from_tpf", lambda *a, **kw: bundle)
+
+    with SessionLocal() as db:
+        job = _make_job(artifact_mask_id=str(uuid4()))
+        db.add(job)
+        db.commit()
+        job_id = job.id
+
+    with pytest.raises(ValueError, match="artifact mask not found"):
+        run_analysis_job.run(job_id)
+
+    with SessionLocal() as db:
+        job = db.get(AnalysisJobRecord, job_id)
+        assert job.status == "failed"
+
+
+def test_run_analysis_job_marks_failed_on_malformed_aperture_mask_json(monkeypatch):
+    bundle = _fake_bundle()
+    monkeypatch.setattr("orbitlab.worker.extract_light_curve_bundle_from_tpf", lambda *a, **kw: bundle)
+
+    with SessionLocal() as db:
+        mask_id = str(uuid4())
+        db.add(
+            ApertureMaskRecord(
+                id=mask_id,
+                target_id="TIC 123",
+                product_uri="mast:test-product",
+                mask_json="{not-json",
+                reason="bad json",
+            )
+        )
+        job = _make_job(aperture_mask_id=mask_id)
+        db.add(job)
+        db.commit()
+        job_id = job.id
+
+    with pytest.raises(json.JSONDecodeError):
+        run_analysis_job.run(job_id)
+
+    with SessionLocal() as db:
+        job = db.get(AnalysisJobRecord, job_id)
+        assert job.status == "failed"
+        assert job.error
 
 
 # ---------------------------------------------------------------------------

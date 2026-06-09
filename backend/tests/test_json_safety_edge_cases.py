@@ -185,3 +185,36 @@ def test_to_jsonable_fallback_stringifies_unknown_objects():
 
     result = to_jsonable(Weird())
     assert result == "weird_object"
+
+
+def test_to_jsonable_falls_back_when_item_adapter_raises():
+    class BadItem:
+        def item(self):
+            raise TypeError("scalar adapter failed")
+
+        def __str__(self):
+            return "bad_item"
+
+    assert to_jsonable(BadItem()) == "bad_item"
+
+
+def test_to_jsonable_uses_tolist_after_item_adapter_value_error():
+    class ListBackedScalar:
+        def item(self):
+            raise ValueError("not a scalar")
+
+        def tolist(self):
+            return [np.float32(1.25), np.nan]
+
+    assert to_jsonable(ListBackedScalar()) == [1.25, None]
+
+
+def test_to_jsonable_falls_back_when_tolist_adapter_raises():
+    class BadList:
+        def tolist(self):
+            raise ValueError("array adapter failed")
+
+        def __str__(self):
+            return "bad_list"
+
+    assert to_jsonable(BadList()) == "bad_list"

@@ -103,16 +103,16 @@ def run_analysis_job(self, job_id: str) -> str:
             db.commit()
             logger.info("Successfully completed analysis job: %s", job_id)
             return result_id
-        except ValueError as exc:
+        except json.JSONDecodeError as exc:
             db.rollback()
-            logger.error("ValueError in job %s: %s", job_id, exc)
+            logger.error("JSONDecodeError in job %s: %s", job_id, exc)
             job.status = "failed"
             job.error = str(exc)
             db.commit()
             raise
-        except json.JSONDecodeError as exc:
+        except ValueError as exc:
             db.rollback()
-            logger.error("JSONDecodeError in job %s: %s", job_id, exc)
+            logger.error("ValueError in job %s: %s", job_id, exc)
             job.status = "failed"
             job.error = str(exc)
             db.commit()

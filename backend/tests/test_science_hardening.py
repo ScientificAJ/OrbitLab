@@ -6,7 +6,7 @@ import types
 
 import numpy as np
 import pytest
-from orbitlab.ml.calibration import apply_probability_calibration
+from orbitlab.ml.calibration import apply_probability_calibration, attach_probability_calibration
 from orbitlab.science.bls import TransitCandidate
 from orbitlab.science.injection_recovery import inject_box_transit, run_injection_recovery
 from orbitlab.science.tls_refinement import refine_with_tls, search_with_tls
@@ -35,6 +35,85 @@ def test_probability_calibration_uses_local_isotonic_bundle(tmp_path, monkeypatc
     assert payload["calibration_source"] == "unit-test-calibration"
     assert payload["calibration_method"] == "isotonic_bins"
     assert payload["calibration_checksum"]
+
+
+@pytest.mark.parametrize("probability", [None, float("nan"), float("inf")])
+def test_probability_calibration_reports_unavailable_for_missing_or_nonfinite_probability(probability):
+    payload = apply_probability_calibration(probability, "Kepler")
+
+    assert payload == {
+        "raw_ml_probability": probability,
+        "calibrated_ml_probability": None,
+        "calibration_source": None,
+        "calibration_method": None,
+        "calibration_checksum": None,
+    }
+
+
+def test_probability_calibration_uses_identity_without_local_bundle(tmp_path, monkeypatch):
+    monkeypatch.setattr("orbitlab.ml.calibration.CALIBRATION_DIR", tmp_path / "no-calibration")
+
+    payload = apply_probability_calibration(1.4, "Kepler")
+
+    assert payload["raw_ml_probability"] == 1.0
+    assert payload["calibrated_ml_probability"] == 1.0
+    assert payload["calibration_source"] == "identity_no_local_calibration_bundle"
+    assert payload["calibration_method"] == "identity"
+    assert payload["calibration_checksum"] is None
+
+
+def test_probability_calibration_uses_sigmoid_bundle(tmp_path, monkeypatch):
+    calibration_dir = tmp_path / "calibration"
+    calibration_dir.mkdir()
+    (calibration_dir / "k2-probability-calibration.json").write_text(
+        json.dumps(
+            {
+                "method": "sigmoid",
+                "source": "unit-test-sigmoid",
+                "coef": 2.0,
+                "intercept": -1.0,
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("orbitlab.ml.calibration.CALIBRATION_DIR", calibration_dir)
+
+    payload = apply_probability_calibration(0.5, "K2")
+
+    assert payload["raw_ml_probability"] == 0.5
+    assert payload["calibrated_ml_probability"] == pytest.approx(0.5)
+    assert payload["calibration_source"] == "unit-test-sigmoid"
+    assert payload["calibration_method"] == "sigmoid"
+    assert payload["calibration_checksum"]
+
+
+def test_probability_calibration_preserves_raw_score_for_unknown_bundle_method(tmp_path, monkeypatch):
+    calibration_dir = tmp_path / "calibration"
+    calibration_dir.mkdir()
+    (calibration_dir / "tess-probability-calibration.json").write_text(
+        json.dumps({"method": "future-method", "source": "unit-test-future"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr("orbitlab.ml.calibration.CALIBRATION_DIR", calibration_dir)
+
+    payload = apply_probability_calibration(-0.5, "TESS")
+
+    assert payload["raw_ml_probability"] == 0.0
+    assert payload["calibrated_ml_probability"] == 0.0
+    assert payload["calibration_source"] == "unit-test-future"
+    assert payload["calibration_method"] == "future-method"
+    assert payload["calibration_checksum"]
+
+
+def test_attach_probability_calibration_preserves_existing_ml_fields(tmp_path, monkeypatch):
+    monkeypatch.setattr("orbitlab.ml.calibration.CALIBRATION_DIR", tmp_path / "no-calibration")
+
+    payload = attach_probability_calibration({"probability": 0.3, "model_id": "unit"}, "Kepler")
+
+    assert payload["model_id"] == "unit"
+    assert payload["probability"] == 0.3
+    assert payload["raw_ml_probability"] == 0.3
+    assert payload["calibrated_ml_probability"] == 0.3
 
 
 def test_injection_recovery_reports_recovered_known_signal():

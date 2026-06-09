@@ -82,13 +82,6 @@ describe('TourOverlay', () => {
   });
 
   it('exposes six beginner tour steps with stable ids', () => {
-    expect(beginnerTourSteps.map((s) => s.id)).toEqual([
-      'mission',
-      'search',
-      'target',
-      'product',
-      'run',
-      'plots',
-    ]);
+    expect(beginnerTourSteps.map((s) => s.id)).toEqual(['mission', 'search', 'target', 'product', 'run', 'plots']);
   });
 });

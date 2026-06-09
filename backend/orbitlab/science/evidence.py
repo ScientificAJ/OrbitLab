@@ -39,8 +39,6 @@ def estimate_red_noise_beta(residuals: np.ndarray, bin_sizes: tuple[int, ...] = 
         if values.size < bin_size * 4:
             continue
         usable = values[: values.size // bin_size * bin_size]
-        if usable.size == 0:
-            continue
         binned = usable.reshape(-1, bin_size).mean(axis=1)
         expected = white_sigma / math.sqrt(bin_size)
         observed = float(np.nanstd(binned))

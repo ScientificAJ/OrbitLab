@@ -160,7 +160,9 @@ describe('uiState helpers', () => {
     expect(getWorkflowMessage({ ...base, workflow: 'running', jobStatus: 'started', mode: 'advanced' })).toBe(
       'Analysis job started...',
     );
-    expect(getWorkflowMessage({ ...base, workflow: 'running', mode: 'beginner' })).toBe('Starting the full analysis...');
+    expect(getWorkflowMessage({ ...base, workflow: 'running', mode: 'beginner' })).toBe(
+      'Starting the full analysis...',
+    );
     expect(getWorkflowMessage({ ...base, workflow: 'running', mode: 'advanced' })).toBe('Submitting analysis job...');
   });
 
@@ -209,7 +211,9 @@ describe('uiState helpers', () => {
     expect(getWorkflowMessage({ ...base, workflow: 'product-selected', mode: 'beginner' })).toBe(
       'Observation file selected. Preview candidates or run the full analysis.',
     );
-    expect(getWorkflowMessage({ ...base, mode: 'beginner' })).toBe('Choose a mission, then search for a target to begin.');
+    expect(getWorkflowMessage({ ...base, mode: 'beginner' })).toBe(
+      'Choose a mission, then search for a target to begin.',
+    );
     expect(getWorkflowMessage({ ...base, mode: 'advanced' })).toBe('Search for a target to begin.');
     // default mode (omitted) should behave as advanced
     expect(getWorkflowMessage({ ...base })).toBe('Search for a target to begin.');
@@ -217,7 +221,13 @@ describe('uiState helpers', () => {
 
   it('handles complete workflow without hasResult (skips zero-candidate branch)', () => {
     expect(
-      getWorkflowMessage({ ...base, workflow: 'complete', hasResult: false, candidateCount: 0, resultKind: 'analysis' }),
+      getWorkflowMessage({
+        ...base,
+        workflow: 'complete',
+        hasResult: false,
+        candidateCount: 0,
+        resultKind: 'analysis',
+      }),
     ).toBe('Analysis candidates are ready for review.');
   });
 });

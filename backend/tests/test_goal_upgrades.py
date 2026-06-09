@@ -6,8 +6,11 @@ import numpy as np
 import pytest
 from orbitlab.benchmarks.science_benchmark import (
     BenchmarkCase,
+    _BenchmarkUnavailableModel,
+    _default_cases,
     benchmark_report_markdown,
     run_science_benchmark,
+    write_benchmark_reports,
 )
 from orbitlab.science.bls import TransitCandidate
 from orbitlab.science.detrending_sensitivity import run_detrending_sensitivity
@@ -185,6 +188,113 @@ def test_science_benchmark_summary_uses_truth_sets(monkeypatch):
     assert report["false_positive_rejection_rate"] == 1.0
     assert report["false_alarm_escape_list"] == []
     assert "| planet |" in markdown
+
+
+def test_science_benchmark_default_cases_and_report_writer(tmp_path):
+    cases = _default_cases()
+    assert {case.truth_label for case in cases} == {
+        "confirmed_planet",
+        "known_false_positive",
+        "injected_transit",
+        "scrambled_control",
+    }
+    assert all(case.time.shape == case.flux.shape for case in cases)
+
+    with pytest.raises(FileNotFoundError, match="without a registered ML artifact"):
+        _BenchmarkUnavailableModel().predict()
+
+    report = {
+        "status": "passed",
+        "vetting_mode": "fast",
+        "case_count": 0,
+        "known_planet_recovery_rate": None,
+        "false_positive_rejection_rate": None,
+        "injected_transit_recovery_rate": None,
+        "false_alarm_escape_list": [],
+        "missed_known_planets": [],
+        "unstable_candidates": [],
+        "results": [],
+    }
+    paths = write_benchmark_reports(report, tmp_path)
+
+    assert Path(paths["json"]).read_text(encoding="utf-8")
+    assert "# OrbitLab Science Benchmark Report" in Path(paths["markdown"]).read_text(encoding="utf-8")
+
+
+def test_science_benchmark_records_misses_escapes_unstable_periods_and_engine_failures(monkeypatch):
+    time = np.linspace(0, 4, 100, dtype=np.float32)
+    flux = 1.0 + 0.001 * np.sin(time).astype(np.float32)
+    cases = [
+        BenchmarkCase(
+            case_id="missed-planet",
+            group="known_confirmed_planets",
+            truth_label="confirmed_planet",
+            target_id="TIC 10",
+            mission="TESS",
+            expected_period_days=2.0,
+            expected_disposition="planet_candidate",
+            description="missed",
+            time=time,
+            flux=flux,
+        ),
+        BenchmarkCase(
+            case_id="escaped-false-positive",
+            group="known_false_positives",
+            truth_label="known_false_positive",
+            target_id="TIC 20",
+            mission="TESS",
+            expected_period_days=None,
+            expected_disposition="not_planet_candidate",
+            description="escape",
+            time=time,
+            flux=flux,
+        ),
+        BenchmarkCase(
+            case_id="injected-with-hard-fail",
+            group="synthetic_injections",
+            truth_label="injected_transit",
+            target_id="TIC 30",
+            mission="TESS",
+            expected_period_days=3.0,
+            expected_disposition="planet_candidate",
+            description="hard fail",
+            time=time,
+            flux=flux,
+        ),
+    ]
+
+    def fake_analyze_light_curve_arrays(*, target_id, **kwargs):
+        if target_id == "TIC 10":
+            tce = {"candidate_id": "miss", "period_days": 3.0, "disposition": "borderline_tce", "flags": []}
+            return {
+                "tces": [tce],
+                "planet_candidates": [],
+                "engine_status": {"tls": {"status": "unstable_result"}},
+            }
+        if target_id == "TIC 20":
+            tce = {"candidate_id": "escape", "period_days": 1.0, "disposition": "planet_candidate", "flags": []}
+            return {"tces": [tce], "planet_candidates": [tce], "engine_status": {}}
+        tce = {
+            "candidate_id": "hard",
+            "period_days": 3.0,
+            "disposition": "planet_candidate",
+            "flags": [{"severity": "hard_fail", "code": "unit"}],
+        }
+        return {"tces": [tce], "planet_candidates": [tce], "engine_status": {"dave": {"status": "failed"}}}
+
+    import orbitlab.benchmarks.science_benchmark as benchmark
+
+    monkeypatch.setattr(benchmark, "analyze_light_curve_arrays", fake_analyze_light_curve_arrays)
+
+    report = run_science_benchmark(cases=cases)
+
+    assert report["known_planet_recovery_rate"] == 0.0
+    assert report["injected_transit_recovery_rate"] == 0.0
+    assert report["false_positive_rejection_rate"] == 0.0
+    assert report["false_alarm_escape_list"] == ["escaped-false-positive"]
+    assert report["missed_known_planets"] == ["missed-planet", "injected-with-hard-fail"]
+    assert report["unstable_candidates"] == ["missed-planet"]
+    assert report["engine_failure_summary"] == {"tls": 1, "dave": 1}
 
 
 def test_sector_consistency_reports_single_sector_only(monkeypatch):
