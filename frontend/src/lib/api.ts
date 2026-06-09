@@ -229,7 +229,7 @@ export type SavedSession = {
 
 const API = (import.meta.env.VITE_API_BASE_URL ?? '/api/v1').replace(/\/$/, '');
 
-export function formatApiErrorDetail(detail: unknown, fallback: string): string {
+function formatApiErrorDetail(detail: unknown, fallback: string): string {
   if (typeof detail === 'string') return detail;
 
   if (Array.isArray(detail)) {

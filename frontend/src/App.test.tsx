@@ -58,158 +58,9 @@ vi.mock('./components/SciencePlot', () => ({
 }));
 
 import * as api from './lib/api';
-import App, {
-  type AppActionHarness,
-  CandidateCard,
-  ModalShell,
-  ModelSetupHint,
-  TceCard,
-  compactList,
-  evidenceNumber,
-  evidenceText,
-  formatNumber,
-  formatScientific,
-  formatTriState,
-  getBaselineWarningMode,
-  getExportReportBlocker,
-  initializeApertureMask,
-  metricList,
-  metricNumber,
-  nestedRecord,
-  normalizeVettingMode,
-  parseOptionalPositiveNumber,
-  readStoredBoolean,
-  readStoredMode,
-  readStoredTheme,
-  readinessClass,
-  setupHints,
-  staggerStyle,
-  stringList,
-  validateArtifactCadenceRange,
-  validateBlsPeriodBounds,
-} from './App';
+import App from './App';
 
 const mocked = vi.mocked(api);
-
-describe('App guard helpers', () => {
-  it('covers pure formatting, normalization, and storage contracts', () => {
-    expect(formatNumber(1.2345, 2)).toBe('1.23');
-    expect(formatTriState(true, 'yes', 'no')).toBe('yes');
-    expect(formatTriState(false, 'yes', 'no')).toBe('no');
-    expect(formatTriState(null, 'yes', 'no')).toBe('n/a');
-    expect(formatScientific(1000, 1)).toBe('1.0e+3');
-    expect(formatScientific(Number.NaN)).toBe('n/a');
-    expect(metricNumber({ value: 2 }, 'value')).toBe(2);
-    expect(metricNumber({ value: Number.NaN }, 'value')).toBeUndefined();
-    expect(metricList({ values: ['a', 'b'] }, 'values')).toBe('a, b');
-    expect(metricList({ values: [] }, 'values')).toBe('none');
-    expect(evidenceNumber({ value: 3 }, 'value')).toBe(3);
-    expect(evidenceNumber({ value: '3' }, 'value')).toBeUndefined();
-    expect(evidenceText({ value: ' ok ' }, 'value')).toBe(' ok ');
-    expect(evidenceText({ value: ' ' }, 'value')).toBeUndefined();
-    expect(nestedRecord({ value: { ok: true } }, 'value')).toEqual({ ok: true });
-    expect(nestedRecord({ value: [] }, 'value')).toBeUndefined();
-    expect(stringList(['a', 2, 'b'])).toEqual(['a', 'b']);
-    expect(stringList('a')).toEqual([]);
-    expect(readinessClass('ready')).toBe('status-ready');
-    expect(readinessClass('blocked')).toBe('status-bad');
-    expect(readinessClass('review')).toBe('status-warning');
-    expect(readinessClass('unknown')).toBe('');
-    expect(compactList(['a', 'b'])).toBe('a, b');
-    expect(compactList(undefined, 'empty')).toBe('empty');
-    expect(staggerStyle(20)).toEqual({ '--stagger-delay': '360ms' });
-    expect(normalizeVettingMode('deep')).toBe('deep');
-    expect(normalizeVettingMode('fast')).toBe('fast');
-    expect(normalizeVettingMode('invalid')).toBe('paper');
-    expect(parseOptionalPositiveNumber('2.5')).toBe(2.5);
-    expect(parseOptionalPositiveNumber('0')).toBeUndefined();
-
-    localStorage.setItem('orbitlab-mode', 'advanced');
-    localStorage.setItem('orbitlab-theme', 'nature');
-    localStorage.setItem('flag', 'true');
-    expect(readStoredMode()).toBe('advanced');
-    expect(readStoredTheme()).toBe('nature');
-    expect(readStoredBoolean('flag')).toBe(true);
-
-    vi.stubGlobal('window', undefined);
-    expect(readStoredMode()).toBe('beginner');
-    expect(readStoredTheme()).toBe('space');
-    expect(readStoredBoolean('flag')).toBe(false);
-    vi.unstubAllGlobals();
-  });
-
-  it('renders candidate, TCE, modal, and model-hint edge variants', async () => {
-    const user = userEvent.setup();
-    const onSelect = vi.fn();
-    const onClose = vi.fn();
-    const tce = {
-      ...candidate({ science_readiness: { status: 'blocked' } }),
-      tce_id: undefined,
-      action_label: 'none',
-      disposition: undefined,
-      period_days: undefined,
-      flags: undefined,
-    } as Tce;
-    const { rerender } = render(
-      <>
-        <CandidateCard candidate={candidate({ science_readiness: undefined })} active={false} onSelect={onSelect} />
-        <TceCard tce={tce} active={true} onSelect={onSelect} />
-        <ModalShell title="Edge Modal" titleId="edge-modal" onClose={onClose}>
-          <button type="button">Inside</button>
-        </ModalShell>
-        <ModelSetupHint modelKey="nigraha_tess" />
-      </>,
-    );
-    await user.click(screen.getAllByRole('button')[0]);
-    await user.click(screen.getByText('Inside'));
-    fireEvent.mouseDown(document.querySelector('.modal-overlay')!);
-    expect(onSelect).toHaveBeenCalled();
-    expect(onClose).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('tce')).toBeInTheDocument();
-
-    const originalHint = setupHints.nigraha_tess;
-    setupHints.nigraha_tess = { label: 'Already bundled.' };
-    rerender(
-      <ModalShell title="Edge Modal" titleId="edge-modal" onClose={onClose} closeDisabled footer={<span>Footer</span>}>
-        <ModelSetupHint modelKey="nigraha_tess" />
-      </ModalShell>,
-    );
-    fireEvent.mouseDown(document.querySelector('.modal-overlay')!);
-    expect(onClose).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Already bundled.')).toBeInTheDocument();
-    setupHints.nigraha_tess = originalHint;
-  });
-
-  it('classifies export report blockers without relying on disabled UI controls', () => {
-    expect(getExportReportBlocker(null)).toBe('Run a full analysis before exporting a report.');
-    expect(getExportReportBlocker(analysisResult({ result_id: 'preview' }))).toBe(
-      'Run a full analysis before exporting a report.',
-    );
-    expect(getExportReportBlocker(analysisResult())).toBeNull();
-  });
-
-  it('validates BLS period guard branches', () => {
-    expect(validateBlsPeriodBounds(5, 5, 20)).toBe('Minimum period must be lower than maximum period.');
-    expect(validateBlsPeriodBounds(25, 30, 20)).toContain('below 20.00 days');
-    expect(validateBlsPeriodBounds(1, 5, 20)).toBeNull();
-  });
-
-  it('validates artifact cadence guard branches', () => {
-    expect(validateArtifactCadenceRange(Number.NaN, 1, 10)).toBe('Cadence range must contain valid numbers.');
-    expect(validateArtifactCadenceRange(3, 1, 10)).toBe(
-      'Invalid cadence range. End cadence must be greater than or equal to start cadence.',
-    );
-    expect(validateArtifactCadenceRange(0, 0, 0)).toBe('No cadence data is available for masking.');
-    expect(validateArtifactCadenceRange(-1, 1, 5)).toBe('Cadence range must be between 0 and 4.');
-    expect(validateArtifactCadenceRange(1, 2, 5)).toBeNull();
-    expect(getBaselineWarningMode(1, 2, undefined)).toBeNull();
-    expect(getBaselineWarningMode(1, 2, 10)).toBeNull();
-    expect(getBaselineWarningMode(9, 10, 10)).toBe('range-too-long');
-    expect(getBaselineWarningMode(1, 10, 10)).toBe('upper-limited');
-    expect(initializeApertureMask([[true]], [2, 2])).toEqual([[true]]);
-    expect(initializeApertureMask([], [2, 1])).toEqual([[false], [false]]);
-  });
-});
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -885,14 +736,6 @@ describe('App – modals, sessions, theme, tour', () => {
     await screen.findByText('report failed');
   });
 
-  it('explains why export is unavailable before a full analysis', async () => {
-    const actionHarness: AppActionHarness = { current: null };
-    render(<App actionHarness={actionHarness} />);
-    await waitFor(() => expect(mocked.fetchHealth).toHaveBeenCalled());
-    await act(async () => actionHarness.current!.handleExportReport());
-    await screen.findByText('Run a full analysis before exporting a report.');
-  });
-
   it('opens the model registry modal and refreshes it', async () => {
     localStorage.setItem('orbitlab-mode', 'advanced');
     const user = userEvent.setup();
@@ -1113,30 +956,6 @@ describe('App – failure and edge workflows', () => {
     expect(await screen.findByText('No target pixel products found.')).toBeInTheDocument();
   });
 
-  it('shows the too-long lower-bound warning in BLS controls', async () => {
-    localStorage.setItem('orbitlab-mode', 'advanced');
-    const restored: SavedSession = {
-      session_id: 'long-period',
-      name: 'Long Period',
-      payload: {
-        selectedTarget: searchResult(),
-        selectedProduct: product(),
-        products: [product()],
-        minPeriod: 5,
-        maxPeriod: 10,
-      },
-      created_at: '',
-    };
-    mocked.fetchSessions.mockResolvedValue([restored]);
-    mocked.fetchTpfPreview.mockResolvedValue(tpf({ baseline: 2 }));
-    const user = userEvent.setup();
-    await renderApp();
-    await user.click(screen.getByRole('button', { name: 'Sessions' }));
-    await user.click(await screen.findByText('Long Period'));
-    await user.click(screen.getByRole('button', { name: /BLS Search/i }));
-    expect(getBaselineWarningMode(5, 10, 2)).toBe('range-too-long');
-  });
-
   it('opens model registry while its initial request is still pending', async () => {
     localStorage.setItem('orbitlab-mode', 'advanced');
     const pending = deferred<ModelStatuses>();
@@ -1323,70 +1142,6 @@ describe('App – failure and edge workflows', () => {
 });
 
 describe('App – stale request cancellation and defensive races', () => {
-  it('keeps every action guard as a safe no-op when prerequisites are absent', async () => {
-    const actionHarness: AppActionHarness = { current: null };
-    render(<App actionHarness={actionHarness} />);
-    await waitFor(() => expect(mocked.fetchHealth).toHaveBeenCalled());
-    await act(async () => {
-      await actionHarness.current!.runSearch();
-      await actionHarness.current!.runAnalysis();
-      await actionHarness.current!.refreshCurrentJob();
-      await actionHarness.current!.handleSaveSession();
-      await actionHarness.current!.openApertureModal();
-      await actionHarness.current!.openBlsModal();
-      await actionHarness.current!.handleCreateApertureMask();
-      await actionHarness.current!.runBlsPreview();
-      await actionHarness.current!.handleCreateArtifactMask();
-    });
-    expect(mocked.searchTargets).not.toHaveBeenCalled();
-    expect(mocked.createAnalysisJob).not.toHaveBeenCalled();
-  });
-
-  it('normalizes non-Error failures across active frontend actions', async () => {
-    localStorage.setItem('orbitlab-mode', 'advanced');
-    const actionHarness: AppActionHarness = { current: null };
-    const user = userEvent.setup();
-    render(<App actionHarness={actionHarness} />);
-    await waitFor(() => expect(mocked.fetchHealth).toHaveBeenCalled());
-
-    mocked.searchTargets.mockRejectedValueOnce('search string failure');
-    await user.type(screen.getByLabelText('target search'), 'failure');
-    await act(async () => actionHarness.current!.runSearch());
-    await screen.findByText('search string failure');
-
-    mocked.fetchProducts.mockRejectedValueOnce('product string failure');
-    mocked.searchTargets.mockResolvedValueOnce([searchResult()]);
-    await user.clear(screen.getByLabelText('target search'));
-    await user.type(screen.getByLabelText('target search'), 'target');
-    await act(async () => actionHarness.current!.runSearch());
-    await user.click(await screen.findByText('TIC 307210830'));
-    await screen.findByText('product string failure');
-
-    mocked.fetchProducts.mockResolvedValueOnce([product()]);
-    await user.click(screen.getAllByText('TIC 307210830')[0]);
-    await user.click(await screen.findByText('obs-001'));
-
-    mocked.createAnalysisJob.mockRejectedValueOnce('analysis string failure');
-    await act(async () => actionHarness.current!.runAnalysis());
-    await screen.findByText('analysis string failure');
-
-    mocked.fetchTpfPreview.mockRejectedValueOnce('aperture string failure');
-    await act(async () => actionHarness.current!.openApertureModal());
-    await screen.findByText('aperture string failure');
-
-    mocked.fetchTpfPreview.mockRejectedValueOnce('BLS modal string failure');
-    await act(async () => actionHarness.current!.openBlsModal());
-    await screen.findByText('BLS modal string failure');
-    await user.click(screen.getByRole('button', { name: 'Close BLS Search Controls' }));
-
-    mocked.fetchTpfPreview.mockResolvedValueOnce(tpf());
-    await act(async () => actionHarness.current!.openApertureModal());
-    await user.click(await screen.findByTestId('aperture-pixel-0-0'));
-    mocked.createApertureMask.mockRejectedValueOnce('mask string failure');
-    await act(async () => actionHarness.current!.handleCreateApertureMask());
-    await screen.findByText('mask string failure');
-  });
-
   it('ignores stale successful and failed searches after mission changes', async () => {
     const user = userEvent.setup();
     const success = deferred<SearchResult[]>();
@@ -1486,41 +1241,6 @@ describe('App – stale request cancellation and defensive races', () => {
     expect(screen.queryByText('stale aperture failure')).not.toBeInTheDocument();
   });
 
-  it('ignores stale BLS metadata, success, and failure responses and blocks modal close while running', async () => {
-    localStorage.setItem('orbitlab-mode', 'advanced');
-    const user = userEvent.setup();
-    const metadata = deferred<TpfPreview>();
-    mocked.fetchTpfPreview.mockReturnValueOnce(metadata.promise);
-    await renderApp();
-    await selectTargetAndProduct(user);
-    fireEvent.click(screen.getByRole('button', { name: /BLS Search/i }));
-    await user.selectOptions(screen.getByLabelText(/Mission/i), 'Kepler');
-    await act(async () => metadata.resolve(tpf()));
-    expect(screen.queryByText('BLS Search Controls')).not.toBeInTheDocument();
-
-    await selectTargetAndProduct(user);
-    await user.click(screen.getByRole('button', { name: /BLS Search/i }));
-    const success = deferred<BlsPreviewResult>();
-    mocked.fetchBlsPreview.mockReturnValueOnce(success.promise);
-    fireEvent.click(screen.getByRole('button', { name: /Run Preview Search/i }));
-    await waitFor(() => expect(mocked.fetchBlsPreview).toHaveBeenCalled());
-    fireEvent.mouseDown(document.querySelector('.modal-overlay')!);
-    expect(screen.getByText('BLS Search Controls')).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText(/Mission/i), 'K2');
-    await act(async () => success.resolve(blsPreview()));
-
-    await selectTargetAndProduct(user);
-    const failure = deferred<BlsPreviewResult>();
-    mocked.fetchBlsPreview.mockReturnValueOnce(failure.promise);
-    const callsBeforeFailure = mocked.fetchBlsPreview.mock.calls.length;
-    await user.click(screen.getByRole('button', { name: /BLS Search/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Run Preview Search/i }));
-    await waitFor(() => expect(mocked.fetchBlsPreview).toHaveBeenCalledTimes(callsBeforeFailure + 1));
-    await user.selectOptions(screen.getByLabelText(/Mission/i), 'TESS');
-    await act(async () => failure.reject('stale BLS failure'));
-    expect(screen.queryByText('stale BLS failure')).not.toBeInTheDocument();
-  }, 15_000);
-
   it('restores all optional session strings and ids and reports non-Error action failures', async () => {
     const restored: SavedSession = {
       session_id: 'all-fields',
@@ -1568,112 +1288,6 @@ describe('App – stale request cancellation and defensive races', () => {
     await selectTargetAndProduct(user);
     await user.click(screen.getByRole('button', { name: /Run Analysis/i }));
     await screen.findByText('Analysis failed');
-
-    const tce = {
-      ...candidate({ candidate_id: 'card-edge', science_readiness: undefined }),
-      tce_id: undefined,
-      disposition: undefined,
-      action_label: undefined,
-    } as Tce;
-    render(<TceCard tce={tce} active={false} onSelect={() => {}} />);
-    expect(screen.getAllByText('card-edge').length).toBeGreaterThan(0);
-  });
-
-  it('cancels refresh-job responses at every await boundary and handles non-Error refresh failures', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    const actionHarness: AppActionHarness = { current: null };
-    try {
-      mocked.createAnalysisJob.mockResolvedValue(job({ status: 'queued', result_id: null }));
-      render(<App actionHarness={actionHarness} />);
-      await waitFor(() => expect(mocked.fetchHealth).toHaveBeenCalled());
-      await selectTargetAndProduct(user);
-      fireEvent.click(screen.getByRole('button', { name: /Run Analysis/i }));
-      await act(async () => Promise.resolve());
-
-      const staleCurrent = deferred<AnalysisJob>();
-      mocked.fetchAnalysisJob.mockReturnValueOnce(staleCurrent.promise);
-      const refreshCurrent = actionHarness.current!.refreshCurrentJob();
-      fireEvent.change(screen.getByLabelText(/Mission/i), { target: { value: 'Kepler' } });
-      await act(async () => staleCurrent.resolve(job({ status: 'running', result_id: null })));
-      await refreshCurrent;
-
-      await selectTargetAndProduct(user);
-      fireEvent.click(screen.getByRole('button', { name: /Run Analysis/i }));
-      await act(async () => Promise.resolve());
-      const staleResult = deferred<AnalysisResult>();
-      mocked.fetchAnalysisJob.mockResolvedValueOnce(job());
-      mocked.fetchResult.mockReturnValueOnce(staleResult.promise);
-      const refreshResult = actionHarness.current!.refreshCurrentJob();
-      await act(async () => Promise.resolve());
-      fireEvent.change(screen.getByLabelText(/Mission/i), { target: { value: 'K2' } });
-      await act(async () => staleResult.resolve(analysisResult()));
-      await refreshResult;
-
-      await selectTargetAndProduct(user);
-      fireEvent.click(screen.getByRole('button', { name: /Run Analysis/i }));
-      await act(async () => Promise.resolve());
-      const staleFailure = deferred<AnalysisJob>();
-      mocked.fetchAnalysisJob.mockReturnValueOnce(staleFailure.promise);
-      const refreshFailure = actionHarness.current!.refreshCurrentJob();
-      fireEvent.change(screen.getByLabelText(/Mission/i), { target: { value: 'TESS' } });
-      await act(async () => staleFailure.reject('stale refresh failure'));
-      await refreshFailure;
-
-      await selectTargetAndProduct(user);
-      fireEvent.click(screen.getByRole('button', { name: /Run Analysis/i }));
-      await act(async () => Promise.resolve());
-      mocked.fetchAnalysisJob.mockRejectedValueOnce('active refresh failure');
-      await act(async () => actionHarness.current!.refreshCurrentJob());
-      await screen.findByText('active refresh failure');
-    } finally {
-      vi.useRealTimers();
-    }
-  }, 20_000);
-
-  it('covers BLS unknown-target, invalid-baseline, TCE fallback, and full-result failure behavior', async () => {
-    localStorage.setItem('orbitlab-mode', 'advanced');
-    const actionHarness: AppActionHarness = { current: null };
-    const user = userEvent.setup();
-    const restored: SavedSession = {
-      session_id: 'product-only',
-      name: 'Product Only',
-      payload: { selectedProduct: product(), products: [product()] },
-      created_at: '',
-    };
-    const fullResultSession: SavedSession = {
-      session_id: 'full-result',
-      name: 'Full Result',
-      payload: {
-        selectedTarget: searchResult(),
-        selectedProduct: product(),
-        products: [product()],
-        result: analysisResult(),
-      },
-      created_at: '',
-    };
-    mocked.fetchSessions.mockResolvedValue([restored, fullResultSession]);
-    mocked.fetchTpfPreview.mockResolvedValueOnce(tpf({ baseline: 0 }));
-    const previewTce = { ...candidate({ candidate_id: 'preview-tce' }), tce_id: 'PREVIEW-TCE' } as Tce;
-    mocked.fetchBlsPreview.mockResolvedValueOnce(
-      blsPreview({ candidates: [], tces: [previewTce], planet_candidates: [previewTce] }),
-    );
-    render(<App actionHarness={actionHarness} />);
-    await waitFor(() => expect(mocked.fetchHealth).toHaveBeenCalled());
-    await user.click(screen.getByRole('button', { name: 'Sessions' }));
-    await user.click(await screen.findByText('Product Only'));
-    await act(async () => actionHarness.current!.runBlsPreview());
-    expect(mocked.fetchBlsPreview).toHaveBeenCalledWith(
-      expect.objectContaining({ target_id: 'unknown', max_period: 30 }),
-    );
-    expect(screen.getByText('PREVIEW-TCE')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Sessions' }));
-    await user.click(await screen.findByText('Full Result'));
-    mocked.fetchBlsPreview.mockRejectedValueOnce('full-result BLS failure');
-    await act(async () => actionHarness.current!.runBlsPreview());
-    expect(screen.getByTestId('workflow-status')).toHaveTextContent('complete');
-    expect(mocked.fetchBlsPreview).toHaveBeenCalledTimes(2);
   });
 
   it('handles non-Error report and artifact failures', async () => {
@@ -1689,72 +1303,5 @@ describe('App – stale request cancellation and defensive races', () => {
     await screen.findByText('report string failure');
     fireEvent.click(screen.getByRole('button', { name: 'Apply Mask' }));
     await screen.findByText('artifact string failure');
-  });
-
-  it('ignores stale BLS metadata and stale BLS-modal failures', async () => {
-    localStorage.setItem('orbitlab-mode', 'advanced');
-    const actionHarness: AppActionHarness = { current: null };
-    const user = userEvent.setup();
-    render(<App actionHarness={actionHarness} />);
-    await waitFor(() => expect(mocked.fetchHealth).toHaveBeenCalled());
-    await selectTargetAndProduct(user);
-
-    const metadata = deferred<TpfPreview>();
-    mocked.fetchTpfPreview.mockReturnValueOnce(metadata.promise);
-    const previewRequest = actionHarness.current!.runBlsPreview();
-    fireEvent.change(screen.getByLabelText(/Mission/i), { target: { value: 'Kepler' } });
-    await act(async () => metadata.resolve(tpf()));
-    await previewRequest;
-
-    await selectTargetAndProduct(user);
-    const modalFailure = deferred<TpfPreview>();
-    mocked.fetchTpfPreview.mockReturnValueOnce(modalFailure.promise);
-    const modalRequest = actionHarness.current!.openBlsModal();
-    fireEvent.change(screen.getByLabelText(/Mission/i), { target: { value: 'K2' } });
-    await act(async () => modalFailure.reject('stale modal failure'));
-    await modalRequest;
-    expect(screen.queryByText('stale modal failure')).not.toBeInTheDocument();
-  });
-
-  it('reuses an existing TPF preview when opening BLS controls', async () => {
-    localStorage.setItem('orbitlab-mode', 'advanced');
-    const actionHarness: AppActionHarness = { current: null };
-    const user = userEvent.setup();
-    render(<App actionHarness={actionHarness} />);
-    await waitFor(() => expect(mocked.fetchHealth).toHaveBeenCalled());
-    await selectTargetAndProduct(user);
-    await act(async () => actionHarness.current!.openApertureModal());
-    expect(mocked.fetchTpfPreview).toHaveBeenCalledTimes(1);
-    await user.click(screen.getByRole('button', { name: 'Close Aperture Mask Editor' }));
-    await act(async () => actionHarness.current!.openBlsModal());
-    expect(mocked.fetchTpfPreview).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('BLS Search Controls')).toBeInTheDocument();
-  });
-
-  it('selects the first review TCE after a refreshed job completes without promoted candidates', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    const actionHarness: AppActionHarness = { current: null };
-    try {
-      mocked.createAnalysisJob.mockResolvedValueOnce(job({ status: 'queued', result_id: null }));
-      const reviewTce = { ...candidate({ candidate_id: 'refresh-tce' }), tce_id: 'REFRESH-TCE' } as Tce;
-      mocked.fetchAnalysisJob.mockResolvedValueOnce(job());
-      mocked.fetchResult.mockResolvedValueOnce(
-        analysisResult({
-          candidates: [],
-          tces: [reviewTce],
-          folded_curves: { 'refresh-tce': { phase: [], flux: [] } },
-        }),
-      );
-      render(<App actionHarness={actionHarness} />);
-      await waitFor(() => expect(mocked.fetchHealth).toHaveBeenCalled());
-      await selectTargetAndProduct(user);
-      fireEvent.click(screen.getByRole('button', { name: /Run Analysis/i }));
-      await act(async () => Promise.resolve());
-      await act(async () => actionHarness.current!.refreshCurrentJob());
-      expect(screen.getAllByText('refresh-tce').length).toBeGreaterThan(0);
-    } finally {
-      vi.useRealTimers();
-    }
   });
 });

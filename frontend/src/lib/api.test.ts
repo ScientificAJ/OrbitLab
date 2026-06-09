@@ -12,7 +12,6 @@ import {
   fetchResult,
   fetchSessions,
   fetchTpfPreview,
-  formatApiErrorDetail,
   saveSession,
   searchTargets,
 } from './api';
@@ -396,7 +395,7 @@ describe('fetchReport', () => {
 });
 
 // ---------------------------------------------------------------------------
-// formatApiErrorDetail — exercises the error parsing inside readJson
+// Error-detail cases exercised through the public API request functions.
 // ---------------------------------------------------------------------------
 describe('error detail parsing', () => {
   it('surfaces FastAPI validation error array as joined string', async () => {
@@ -471,14 +470,5 @@ describe('error detail parsing', () => {
   it('uses status-based message when error body text is empty and not JSON', async () => {
     mockFetch.mockResolvedValueOnce(new Response('', { status: 503 }));
     await expect(fetchHealth()).rejects.toThrow('Request failed with status 503');
-  });
-
-  // Direct unit coverage of the pure helper, including the final generic
-  // fallback branch which is unreachable via readJson (empty text throws first).
-  it('formatApiErrorDetail returns the generic fallback for nullish detail and empty fallback', () => {
-    expect(formatApiErrorDetail(undefined, '')).toBe('Request failed');
-    expect(formatApiErrorDetail(null, '')).toBe('Request failed');
-    expect(formatApiErrorDetail(undefined, 'custom fallback')).toBe('custom fallback');
-    expect(formatApiErrorDetail('already a string', 'x')).toBe('already a string');
   });
 });

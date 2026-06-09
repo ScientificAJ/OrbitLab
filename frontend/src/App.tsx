@@ -69,69 +69,69 @@ import {
 } from './lib/uiState';
 import './styles/app.css';
 
-export function formatNumber(value: number | null | undefined, digits = 3) {
+function formatNumber(value: number | null | undefined, digits = 3) {
   return formatFiniteNumber(value, digits);
 }
 
-export function formatTriState(value: unknown, trueLabel: string, falseLabel: string) {
+function formatTriState(value: unknown, trueLabel: string, falseLabel: string) {
   if (value === true) return trueLabel;
   if (value === false) return falseLabel;
   return 'n/a';
 }
 
-export function formatScientific(value: number | null | undefined, digits = 3) {
+function formatScientific(value: number | null | undefined, digits = 3) {
   return typeof value === 'number' && Number.isFinite(value) ? value.toExponential(digits) : 'n/a';
 }
 
-export function metricNumber(metrics: Record<string, unknown> | undefined, key: string) {
+function metricNumber(metrics: Record<string, unknown> | undefined, key: string) {
   const value = metrics?.[key];
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
-export function metricList(metrics: Record<string, unknown> | undefined, key: string) {
+function metricList(metrics: Record<string, unknown> | undefined, key: string) {
   const value = metrics?.[key];
   return Array.isArray(value) && value.length ? value.join(', ') : 'none';
 }
 
-export function evidenceNumber(evidence: Record<string, unknown> | undefined, key: string) {
+function evidenceNumber(evidence: Record<string, unknown> | undefined, key: string) {
   const value = evidence?.[key];
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
-export function evidenceText(evidence: Record<string, unknown> | undefined, key: string) {
+function evidenceText(evidence: Record<string, unknown> | undefined, key: string) {
   const value = evidence?.[key];
   return typeof value === 'string' && value.trim() ? value : undefined;
 }
 
-export function nestedRecord(record: Record<string, unknown> | undefined, key: string) {
+function nestedRecord(record: Record<string, unknown> | undefined, key: string) {
   const value = record?.[key];
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
 }
 
-export function stringList(value: unknown) {
+function stringList(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 }
 
-export function readinessClass(status: unknown) {
+function readinessClass(status: unknown) {
   if (status === 'ready') return 'status-ready';
   if (status === 'blocked') return 'status-bad';
   if (status === 'review') return 'status-warning';
   return '';
 }
 
-export function compactList(values: string[] | undefined, empty = 'none') {
+function compactList(values: string[] | undefined, empty = 'none') {
   return values?.length ? values.slice(0, 4).join(', ') : empty;
 }
 
-export function staggerStyle(index: number): CSSProperties {
+function staggerStyle(index: number): CSSProperties {
   return { '--stagger-delay': `${Math.min(index, 8) * 45}ms` } as CSSProperties;
 }
 
-export function normalizeVettingMode(value: unknown): VettingMode {
+function normalizeVettingMode(value: unknown): VettingMode {
   return value === 'deep' || value === 'fast' ? value : 'paper';
 }
 
-export function CandidateCard({
+function CandidateCard({
   candidate,
   active,
   onSelect,
@@ -162,7 +162,7 @@ export function CandidateCard({
   );
 }
 
-export function TceCard({
+function TceCard({
   tce,
   active,
   onSelect,
@@ -203,7 +203,7 @@ export function TceCard({
   );
 }
 
-export function ModalShell({
+function ModalShell({
   title,
   titleId,
   children,
@@ -239,13 +239,13 @@ export function ModalShell({
   );
 }
 
-export const setupHints: Record<string, { label: string; command?: string }> = {
+const setupHints: Record<string, { label: string; command?: string }> = {
   nigraha_tess: { label: 'Fetch and register the TESS weights.', command: 'scripts/fetch_nigraha_weights.py' },
   kepler_astronet: { label: 'Fetch and register the Kepler checkpoint.', command: 'scripts/fetch_kepler_astronet.py' },
   k2_exomac_kkt: { label: 'Fetch and register the K2 ExoMAC bundle.', command: 'scripts/fetch_k2_exomac_kkt.py' },
 };
 
-export function ModelSetupHint({ modelKey }: { modelKey: string }) {
+function ModelSetupHint({ modelKey }: { modelKey: string }) {
   const hint = setupHints[modelKey];
   if (!hint) {
     return (
@@ -273,71 +273,7 @@ const MAX_PERIOD_CEILING = 60;
 const ANALYSIS_POLL_LIMIT = Number(import.meta.env.VITE_ANALYSIS_POLL_LIMIT ?? 120);
 const ANALYSIS_POLL_INTERVAL_MS = Number(import.meta.env.VITE_ANALYSIS_POLL_INTERVAL_MS ?? 1000);
 
-export function getExportReportBlocker(result: AnalysisResult | null | undefined) {
-  return !result?.result_id || result.result_id === 'preview' ? 'Run a full analysis before exporting a report.' : null;
-}
-
-export function validateBlsPeriodBounds(minPeriod: number, maxPeriod: number, requestPeriodLimit: number) {
-  if (minPeriod >= maxPeriod) {
-    return 'Minimum period must be lower than maximum period.';
-  }
-
-  if (minPeriod >= requestPeriodLimit) {
-    return `This product baseline only supports periods below ${requestPeriodLimit.toFixed(
-      2,
-    )} days. Select or stitch a longer observation for this search.`;
-  }
-
-  return null;
-}
-
-export function validateArtifactCadenceRange(start: number, end: number, cadenceCount: number) {
-  if (!Number.isFinite(start) || !Number.isFinite(end)) {
-    return 'Cadence range must contain valid numbers.';
-  }
-
-  if (end < start) {
-    return 'Invalid cadence range. End cadence must be greater than or equal to start cadence.';
-  }
-
-  if (cadenceCount <= 0) {
-    return 'No cadence data is available for masking.';
-  }
-
-  if (start < 0 || end >= cadenceCount) {
-    return `Cadence range must be between 0 and ${cadenceCount - 1}.`;
-  }
-
-  return null;
-}
-
-export function getBaselineWarningMode(minPeriod: number, maxPeriod: number, baseline: number | undefined) {
-  if (!baseline || maxPeriod <= baseline * 0.8) return null;
-  return minPeriod > baseline * 0.8 ? 'range-too-long' : 'upper-limited';
-}
-
-export function initializeApertureMask(current: boolean[][], shape: readonly number[]) {
-  return current.length ? current : Array.from({ length: shape[0] }, () => Array(shape[1]).fill(false));
-}
-
 type Mission = 'TESS' | 'Kepler' | 'K2';
-
-export interface AppActionHarness {
-  current: {
-    runSearch: () => Promise<void>;
-    runAnalysis: () => Promise<void>;
-    refreshCurrentJob: () => Promise<void>;
-    handleSaveSession: () => Promise<void>;
-    handleExportReport: () => Promise<void>;
-    openApertureModal: () => Promise<void>;
-    openBlsModal: () => Promise<void>;
-    handleCreateApertureMask: () => Promise<void>;
-    runBlsPreview: () => Promise<void>;
-    handleCreateArtifactMask: () => Promise<void>;
-  } | null;
-}
-
-const inertActionHarness: AppActionHarness = { current: null };
 
 const MODE_STORAGE_KEY = 'orbitlab-mode';
 const THEME_STORAGE_KEY = 'orbitlab-theme';
@@ -345,27 +281,27 @@ const TOUR_COMPLETED_STORAGE_KEY = 'orbitlab-beginner-tour-completed';
 const VOYAGER_UNLOCKED_STORAGE_KEY = 'orbitlab-voyager-unlocked';
 const VOYAGER_ENABLED_STORAGE_KEY = 'orbitlab-voyager-enabled';
 
-export function readStoredMode(): OrbitLabMode {
+function readStoredMode(): OrbitLabMode {
   if (typeof window === 'undefined') return 'beginner';
   return normalizeOrbitLabMode(window.localStorage.getItem(MODE_STORAGE_KEY));
 }
 
-export function readStoredTheme(): ThemeName {
+function readStoredTheme(): ThemeName {
   if (typeof window === 'undefined') return 'space';
   return normalizeThemeName(window.localStorage.getItem(THEME_STORAGE_KEY));
 }
 
-export function readStoredBoolean(key: string) {
+function readStoredBoolean(key: string) {
   if (typeof window === 'undefined') return false;
   return window.localStorage.getItem(key) === 'true';
 }
 
-export function parseOptionalPositiveNumber(value: string) {
+function parseOptionalPositiveNumber(value: string) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-export default function App({ actionHarness = inertActionHarness }: { actionHarness?: AppActionHarness } = {}) {
+export default function App() {
   const [mode, setMode] = useState<OrbitLabMode>(readStoredMode);
   const [theme, setTheme] = useState<ThemeName>(readStoredTheme);
   const [tourCompleted, setTourCompleted] = useState(() => readStoredBoolean(TOUR_COMPLETED_STORAGE_KEY));
@@ -595,7 +531,6 @@ export default function App({ actionHarness = inertActionHarness }: { actionHarn
   const orbitEmptyMessage = useMemo(() => getOrbitEmptyMessage(Boolean(result)), [result]);
   const isVoyagerModeActive = voyagerUnlocked && voyagerEnabled;
   const activeTourStep = beginnerTourSteps[tourStepIndex];
-  const baselineWarningMode = getBaselineWarningMode(minPeriod, maxPeriod, tpfPreview?.baseline);
 
   const pixelScale = useMemo(() => {
     if (!tpfPreview) return { min: 0, span: 1 };
@@ -660,7 +595,6 @@ export default function App({ actionHarness = inertActionHarness }: { actionHarn
     setSelectedArtifactMaskId(undefined);
     setTpfPreview(null);
     setApertureMask([]);
-    setBlsRunning(false);
     setBlsPreviewStatus('idle');
     setBlsPreviewError(null);
     setActiveModal(null);
@@ -1007,20 +941,18 @@ export default function App({ actionHarness = inertActionHarness }: { actionHarn
   }
 
   async function handleExportReport() {
-    const exportBlocker = getExportReportBlocker(result);
-    if (exportBlocker) {
-      setError(exportBlocker);
+    if (!result?.result_id || result.result_id === 'preview') {
+      setError('Run a full analysis before exporting a report.');
       return;
     }
-    const exportableResult = result as AnalysisResult;
     setError(null);
     try {
-      const report = await fetchReport(exportableResult.result_id);
+      const report = await fetchReport(result.result_id);
       const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `orbitlab-report-${exportableResult.target_id}-${exportableResult.result_id.slice(0, 8)}.json`;
+      a.download = `orbitlab-report-${result.target_id}-${result.result_id.slice(0, 8)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       showSuccessMessage('Report exported successfully.');
@@ -1064,7 +996,11 @@ export default function App({ actionHarness = inertActionHarness }: { actionHarn
         const preview = await fetchTpfPreview(productUri);
         if (token !== apertureToken.current) return;
         setTpfPreview(preview);
-        setApertureMask((current) => initializeApertureMask(current, preview.shape));
+        setApertureMask((current) =>
+          current.length
+            ? current
+            : Array.from({ length: preview.shape[0] }, () => Array(preview.shape[1]).fill(false)),
+        );
       }
       openModal('bls');
     } catch (err) {
@@ -1123,7 +1059,11 @@ export default function App({ actionHarness = inertActionHarness }: { actionHarn
         const preview = await fetchTpfPreview(productUri);
         if (token !== blsPreviewToken.current) return;
         setTpfPreview(preview);
-        setApertureMask((current) => initializeApertureMask(current, preview.shape));
+        setApertureMask((current) =>
+          current.length
+            ? current
+            : Array.from({ length: preview.shape[0] }, () => Array(preview.shape[1]).fill(false)),
+        );
         const baseline = Number(preview.baseline);
         requestPeriodLimit =
           Number.isFinite(baseline) && baseline > 0 ? Math.min(MAX_PERIOD_CEILING, baseline * 0.8) : MAX_PERIOD_CEILING;
@@ -1132,10 +1072,19 @@ export default function App({ actionHarness = inertActionHarness }: { actionHarn
       }
     }
 
-    const blsPeriodError = validateBlsPeriodBounds(minPeriod, maxPeriod, requestPeriodLimit);
-    if (blsPeriodError) {
+    if (minPeriod >= maxPeriod) {
       setBlsPreviewStatus('failed');
-      setBlsPreviewError(blsPeriodError);
+      setBlsPreviewError('Minimum period must be lower than maximum period.');
+      return;
+    }
+
+    if (minPeriod >= requestPeriodLimit) {
+      setBlsPreviewStatus('failed');
+      setBlsPreviewError(
+        `This product baseline only supports periods below ${requestPeriodLimit.toFixed(
+          2,
+        )} days. Select or stitch a longer observation for this search.`,
+      );
       return;
     }
 
@@ -1198,9 +1147,23 @@ export default function App({ actionHarness = inertActionHarness }: { actionHarn
     const start = Math.floor(cadenceStart);
     const end = Math.floor(cadenceEnd);
 
-    const cadenceError = validateArtifactCadenceRange(start, end, cadenceCount);
-    if (cadenceError) {
-      setError(cadenceError);
+    if (!Number.isFinite(start) || !Number.isFinite(end)) {
+      setError('Cadence range must contain valid numbers.');
+      return;
+    }
+
+    if (end < start) {
+      setError('Invalid cadence range. End cadence must be greater than or equal to start cadence.');
+      return;
+    }
+
+    if (cadenceCount <= 0) {
+      setError('No cadence data is available for masking.');
+      return;
+    }
+
+    if (start < 0 || end >= cadenceCount) {
+      setError(`Cadence range must be between 0 and ${cadenceCount - 1}.`);
       return;
     }
 
@@ -1221,19 +1184,6 @@ export default function App({ actionHarness = inertActionHarness }: { actionHarn
       setError(err instanceof Error ? err.message : String(err));
     }
   }
-
-  actionHarness.current = {
-    runSearch,
-    runAnalysis,
-    refreshCurrentJob,
-    handleSaveSession,
-    handleExportReport,
-    openApertureModal,
-    openBlsModal,
-    handleCreateApertureMask,
-    runBlsPreview,
-    handleCreateArtifactMask,
-  };
 
   return (
     <main
@@ -2266,12 +2216,12 @@ export default function App({ actionHarness = inertActionHarness }: { actionHarn
               />
             </div>
           </div>
-          {tpfPreview?.baseline && baselineWarningMode && (
+          {tpfPreview?.baseline && maxPeriod > tpfPreview.baseline * 0.8 && (
             <div className="modal-warning" style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>
               <strong>Limited data baseline</strong>
               <p>
                 This product has only {tpfPreview.baseline.toFixed(2)} usable days.
-                {baselineWarningMode === 'range-too-long' ? (
+                {minPeriod > tpfPreview.baseline * 0.8 ? (
                   <>
                     {' '}
                     Requested range {minPeriod}–{maxPeriod} days is too long for this file. Search will likely fail.

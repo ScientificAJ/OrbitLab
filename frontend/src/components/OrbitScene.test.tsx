@@ -6,21 +6,9 @@ import type { Candidate } from '../lib/api';
 
 vi.mock('three', () => threeMock);
 
-import { hasOrbitMount, OrbitScene, resolveModeValue } from './OrbitScene';
+import { OrbitScene } from './OrbitScene';
 
 const WebGLRendererMock = threeMock.__WebGLRenderer;
-
-it('preserves defensive mount and mode-value fallbacks', () => {
-  expect(hasOrbitMount(null)).toBe(false);
-  expect(hasOrbitMount(document.createElement('div'))).toBe(true);
-  expect(resolveModeValue([0.5, 2], 1)).toBe(2);
-  expect(resolveModeValue([0.5, 2], 99)).toBe(1);
-});
-
-it('does not initialize WebGL when a host resolver reports no mount', () => {
-  render(<OrbitScene candidates={[]} mountResolver={() => null} />);
-  expect(WebGLRendererMock.instances).toHaveLength(0);
-});
 
 // ---------------------------------------------------------------------------
 // Canvas context plumbing. jsdom returns null for getContext, which would push

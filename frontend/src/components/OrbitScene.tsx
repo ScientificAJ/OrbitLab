@@ -8,7 +8,6 @@ type Props = {
   selectedId?: string;
   emptyMessage?: string;
   onSelectCandidate?: (candidateId: string) => void;
-  mountResolver?: (ref: { current: HTMLDivElement | null }) => HTMLDivElement | null;
 };
 
 type EvidenceTone = 'candidate' | 'ready' | 'review' | 'blocked';
@@ -42,18 +41,6 @@ type PlanetMesh = CandidateRenderData & {
 
 const speedModes = [0.65, 1, 1.8];
 const zoomModes = [0.65, 1, 1.45, 2.1];
-
-export function resolveModeValue(values: readonly number[], index: number) {
-  return values[index] ?? 1;
-}
-
-export function hasOrbitMount(mount: HTMLDivElement | null): mount is HTMLDivElement {
-  return Boolean(mount);
-}
-
-export function resolveOrbitMount(ref: { current: HTMLDivElement | null }) {
-  return ref.current;
-}
 const toneColors: Record<EvidenceTone, number> = {
   candidate: 0x76b9ff,
   ready: 0x97f2bf,
@@ -263,7 +250,6 @@ export function OrbitScene({
   selectedId,
   emptyMessage = 'Run BLS Search or Analysis to render candidate orbits.',
   onSelectCandidate,
-  mountResolver = resolveOrbitMount,
 }: Props) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [webglUnavailable, setWebglUnavailable] = useState(false);
@@ -287,8 +273,8 @@ export function OrbitScene({
   }, [candidates.length, selectedId]);
 
   useEffect(() => {
-    const mount = mountResolver(mountRef);
-    if (!hasOrbitMount(mount)) return;
+    const mount = mountRef.current;
+    if (!mount) return;
     setWebglUnavailable(false);
     if (!canCreateWebGLContext()) {
       setWebglUnavailable(true);
@@ -301,7 +287,7 @@ export function OrbitScene({
     const width = Math.max(mount.clientWidth, 1);
     const height = Math.max(mount.clientHeight, 1);
     const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 1000);
-    const zoom = resolveModeValue(zoomModes, zoomMode);
+    const zoom = zoomModes[zoomMode] ?? 1;
     const cameraHeight = 14.2 / zoom;
     const cameraDistance = 24.5 / zoom;
     const resetCamera = () => {
@@ -590,7 +576,7 @@ export function OrbitScene({
     let frame = 0;
     let animation = 0;
     const tick = () => {
-      const speed = resolveModeValue(speedModes, speedMode);
+      const speed = speedModes[speedMode] ?? 1;
       if (isPlaying) frame += speed;
       star.rotation.y += 0.0026 * speed;
       rim.rotation.y -= 0.0011 * speed;
@@ -679,17 +665,7 @@ export function OrbitScene({
         mount.removeChild(renderer.domElement);
       }
     };
-  }, [
-    renderData,
-    selectedId,
-    onSelectCandidate,
-    isPlaying,
-    speedMode,
-    zoomMode,
-    cameraReset,
-    candidates.length,
-    mountResolver,
-  ]);
+  }, [renderData, selectedId, onSelectCandidate, isPlaying, speedMode, zoomMode, cameraReset, candidates.length]);
 
   return (
     <div className={`orbit-scene ${selectionPulse ? 'selection-pulse' : ''}`} ref={mountRef} data-testid="orbit-scene">
