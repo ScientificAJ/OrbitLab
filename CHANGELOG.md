@@ -24,6 +24,10 @@ All notable OrbitLab changes are tracked here.
 - TRICERATOPS recovers the TIC id from the product URI when targets are searched by name (e.g. "L 98-59").
 - DAVE ModShift engine failures and timeouts (budget raised 15s -> 120s) degrade to missing evidence instead of crashing the whole analysis job.
 - Soft review warnings (catalog contamination, low ML probability, red noise already priced into effective SNR) no longer veto strong promotions; detection-quality warnings still block.
+- TRILEGAL resilience for TRICERATOPS: the broken server certificate chain is repaired client-side by AIA-chasing the published ZeroSSL intermediate into a certifi bundle (verification still anchors at a trusted root — never `verify=False`), successful TRILEGAL tables are cached per TIC and replayed via `trilegal_fname`, and the payload reports `trilegal_source`.
+- Nigraha cadence-domain guard: FFI-cadence (>300 s) TESS products mark ML scores `cadence_out_of_domain` — neutral in evidence scoring and missing-evidence (`nigraha_out_of_domain`) for paper-grade gates — instead of letting an out-of-domain score read as evidence against a planet.
+- Product listings infer and expose `cadence_seconds` and rank short-cadence (2-minute) products first, so mission ML models run inside their training domain whenever the archive offers fast cadence.
+- DAVE ModShift runs in a scratch directory; it no longer litters the repository root with `orbitlab-modshift-*` artifacts.
 
 ## v0.2.0 - 2026-06-03
 

@@ -1,12 +1,97 @@
 from __future__ import annotations
 
+import os
 import re
+import shutil
+import ssl
+import urllib.request
+from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 
+from orbitlab.config import settings
 from orbitlab.science.bls import TransitCandidate
 from orbitlab.science.catalog_context import parse_tic_id
+
+# The TRILEGAL service at stev.oapd.inaf.it serves a valid ZeroSSL leaf
+# certificate but omits the intermediate, so default verification fails with
+# "unable to get local issuer certificate". Appending the publicly published
+# intermediate (AIA-chased, exactly what browsers do) repairs the chain
+# client-side; verification still has to anchor at a trusted certifi root, so
+# this never weakens trust the way verify=False would.
+_ZEROSSL_INTERMEDIATE_URL = "http://crt.sectigo.com/ZeroSSLRSADVSSLCA2.crt"
+_CA_ENV_KEYS = ("REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE", "SSL_CERT_FILE")
+
+
+def _calibration_dir() -> Path:
+    return settings.calibration_dir
+
+
+def ensure_trilegal_ca_bundle() -> Path | None:
+    """Build (once) a certifi bundle with the missing TRILEGAL intermediate."""
+    bundle_path = _calibration_dir() / "trilegal-ca-bundle.pem"
+    if bundle_path.exists():
+        return bundle_path
+    try:
+        import certifi
+
+        with urllib.request.urlopen(_ZEROSSL_INTERMEDIATE_URL, timeout=30) as response:
+            intermediate_der = response.read()
+        intermediate_pem = ssl.DER_cert_to_PEM_cert(intermediate_der)
+        base_bundle = Path(certifi.where()).read_text(encoding="utf-8")
+        bundle_path.parent.mkdir(parents=True, exist_ok=True)
+        bundle_path.write_text(
+            base_bundle
+            + "\n# ZeroSSL RSA DV SSL CA 2 intermediate (AIA-chased for stev.oapd.inaf.it;"
+            + " chains must still anchor at a certifi root above)\n"
+            + intermediate_pem,
+            encoding="utf-8",
+        )
+        return bundle_path
+    except Exception:
+        return None
+
+
+@contextmanager
+def _repaired_ca_environment(bundle_path: Path | None):
+    """Point requests- and ssl-default-context verification at the repaired bundle."""
+    if bundle_path is None:
+        yield
+        return
+    saved = {key: os.environ.get(key) for key in _CA_ENV_KEYS}
+    for key in _CA_ENV_KEYS:
+        os.environ[key] = str(bundle_path)
+    try:
+        yield
+    finally:
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+
+
+def _cached_trilegal_path(tic_id: int) -> Path:
+    return _calibration_dir() / "trilegal" / f"{tic_id}_TRILEGAL.csv"
+
+
+def _harvest_trilegal_result(tic_id: int) -> bool:
+    """Move a freshly downloaded {tic}_TRILEGAL.csv from CWD into the cache."""
+    produced = Path.cwd() / f"{tic_id}_TRILEGAL.csv"
+    if not produced.exists():
+        return False
+    cached = _cached_trilegal_path(tic_id)
+    try:
+        cached.parent.mkdir(parents=True, exist_ok=True)
+        if not cached.exists():
+            shutil.move(str(produced), str(cached))
+        else:
+            produced.unlink()
+        return True
+    except OSError:
+        return False
 
 
 def _patch_legacy_science_imports() -> None:
@@ -115,25 +200,51 @@ def run_triceratops_fpp(
 
     folded_time = _phase_time(np.asarray(time, dtype=np.float64), candidate)
     binned_time, binned_flux, flux_err = _bin_for_triceratops(folded_time, np.asarray(flux, dtype=np.float64))
-    target = tr.target(ID=tic_id, sectors=np.asarray([sector], dtype=int))
-    aperture_pixels = _aperture_pixels(aperture_mask)
-    calc_depths_used = False
-    calc_depths_detail = None
-    if aperture_pixels is not None and hasattr(target, "calc_depths"):
-        try:
-            target.calc_depths(tdepth=float(candidate.depth), all_ap_pixels=aperture_pixels)
-            calc_depths_used = True
-        except (TypeError, ValueError, RuntimeError, AttributeError) as exc:
-            calc_depths_detail = str(exc)
-    target.calc_probs(
-        time=binned_time,
-        flux_0=binned_flux,
-        flux_err_0=flux_err,
-        P_orb=float(candidate.period),
-        N=int(samples),
-        parallel=parallel,
-        verbose=0,
-    )
+    cached_trilegal = _cached_trilegal_path(tic_id)
+    trilegal_fname = str(cached_trilegal) if cached_trilegal.exists() else None
+    trilegal_source = "cached_file" if trilegal_fname else "live_query"
+    ca_bundle = ensure_trilegal_ca_bundle() if trilegal_fname is None else None
+    with _repaired_ca_environment(ca_bundle):
+        if trilegal_fname is not None:
+            try:
+                target = tr.target(
+                    ID=tic_id, sectors=np.asarray([sector], dtype=int), trilegal_fname=trilegal_fname
+                )
+            except TypeError:
+                # Older/stubbed target signatures without trilegal_fname.
+                target = tr.target(ID=tic_id, sectors=np.asarray([sector], dtype=int))
+                trilegal_source = "live_query"
+        else:
+            target = tr.target(ID=tic_id, sectors=np.asarray([sector], dtype=int))
+        aperture_pixels = _aperture_pixels(aperture_mask)
+        calc_depths_used = False
+        calc_depths_mode = None
+        calc_depths_detail = None
+        if hasattr(target, "calc_depths"):
+            # calc_depths is mandatory before calc_probs (it populates the
+            # per-star "tdepth" column). The selected TPF aperture lives in
+            # TPF-relative pixel coordinates while TRICERATOPS expects its
+            # own TessCut frame, so passing it directly mislocates (or
+            # crashes) the per-star depth calculation; until WCS plumbing
+            # converts frames, use TRICERATOPS' validated default aperture
+            # (5x5 centered on the target in its own frame).
+            try:
+                target.calc_depths(tdepth=float(candidate.depth))
+                calc_depths_used = True
+                calc_depths_mode = "triceratops_default_5x5"
+            except (TypeError, ValueError, RuntimeError, AttributeError, IndexError, KeyError) as exc:
+                calc_depths_detail = str(exc)
+        target.calc_probs(
+            time=binned_time,
+            flux_0=binned_flux,
+            flux_err_0=flux_err,
+            P_orb=float(candidate.period),
+            N=int(samples),
+            parallel=parallel,
+            verbose=0,
+        )
+    if trilegal_source == "live_query" and not _harvest_trilegal_result(tic_id):
+        trilegal_source = "unavailable_scenarios_reduced"
     probs = getattr(target, "probs", None)
     probabilities = probs.to_dict(orient="records") if hasattr(probs, "to_dict") else None
     return {
@@ -147,10 +258,14 @@ def run_triceratops_fpp(
         "parallel": parallel,
         "fpp_uncertainty": None,
         "nfpp_uncertainty": None,
-        "aperture_used": aperture_pixels is not None,
+        "aperture_available": aperture_pixels is not None,
+        "aperture_used": False,
         "aperture_pixel_count": int(aperture_pixels.shape[0]) if aperture_pixels is not None else 0,
         "calc_depths_used": calc_depths_used,
+        "calc_depths_mode": calc_depths_mode,
         "calc_depths_detail": calc_depths_detail,
+        "trilegal_source": trilegal_source,
+        "ca_bundle_used": ca_bundle is not None,
         "contrast_curve_used": False,
         "flux_err": flux_err,
         "probabilities": probabilities,

@@ -822,9 +822,15 @@ MISSING_EVIDENCE_FLAG_CODES = frozenset(
         "dave_model_shift_required",
         "sweet_required",
         "nigraha_required",
+        "nigraha_out_of_domain",
         "triceratops_required",
     }
 )
+
+# Nigraha's TESS CNN ensemble was trained on 2-minute SPOC cadence; folded
+# views built from FFI-cadence data (10/30-min) are statistically outside its
+# training domain and its scores there are not evidence either way.
+NIGRAHA_MAX_IN_DOMAIN_CADENCE_SECONDS = 300.0
 
 # Warnings that are review context rather than detection-quality doubts. A
 # strong, otherwise-clean signal may still promote with only these present
@@ -988,7 +994,17 @@ def _apply_paper_grade_vetting(
 
     probability = _finite_float(ml.get("probability"))
     if mission_upper == "TESS":
-        if probability is None:
+        if ml.get("cadence_out_of_domain"):
+            # An out-of-domain score is not evidence for or against: treat it
+            # as missing ML evidence rather than judging the number.
+            _add_flag(
+                flags,
+                "nigraha_out_of_domain",
+                "hard_fail",
+                "Nigraha was trained on 2-minute cadence; this product's cadence is outside the model's "
+                "domain, so usable TESS ML evidence is missing for paper-grade promotion.",
+            )
+        elif probability is None:
             _add_flag(
                 flags,
                 "nigraha_required",
@@ -1179,6 +1195,8 @@ def _attach_ml_domain_evidence(
     probability = _finite_float(next_ml.get("probability"))
     calibrated = _finite_float(next_ml.get("calibrated_ml_probability"))
     ood_reasons: list[str] = []
+    if next_ml.get("cadence_out_of_domain"):
+        ood_reasons.append("cadence_out_of_training_domain")
     if next_ml.get("preprocessing_compatible") is False:
         ood_reasons.append("preprocessing_incompatible")
     imputed = next_ml.get("imputed_features")
@@ -1494,6 +1512,16 @@ def analyze_light_curve_arrays(
             nigraha_threshold=config.paper_ml_threshold if paper_grade_mode and mission_upper == "TESS" else None,
         )
         ml["stellar_context_source"] = dict(stellar_context_source)
+        cadence_seconds = _cadence_days_from_time(clean_time) * 86400.0
+        ml["cadence_seconds"] = cadence_seconds
+        if mission_upper == "TESS" and cadence_seconds > NIGRAHA_MAX_IN_DOMAIN_CADENCE_SECONDS:
+            ml["cadence_out_of_domain"] = True
+            ml["domain_label"] = ml.get("label")
+            ml["label"] = "out-of-domain"
+            ml["domain_note"] = (
+                "Nigraha was trained on 2-minute SPOC cadence; this product's cadence is outside the "
+                "model's training domain, so the score is not usable evidence."
+            )
         model_shift = {"status": "skipped", "engine": "dave_model_shift"}
         sweet = {"status": "skipped", "engine": "sweet"}
         catalog_context = {

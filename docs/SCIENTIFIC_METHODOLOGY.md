@@ -713,9 +713,13 @@ One-to-one alignment:
 
 OrbitLab uses the real `triceratops` package and the paper's validation thresholds.
 
+TRILEGAL resilience:
+
+TRICERATOPS queries the TRILEGAL galactic model at `stev.oapd.inaf.it`, whose server omits its ZeroSSL intermediate certificate, so default verification fails. OrbitLab repairs the chain client-side: it AIA-chases the published intermediate, appends it to the certifi bundle (`.orbitlab/calibration/trilegal-ca-bundle.pem`), and scopes `REQUESTS_CA_BUNDLE`/`SSL_CERT_FILE` to the TRICERATOPS call. Verification still anchors at a trusted certifi root — this is chain repair, never `verify=False`. Successful TRILEGAL results are cached per TIC under `.orbitlab/calibration/trilegal/` and replayed through TRICERATOPS' native `trilegal_fname` parameter, making paper-grade runs reproducible and resilient to the service's outages. The payload reports `trilegal_source` (`cached_file`, `live_query`, or `unavailable_scenarios_reduced`). When targets are searched by name, the TIC id is recovered from the product URI.
+
 Methodology delta:
 
-The TRICERATOPS tutorial emphasizes aperture pixels and `calc_depths` for nearby-source depth calculations. OrbitLab currently performs separate TIC/Gaia contamination screening and calls `calc_probs` without passing the user's aperture into TRICERATOPS. A fully paper-aligned future version should pass aperture pixels into TRICERATOPS and run aperture-aware `calc_depths` where possible. TRICERATOPS with full aperture and follow-up constraints is stronger than OrbitLab's current wrapper.
+TRICERATOPS with follow-up constraints (contrast curves, spectroscopy) remains stronger than OrbitLab's wrapper. OrbitLab calls `calc_depths` with TRICERATOPS' validated default 5x5 aperture because the selected TPF aperture is in a different pixel frame; passing that aperture safely requires future WCS conversion. OrbitLab does not yet supply follow-up observation constraints.
 
 ## Nigraha TESS ML
 
@@ -762,6 +766,10 @@ Current paper threshold:
 ```text
 paper_ml_threshold = 0.4
 ```
+
+Cadence domain guard:
+
+Nigraha's ensemble was trained on 2-minute SPOC cadence. When the analyzed product's median cadence exceeds 300 s (FFI-derived 10/30-minute products), the score is marked `cadence_out_of_domain`: it contributes a neutral ML component to evidence scoring, and paper-grade promotion blocks on `nigraha_out_of_domain` as missing evidence rather than judging an out-of-domain number. Product listings carry `cadence_seconds` and rank short-cadence products first so the ML surface runs in-domain whenever the archive offers it.
 
 One-to-one alignment:
 

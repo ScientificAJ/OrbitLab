@@ -820,6 +820,8 @@ def test_triceratops_wrapper_reports_input_errors_and_calc_depths_detail(monkeyp
 
     assert result["calc_depths_used"] is False
     assert result["calc_depths_detail"] == "depth geometry unavailable"
+    assert result["aperture_available"] is True
+    assert result["aperture_used"] is False
     assert result["probabilities"] is None
     assert result["parallel"] is True
     assert result["source"] == "TRICERATOPS calc_probs"
@@ -833,6 +835,7 @@ def test_triceratops_wrapper_reports_input_errors_and_calc_depths_detail(monkeyp
         aperture_mask=None,
         samples=10,
     )
+    assert no_aperture["aperture_available"] is False
     assert no_aperture["aperture_used"] is False
     assert no_aperture["calc_depths_used"] is False
 

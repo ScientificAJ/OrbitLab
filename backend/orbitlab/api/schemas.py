@@ -32,6 +32,7 @@ class Product(BaseModel):
     description: str
     size: int | None = None
     product_uri: str
+    cadence_seconds: float | None = None
 
 
 class AnalysisJobCreate(BaseModel):

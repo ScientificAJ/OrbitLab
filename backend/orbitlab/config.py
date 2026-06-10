@@ -27,6 +27,7 @@ class Settings:
     astronet_model_version: str = os.getenv("ORBITLAB_ASTRONET_MODEL_VERSION", "external")
     run_jobs_inline: bool = os.getenv("ORBITLAB_RUN_JOBS_INLINE", "1").strip().lower() in {"1", "true", "yes"}
     mast_cache_dir: Path = Path(os.getenv("ORBITLAB_MAST_CACHE_DIR", ".orbitlab/mast")).resolve()
+    calibration_dir: Path = Path(os.getenv("ORBITLAB_CALIBRATION_DIR", ".orbitlab/calibration")).resolve()
     model_registry_path: Path = Path(os.getenv("ORBITLAB_MODEL_REGISTRY", ".orbitlab/models.json")).resolve()
     nigraha_norm_stats_path: Path = Path(
         os.getenv(

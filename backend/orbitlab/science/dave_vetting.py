@@ -88,10 +88,12 @@ def _run_official_modshift(
         raise RuntimeError(f"Official DAVE modshift binary is not executable at {binary}")
 
     model = _box_model_for_modshift(time, flux, candidate)
-    with tempfile.NamedTemporaryFile(prefix="orbitlab-dave-modshift-", suffix=".dat", mode="w", delete=False) as handle:
-        input_path = Path(handle.name)
-        np.savetxt(handle, np.column_stack((time, flux, model)))
-    try:
+    # Run inside a scratch directory: the official binary writes its plot and
+    # binned-output companions next to the process CWD, which previously
+    # littered the repository root with orbitlab-modshift-* artifacts.
+    with tempfile.TemporaryDirectory(prefix="orbitlab-dave-modshift-") as scratch:
+        input_path = Path(scratch) / "input.dat"
+        np.savetxt(input_path, np.column_stack((time, flux, model)))
         completed = subprocess.run(
             [
                 str(binary),
@@ -106,9 +108,8 @@ def _run_official_modshift(
             capture_output=True,
             text=True,
             timeout=timeout_seconds,
+            cwd=scratch,
         )
-    finally:
-        input_path.unlink(missing_ok=True)
 
     fields = completed.stdout.split()
     if len(fields) < 17:

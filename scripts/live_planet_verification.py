@@ -26,7 +26,7 @@ GOLDEN_TARGETS: list[dict[str, Any]] = [
     {
         "query": "L 98-59",
         "mission": "TESS",
-        "preferred_product_substring": "0000000307210830-s0008",
+        "preferred_product_substring": "s0002-0000000307210830-0121",
         "vetting_mode": "paper",
         "known_planets": [
             {"name": "L 98-59 b", "period_days": 2.2531136, "radius_earth": 0.85},
@@ -39,7 +39,7 @@ GOLDEN_TARGETS: list[dict[str, Any]] = [
     {
         "query": "WASP-126",
         "mission": "TESS",
-        "preferred_product_substring": "0000000025155310-s0006",
+        "preferred_product_substring": "s0001-0000000025155310-0120",
         "vetting_mode": "paper",
         "known_planets": [
             {"name": "WASP-126 b", "period_days": 3.2888, "radius_earth": 10.8},
@@ -127,7 +127,7 @@ def _verify_target(base_url: str, spec: dict[str, Any], output_dir: Path) -> dic
             "product_uri": product["product_uri"],
             "mission": spec["mission"],
             "vetting_mode": spec["vetting_mode"],
-            "max_candidates": 4,
+            "max_candidates": 2,
         },
     )
     record["steps"]["analysis_job_create"] = {"elapsed_s": elapsed, "job_id": job.get("job_id")}

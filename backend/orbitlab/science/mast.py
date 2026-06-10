@@ -17,6 +17,38 @@ class ProductSummary:
     description: str
     size: int | None
     product_uri: str
+    cadence_seconds: float | None = None
+
+
+def infer_cadence_seconds(product_uri: str, description: str = "", exptime: float | None = None) -> float | None:
+    """Best-effort cadence for a TPF product, for ML-domain-aware ranking.
+
+    Short-cadence products (TESS 2-min SPOC, Kepler 1-min) match the training
+    domain of the mission ML models; FFI-derived HLSPs (TESS-SPOC 30/10-min)
+    and Kepler long cadence do not, so callers rank fast cadence first.
+    """
+    if exptime is not None and np.isfinite(exptime) and exptime > 0:
+        return float(exptime)
+    haystack = f"{product_uri} {description}".lower()
+    if "fast-tp" in haystack or "-0021-" in haystack or "_a_fast" in haystack:
+        return 20.0
+    if "-0120-" in haystack or "-0121-" in haystack or "-0136-" in haystack:
+        return 120.0
+    if "hlsp_tess-spoc" in haystack or "hlsp_qlp" in haystack or "ffi" in haystack:
+        return 1800.0
+    if "_spd-targ" in haystack or "short cadence" in haystack:
+        return 60.0
+    if "_lpd-targ" in haystack or "long cadence" in haystack:
+        return 1800.0
+    return None
+
+
+def rank_products_by_cadence(summaries: list[ProductSummary]) -> list[ProductSummary]:
+    """Stable-sort products fastest cadence first; unknown cadence stays last."""
+    return sorted(
+        summaries,
+        key=lambda item: item.cadence_seconds if item.cadence_seconds is not None else float("inf"),
+    )
 
 
 TARGET_ALIASES = {
@@ -151,6 +183,11 @@ def list_tpf_products(target_id: str, *, mission: str | None = None) -> list[Pro
                 continue
             filename = str(row_value(row, "productFilename", row_value(row, "obs_id", "")))
             description = str(row_value(row, "description", "Target Pixel File"))
+            raw_exptime = row_value(row, "exptime", row_value(row, "t_exptime"))
+            try:
+                exptime = float(raw_exptime) if raw_exptime is not None else None
+            except (TypeError, ValueError):
+                exptime = None
             summaries.append(
                 ProductSummary(
                     product_id=str(row_value(row, "obsID", row_value(row, "obs_id", filename))),
@@ -158,9 +195,10 @@ def list_tpf_products(target_id: str, *, mission: str | None = None) -> list[Pro
                     description=description,
                     size=int(row_value(row, "size")) if row_value(row, "size") else None,
                     product_uri=product_uri,
+                    cadence_seconds=infer_cadence_seconds(product_uri, description, exptime),
                 )
             )
-        return summaries
+        return rank_products_by_cadence(summaries)
 
     try:
         from astroquery.mast import Observations
@@ -200,9 +238,10 @@ def list_tpf_products(target_id: str, *, mission: str | None = None) -> list[Pro
                 description=description,
                 size=int(row_value(row, "size")) if row_value(row, "size") else None,
                 product_uri=product_uri,
+                cadence_seconds=infer_cadence_seconds(product_uri, description),
             )
         )
-    return summaries
+    return rank_products_by_cadence(summaries)
 
 
 def _download_mast_product(product_uri: str, cache_dir: Path) -> Path:

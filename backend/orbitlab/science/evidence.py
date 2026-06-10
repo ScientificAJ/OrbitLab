@@ -103,6 +103,10 @@ def _score_snr(effective_snr: float, borderline_snr: float, promotion_snr: float
 def _ml_probability(ml: dict[str, Any] | None) -> float | None:
     if not ml:
         return None
+    if ml.get("cadence_out_of_domain"):
+        # An out-of-domain score is not evidence either way; fall back to the
+        # neutral ML component instead of letting it drag the final score.
+        return None
     for key in ("calibrated_ml_probability", "probability"):
         value = ml.get(key)
         if isinstance(value, (int, float)) and math.isfinite(float(value)):

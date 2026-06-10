@@ -214,6 +214,139 @@ def test_model_shift_engine_failure_degrades_to_missing_evidence(tmp_path):
     assert "missing" in report["detail"].lower() or "RuntimeError" in report["detail"]
 
 
+def test_product_cadence_inference_and_ranking():
+    from orbitlab.science.mast import ProductSummary, infer_cadence_seconds, rank_products_by_cadence
+
+    hlsp = "mast:HLSP/tess-spoc/s0008/target/.../hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits"
+    spoc_2min = "mast:TESS/product/tess2018234235059-s0002-0000000307210830-0121-s_tp.fits"
+    kepler_lc = "mast:Kepler/url/.../kplr011904151-2009131105131_lpd-targ.fits.gz"
+
+    assert infer_cadence_seconds(hlsp) == 1800.0
+    assert infer_cadence_seconds(spoc_2min) == 120.0
+    assert infer_cadence_seconds(kepler_lc) == 1800.0
+    assert infer_cadence_seconds("unknown.fits") is None
+    assert infer_cadence_seconds("unknown.fits", exptime=120.0) == 120.0
+
+    def _product(uri, cadence):
+        return ProductSummary(
+            product_id=uri, mission="TESS", description="", size=None, product_uri=uri, cadence_seconds=cadence
+        )
+
+    ranked = rank_products_by_cadence(
+        [_product(hlsp, 1800.0), _product("u.fits", None), _product(spoc_2min, 120.0)]
+    )
+    assert [item.cadence_seconds for item in ranked] == [120.0, 1800.0, None]
+
+
+def test_nigraha_out_of_domain_cadence_is_missing_evidence_not_a_low_score():
+    from orbitlab.science.evidence import _ml_probability
+    from orbitlab.science.pipeline import _apply_paper_grade_vetting
+
+    config = load_science_config()
+    candidate = TransitCandidate(3.69, 0.5, 0.04, 0.0015, 10.0, 18.0)
+    flags: list[dict] = []
+    _apply_paper_grade_vetting(
+        flags=flags,
+        candidate=candidate,
+        config=config,
+        support={"effective_snr": 18.0, "observed_transit_count": 6},
+        tls={"status": "complete", "sde": 18.0, "distinct_transit_count": 6},
+        model_shift={"status": "pass", "hard_fail": False},
+        sweet={"status": "pass"},
+        ml={"probability": 0.0009, "cadence_out_of_domain": True},
+        catalog_context={},
+        fpp={"status": "complete", "fpp": 0.001, "nfpp": 0.0001},
+        mission_upper="TESS",
+    )
+    codes = {flag["code"]: flag["severity"] for flag in flags}
+    assert codes.get("nigraha_out_of_domain") == "hard_fail"
+    assert "nigraha_low_probability" not in codes
+    assert "nigraha_out_of_domain" in MISSING_EVIDENCE_FLAG_CODES
+
+    assert _ml_probability({"probability": 0.0009, "cadence_out_of_domain": True}) is None
+    assert _ml_probability({"probability": 0.7}) == pytest.approx(0.7)
+
+
+def test_trilegal_ca_bundle_failure_is_tolerated(monkeypatch, tmp_path):
+    import orbitlab.science.triceratops_fpp as tf
+
+    monkeypatch.setattr(tf, "_calibration_dir", lambda: tmp_path)
+
+    def _refuse(*args, **kwargs):
+        raise OSError("no network")
+
+    monkeypatch.setattr(tf.urllib.request, "urlopen", _refuse)
+    assert tf.ensure_trilegal_ca_bundle() is None
+
+    prebuilt = tmp_path / "trilegal-ca-bundle.pem"
+    prebuilt.write_text("# already built", encoding="utf-8")
+    assert tf.ensure_trilegal_ca_bundle() == prebuilt
+
+
+def test_repaired_ca_environment_sets_and_restores(monkeypatch, tmp_path):
+    import os
+
+    import orbitlab.science.triceratops_fpp as tf
+
+    bundle = tmp_path / "bundle.pem"
+    bundle.write_text("x", encoding="utf-8")
+    monkeypatch.delenv("REQUESTS_CA_BUNDLE", raising=False)
+    with tf._repaired_ca_environment(bundle):
+        assert os.environ["REQUESTS_CA_BUNDLE"] == str(bundle)
+        assert os.environ["SSL_CERT_FILE"] == str(bundle)
+    assert "REQUESTS_CA_BUNDLE" not in os.environ
+    with tf._repaired_ca_environment(None):
+        assert "REQUESTS_CA_BUNDLE" not in os.environ
+
+
+def test_cached_trilegal_file_is_passed_to_triceratops(monkeypatch, tmp_path):
+    import sys
+    import types
+
+    import orbitlab.science.triceratops_fpp as tf
+
+    monkeypatch.setattr(tf, "_calibration_dir", lambda: tmp_path)
+    cached = tmp_path / "trilegal" / "307210830_TRILEGAL.csv"
+    cached.parent.mkdir(parents=True)
+    cached.write_text("stars", encoding="utf-8")
+
+    captured: dict = {}
+
+    class _FakeTarget:
+        FPP = 0.005
+        NFPP = 0.0001
+        probs = None
+
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+        def calc_probs(self, **kwargs):
+            captured["calc_probs"] = True
+
+    fake_module = types.ModuleType("triceratops.triceratops")
+    fake_module.target = _FakeTarget
+    monkeypatch.setitem(sys.modules, "triceratops", types.ModuleType("triceratops"))
+    monkeypatch.setitem(sys.modules, "triceratops.triceratops", fake_module)
+
+    time = np.linspace(0.0, 10.0, 600)
+    flux = 1.0 + np.random.default_rng(3).normal(0.0, 3.0e-4, time.size)
+    candidate = TransitCandidate(2.0, 0.4, 0.1, 0.002, 9.0, 10.0)
+    report = tf.run_triceratops_fpp(
+        target_id="L 98-59",
+        product_uri="hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+        time=time,
+        flux=flux,
+        candidate=candidate,
+        samples=1000,
+    )
+
+    assert captured["trilegal_fname"] == str(cached)
+    assert captured["calc_probs"] is True
+    assert report["status"] == "complete"
+    assert report["target_id"] == 307210830, "TIC must be recovered from the product URI for name searches"
+    assert report["trilegal_source"] == "cached_file"
+
+
 def test_detrending_sensitivity_masked_variant_keeps_the_transit():
     from orbitlab.science.detrending_sensitivity import run_detrending_sensitivity
 
