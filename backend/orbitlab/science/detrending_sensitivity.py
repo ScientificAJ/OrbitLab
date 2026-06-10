@@ -93,9 +93,28 @@ def run_detrending_sensitivity(
             methods.append({"label": f"wotan_biweight_{window:g}d", "status": "failed", "detail": str(exc)})
 
     try:
+        # Transit-masked detrending: estimate the trend with the candidate's
+        # transits replaced by the local baseline, then divide the ORIGINAL
+        # flux by that trend. Detrending the masked flux directly would erase
+        # the transit signal itself, so this variant would always disagree
+        # with the others and falsely mark every strong candidate unstable.
+        from wotan import flatten
+
         masked_flux = _mask_candidate_transits(clean_time, clean_flux, candidate)
-        detrended_masked, _ = detrend_with_wotan(clean_time, masked_flux, method="biweight", window_length_days=0.75)
-        variants.append(("transit_masked_wotan_biweight_0.75d", detrended_masked))
+        _, masked_trend = flatten(
+            clean_time,
+            masked_flux,
+            method="biweight",
+            window_length=0.75,
+            return_trend=True,
+        )
+        masked_trend = np.asarray(masked_trend, dtype=np.float64)
+        trend_valid = np.isfinite(masked_trend) & (np.abs(masked_trend) > np.finfo(float).eps)
+        if not trend_valid.any():
+            raise ValueError("transit-masked wotan trend produced no finite values")
+        trend_fill = float(np.nanmedian(masked_trend[trend_valid]))
+        masked_trend = np.where(trend_valid, masked_trend, trend_fill)
+        variants.append(("transit_masked_wotan_biweight_0.75d", clean_flux / masked_trend))
     except (RuntimeError, ValueError, ImportError) as exc:
         methods.append({"label": "transit_masked_wotan_biweight_0.75d", "status": "failed", "detail": str(exc)})
 

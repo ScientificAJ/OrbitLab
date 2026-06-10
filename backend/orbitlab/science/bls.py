@@ -30,13 +30,27 @@ class BlsResult:
     metadata: dict[str, Any]
 
 
-def sigma_clip_flux(time: np.ndarray, flux: np.ndarray, sigma: float = 6.0) -> tuple[np.ndarray, np.ndarray]:
+def sigma_clip_flux(
+    time: np.ndarray,
+    flux: np.ndarray,
+    sigma: float = 6.0,
+    sigma_lower: float = 50.0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Asymmetric robust outlier clip for transit searches.
+
+    Positive outliers (flares, cosmic rays, scattered light) are clipped at
+    ``sigma``. Negative excursions are the signal being searched for: a deep
+    transit on a quiet star easily exceeds 6 robust sigma (a hot Jupiter at
+    1% depth over 300 ppm scatter is ~30 sigma), so a symmetric clip deletes
+    exactly the strongest planets before the periodogram ever sees them.
+    ``sigma_lower`` only removes gross instrumental dropouts.
+    """
     median = np.nanmedian(flux)
     mad = np.nanmedian(np.abs(flux - median))
     if not np.isfinite(mad) or mad == 0:
         return time, flux
     robust_sigma = 1.4826 * mad
-    keep = np.abs(flux - median) <= sigma * robust_sigma
+    keep = (flux - median <= sigma * robust_sigma) & (median - flux <= sigma_lower * robust_sigma)
     return time[keep], flux[keep]
 
 
@@ -390,6 +404,37 @@ def run_bls(
     duration = float(result.duration[index])
     model_depth = float(max(result.depth[index], 0.0))
     power = float(result.power[index])
+
+    # Local fine-grid refinement around the broad-grid peak. Geometric broad
+    # grids leave ~0.1% period error, which drifts the folded phase by a
+    # large fraction of the transit duration across a full baseline; that
+    # smears odd/even and secondary diagnostics enough to hide eclipsing
+    # binaries and degrade ephemeris accuracy. A narrow linear grid pins the
+    # period before any phase-based vetting runs.
+    refinement = {"applied": False}
+    fine_lo = max(min_period, period * 0.985)
+    fine_hi = min(max_period, period * 1.015)
+    if fine_hi > fine_lo:
+        fine_periods = np.linspace(fine_lo, fine_hi, 2001, dtype=np.float64)
+        try:
+            fine_result = model.power(fine_periods, durations)
+            fine_power = np.asarray(fine_result.power, dtype=np.float64)
+            if np.isfinite(fine_power).any():
+                fine_index = int(np.nanargmax(fine_power))
+                if float(fine_power[fine_index]) >= power:
+                    period = float(fine_result.period[fine_index])
+                    epoch = float(fine_result.transit_time[fine_index])
+                    duration = float(fine_result.duration[fine_index])
+                    model_depth = float(max(fine_result.depth[fine_index], 0.0))
+                    power = float(fine_power[fine_index])
+                    refinement = {
+                        "applied": True,
+                        "window_fraction": 0.015,
+                        "samples": int(fine_periods.size),
+                        "refined_period_days": period,
+                    }
+        except (ValueError, RuntimeError):
+            refinement = {"applied": False, "detail": "fine refinement failed; broad-grid peak retained"}
     measured_depth = _measured_transit_depth(
         clipped_time,
         snr_flux,
@@ -427,6 +472,7 @@ def run_bls(
         "sigma_clip_kept_cadences": int(clipped_time.size),
         "clean_cadences": int(clean_time.size),
         "search_binning": binning,
+        "period_refinement": refinement,
         "snr_estimator": "depth_over_out_of_transit_mad_times_sqrt_in_transit_cadences",
     }
 

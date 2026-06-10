@@ -202,6 +202,8 @@ def test_paper_grade_analysis_records_triceratops_failure(monkeypatch):
                 "citation": "test",
             }
 
+    _mock_rng = np.random.default_rng(7)
+
     class _BlsResult:
         periodogram = {
             "period": np.array([candidate.period], dtype=np.float32),
@@ -209,7 +211,10 @@ def test_paper_grade_analysis_records_triceratops_failure(monkeypatch):
             "duration": np.array([candidate.duration], dtype=np.float32),
         }
         search_time = np.linspace(0, 20, 600, dtype=np.float32)
-        search_flux = (1.0 + 0.0005 * np.sin(np.linspace(0, 20, 600, dtype=np.float32))).astype(np.float32)
+        # White noise: keeps red-noise beta near 1 so this test isolates the
+        # missing-evidence (TRICERATOPS unavailable) path without tripping
+        # the paper_low_snr evidence-against gate.
+        search_flux = (1.0 + _mock_rng.normal(0.0, 0.0005, 600)).astype(np.float32)
         clean_time = search_time
         clean_flux = search_flux
         metadata = {"min_period_days": 0.5, "max_period_days": 10.0}
@@ -272,9 +277,14 @@ def test_paper_grade_analysis_records_triceratops_failure(monkeypatch):
     tce = payload["tces"][0]
     assert tce["fpp"]["status"] == "failed"
     assert "TRILEGAL SSL certificate failure" in tce["fpp"]["detail"]
-    assert any(flag["code"] == "triceratops_fpp" and flag["severity"] == "hard_fail" for flag in tce["flags"])
-    assert any(flag["code"] == "triceratops_nfpp" and flag["severity"] == "hard_fail" for flag in tce["flags"])
+    # Engine-unavailable is missing evidence, not evidence against: promotion
+    # must stay blocked, but the signal must not be branded a false positive.
+    assert any(flag["code"] == "triceratops_required" and flag["severity"] == "hard_fail" for flag in tce["flags"])
+    assert not any(flag["code"] in {"triceratops_fpp", "triceratops_nfpp"} for flag in tce["flags"])
     assert tce["vetting"]["paper_grade"]["status"] == "fail"
+    assert tce["disposition"] == "borderline_tce"
+    assert tce["action_label"] == "review_needed"
+    assert payload["planet_candidates"] == []
 
 
 def test_disposition_promotes_clean_snr_at_threshold():
@@ -425,9 +435,11 @@ def test_analysis_uses_solar_like_physics_fallback_when_stellar_context_is_missi
     assert "planet_radius_earth" in physics["locked_fields"]
     assert physics["radius_ratio"] > 0
     assert physics["semi_major_axis_au"] > 0
-    assert payload["tces"][0]["science_readiness"]["status"] == "blocked"
-    assert "stellar_context_unverified" in payload["tces"][0]["science_readiness"]["blockers"]
-    assert payload["science_readiness"]["status"] == "blocked"
+    # Unknown stellar parentage locks physics interpretation but is review
+    # context for the flux-relative transit signal, not a candidacy veto.
+    assert payload["tces"][0]["science_readiness"]["status"] == "review"
+    assert "stellar_context_unverified" in payload["tces"][0]["science_readiness"]["warnings"]
+    assert payload["science_readiness"]["status"] == "review"
     assert payload["stellar_context"]["physics_source"] == "solar_like_fallback"
 
 
@@ -674,8 +686,8 @@ def test_bls_preview_uses_target_id_for_known_kepler_period_and_preserves_low_sn
     assert payload["tces"][0]["physics"]["interpretation_locked"] is True
     assert payload["tces"][0]["science_readiness"]["result_kind"] == "preview"
     assert "paper_grade_tls_not_run" in payload["tces"][0]["science_readiness"]["evidence_gaps"]
-    assert "stellar_context_unverified" in payload["tces"][0]["science_readiness"]["blockers"]
-    assert payload["science_readiness"]["status"] == "blocked"
+    assert "stellar_context_unverified" in payload["tces"][0]["science_readiness"]["warnings"]
+    assert payload["science_readiness"]["status"] == "review"
     assert any(flag["code"] == "known_period_low_snr" for flag in payload["tces"][0]["flags"])
     assert payload["candidates"] == []
 

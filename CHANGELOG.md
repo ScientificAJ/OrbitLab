@@ -7,6 +7,23 @@ All notable OrbitLab changes are tracked here.
 ### Added
 
 - Expanded documentation for the Science Provenance Release Room, release trust boundaries, model checksum readiness, deployment provenance checks, and submission evidence review.
+- Hardened truth benchmark: promotion-aware scoring that fails loudly, false-positive trap zoo (eclipsing binaries, background-EB secondary, odd/even mismatch, single deep event, sinusoid), multi-seed scrambled plus pure-noise false-alarm controls, and physics golden-radius checks against real planet values (TRAPPIST-1 b, HAT-P-7 b analogs).
+- Unmocked live verification script (`scripts/live_planet_verification.py`) that drives the real API by planet name and compares recovered ephemerides/radii against NASA Exoplanet Archive golden values.
+- Regression suite `backend/tests/test_accuracy_mission_fixes.py` pinning every accuracy fix.
+
+### Fixed
+
+- Transit searches no longer delete deep transits: BLS sigma clipping is now asymmetric (+6 sigma flares clipped, dips preserved), so hot Jupiters and deep M-dwarf transits survive the search.
+- Red-noise beta is estimated on out-of-transit residuals (Pont et al. 2006), removing the inverted penalty where deeper planets looked noisier.
+- Odd/even depth vetting uses event-centered transit numbering (round, not floor), restoring the eclipsing-binary half-period discriminator that parity splitting had silently disabled; same fix for observed-transit counting and DAVE per-event depths.
+- BLS adds a local fine-grid period refinement pass, sharpening phase-based vetting and ephemeris accuracy to ~0.01 percent.
+- Engine-unavailable hard failures (TLS/DAVE/SWEET/Nigraha/TRICERATOPS `*_required`) now block promotion as reviewable `borderline_tce` instead of mislabeling signals `rejected_signal`; TRICERATOPS incompletes report honestly instead of claiming "FPP above threshold".
+- Planet physics consumes the merged stellar context (job -> curated known target -> live TIC catalog) with provenance, fixing solar-default radius corruption (up to ~9x) for known and catalog-resolved hosts; locked physics is a review warning, not a candidacy veto.
+- Detrending sensitivity's transit-masked variant computes the trend on masked flux and applies it to the original flux instead of erasing the transit it was testing.
+- Odd/even hard fails require real in-transit sampling (>=6 points, >=2 events per parity); sparse 30-minute-cadence cases downgrade to review warnings instead of false rejections.
+- TRICERATOPS recovers the TIC id from the product URI when targets are searched by name (e.g. "L 98-59").
+- DAVE ModShift engine failures and timeouts (budget raised 15s -> 120s) degrade to missing evidence instead of crashing the whole analysis job.
+- Soft review warnings (catalog contamination, low ML probability, red noise already priced into effective SNR) no longer veto strong promotions; detection-quality warnings still block.
 
 ## v0.2.0 - 2026-06-03
 

@@ -30,6 +30,22 @@ def parse_tess_sector(product_uri: str | None) -> int | None:
     return int(match.group(1)) if match else None
 
 
+def parse_tic_from_product_uri(product_uri: str | None) -> int | None:
+    """Recover the TIC id from a TESS product URI.
+
+    Name-based searches (e.g. "L 98-59") resolve products whose URIs embed the
+    zero-padded TIC (SPOC: ``...-0000000307210830-...``, HLSP TESS-SPOC:
+    ``..._0000000307210830-s0008_...``); without this fallback TRICERATOPS
+    would be unavailable for every target the user typed by name.
+    """
+    if not product_uri:
+        return None
+    match = re.search(r"[-_](\d{13,16})[-_]", product_uri)
+    if match:
+        return int(match.group(1))
+    return None
+
+
 def _phase_time(time: np.ndarray, candidate: TransitCandidate) -> np.ndarray:
     return ((time - candidate.epoch + 0.5 * candidate.period) % candidate.period) - 0.5 * candidate.period
 
@@ -88,7 +104,11 @@ def run_triceratops_fpp(
 
     tic_id = parse_tic_id(target_id)
     if tic_id is None:
-        raise ValueError(f"TRICERATOPS requires a numeric TIC target id, got {target_id!r}")
+        tic_id = parse_tic_from_product_uri(product_uri)
+    if tic_id is None:
+        raise ValueError(
+            f"TRICERATOPS requires a numeric TIC id; none found in target {target_id!r} or its product URI"
+        )
     sector = parse_tess_sector(product_uri)
     if sector is None:
         raise ValueError("TRICERATOPS requires a TESS sector parsed from the selected product URI")

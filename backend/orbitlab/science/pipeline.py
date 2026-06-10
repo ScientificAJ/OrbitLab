@@ -18,7 +18,7 @@ from orbitlab.science.data_quality import clean_light_curve
 from orbitlab.science.dave_vetting import run_model_shift, run_sweet_test
 from orbitlab.science.detrending import detrend_with_wotan
 from orbitlab.science.detrending_sensitivity import run_detrending_sensitivity
-from orbitlab.science.evidence import build_candidate_evidence, estimate_red_noise_beta
+from orbitlab.science.evidence import build_candidate_evidence, estimate_red_noise_beta, out_of_transit_residuals
 from orbitlab.science.folding import bin_phase_curve, phase_fold
 from orbitlab.science.injection_recovery import run_injection_recovery
 from orbitlab.science.known_targets import (
@@ -121,7 +121,9 @@ def _add_flag(flags: list[dict], code: str, severity: str, message: str) -> None
 def _observed_transit_count(time: np.ndarray, candidate) -> int:
     if candidate.period <= 0 or candidate.duration <= 0:
         return 0
-    phase_number = np.floor((np.asarray(time) - candidate.epoch) / candidate.period).astype(int)
+    # Nearest-integer event numbering: floor() splits an epoch-centered
+    # event across two transit numbers and overcounts observed transits.
+    phase_number = np.round((np.asarray(time) - candidate.epoch) / candidate.period).astype(int)
     phase = ((np.asarray(time) - candidate.epoch + 0.5 * candidate.period) % candidate.period) - 0.5 * candidate.period
     in_transit = np.abs(phase) <= 0.5 * candidate.duration
     return int(np.unique(phase_number[in_transit]).size)
@@ -499,12 +501,25 @@ def _stellar_context_for_physics(
     stellar_radius_solar: float | None,
     stellar_mass_solar: float | None,
     stellar_teff: float | None,
+    provenance: dict[str, str] | None = None,
 ) -> tuple[float, float, float | None, str]:
     radius = stellar_radius_solar if stellar_radius_solar and stellar_radius_solar > 0 else 1.0
     mass = stellar_mass_solar if stellar_mass_solar and stellar_mass_solar > 0 else 1.0
     teff = stellar_teff if stellar_teff and stellar_teff > 0 else 5778.0
-    source = "user_supplied" if stellar_radius_solar and stellar_mass_solar else "solar_like_fallback"
-    return radius, mass, teff, source
+    if not (stellar_radius_solar and stellar_mass_solar):
+        return radius, mass, teff, "solar_like_fallback"
+    if provenance:
+        # Label the dominant origin of the radius/mass pair so habitability
+        # caution and evidence scoring can trust real catalog/curated context
+        # the same way they trust an explicit user value.
+        sources = {provenance.get("radius_solar"), provenance.get("mass_solar")}
+        sources.discard(None)
+        sources.discard("imputed_solar_default")
+        if len(sources) == 1:
+            return radius, mass, teff, str(sources.pop())
+        if sources:
+            return radius, mass, teff, "merged_sources"
+    return radius, mass, teff, "user_supplied"
 
 
 def _apply_habitability_caution(physics: dict[str, Any], physics_source: str) -> dict[str, Any]:
@@ -575,7 +590,11 @@ def _candidate_science_readiness(
             warnings.append(code)
 
     if physics.get("interpretation_locked"):
-        blockers.append("stellar_context_unverified")
+        # Unknown stellar parentage locks the physics interpretation fields
+        # (radius, semi-major axis, HZ), but the transit detection itself is
+        # flux-relative evidence: keep the signal promotable and reviewable
+        # instead of vetoing candidacy on missing host-star characterization.
+        warnings.append("stellar_context_unverified")
 
     if vetting_mode == "paper":
         if not paper_grade or paper_grade.get("status") != "pass":
@@ -749,7 +768,25 @@ def _structured_flags(candidate, validation: dict, config, support: dict | None 
         and np.isfinite(odd_even_sigma)
         and odd_even_sigma >= config.odd_even_hard_fail_sigma
     ):
-        _add_flag(flags, "odd_even_depth_mismatch", "hard_fail", "Odd/even depth mismatch exceeds sigma threshold.")
+        # A hard binary verdict needs real sampling behind it: with 30-min
+        # FFI cadence a transit can contribute 1-2 points per event, and a
+        # median-of-few depth comparison is too noisy to reject a planet on
+        # its own (DAVE ModShift's odd/even metric stays authoritative in
+        # paper mode). Sparse cases stay flagged for review.
+        min_points = validation.get("odd_even_min_points")
+        min_events = validation.get("odd_even_min_events")
+        well_sampled = (not isinstance(min_points, int) or min_points >= 6) and (
+            not isinstance(min_events, int) or min_events >= 2
+        )
+        _add_flag(
+            flags,
+            "odd_even_depth_mismatch",
+            "hard_fail" if well_sampled else "warning",
+            "Odd/even depth mismatch exceeds sigma threshold."
+            if well_sampled
+            else "Odd/even depth mismatch exceeds sigma threshold, but in-transit sampling is too sparse "
+            "for a hard false-positive verdict; review required.",
+        )
     centroid_significance = validation.get("centroid_significance")
     if isinstance(centroid_significance, (int, float)) and np.isfinite(centroid_significance):
         if centroid_significance >= 3.0:
@@ -774,18 +811,59 @@ def _structured_flags(candidate, validation: dict, config, support: dict | None 
     return flags
 
 
+# Hard-fail codes that mean "required evidence is missing/incomplete", not
+# "evidence says false positive". They must block promotion loudly, but a
+# signal whose only hard failures are missing engines stays a reviewable TCE:
+# "DAVE unavailable" is not "signal failed DAVE" (see GOAL.md engine-failure
+# semantics). Evidence-against hard fails still reject outright.
+MISSING_EVIDENCE_FLAG_CODES = frozenset(
+    {
+        "paper_tls_required",
+        "dave_model_shift_required",
+        "sweet_required",
+        "nigraha_required",
+        "triceratops_required",
+    }
+)
+
+# Warnings that are review context rather than detection-quality doubts. A
+# strong, otherwise-clean signal may still promote with only these present
+# (Kepler/TESS triage treats catalog context and supporting-ML shortfalls as
+# follow-up notes, not detection vetoes). Noise/shape warnings such as
+# red_noise, low_snr, or stellar_rotation_harmonic stay promotion-blocking.
+SOFT_REVIEW_WARNING_CODES = frozenset(
+    {
+        "catalog_contamination",
+        "nigraha_low_probability",
+        "known_period_low_snr",
+        "planetary_secondary",
+        "weak_residual_signal",
+        # Red noise already deflates effective SNR via beta (Pont, Zucker &
+        # Queloz 2006), and the promotion gates run on that deflated value;
+        # blocking on the warning as well would double-penalize strong
+        # signals on mildly variable stars.
+        "red_noise",
+    }
+)
+
+
 def _disposition(
     candidate, flags: list[dict], config, evidence: dict[str, Any] | None = None
 ) -> tuple[str, str, str, float]:
-    has_hard_fail = any(flag["severity"] == "hard_fail" for flag in flags)
+    hard_fail_codes = {flag["code"] for flag in flags if flag["severity"] == "hard_fail"}
     effective_snr = float((evidence or {}).get("effective_snr", candidate.signal_to_noise))
     final_score = float((evidence or {}).get("final_score", min(max(effective_snr / config.promotion_snr, 0.0), 1.0)))
-    if has_hard_fail:
+    if hard_fail_codes - MISSING_EVIDENCE_FLAG_CODES:
         return "rejected_signal", "none", "low", min(final_score, 0.44)
-    has_review_warning = any(flag["severity"] == "warning" for flag in flags)
-    if final_score >= 0.80 and effective_snr >= 7.1 and not has_review_warning:
+    if hard_fail_codes:
+        # Only missing-evidence hard fails: promotion is blocked, but the
+        # signal itself was not shown to be a false positive.
+        return "borderline_tce", "review_needed", "medium", min(final_score, 0.64)
+    warning_codes = {flag["code"] for flag in flags if flag["severity"] == "warning"}
+    only_soft_warnings = warning_codes <= SOFT_REVIEW_WARNING_CODES
+    if final_score >= 0.80 and effective_snr >= config.paper_promotion_snr and only_soft_warnings:
         return "planet_candidate", "follow_up_needed", "high", final_score
-    if final_score >= 0.65 and effective_snr >= config.promotion_snr and not has_review_warning:
+    if final_score >= 0.65 and effective_snr >= config.promotion_snr and not warning_codes:
         return "planet_candidate", "follow_up_needed", "high", final_score
     if final_score >= 0.45 and effective_snr >= config.borderline_snr_min:
         return "borderline_tce", "review_needed", "medium", final_score
@@ -927,20 +1005,31 @@ def _apply_paper_grade_vetting(
 
         fpp_value = _finite_float(fpp.get("fpp"))
         nfpp_value = _finite_float(fpp.get("nfpp"))
-        if fpp_value is None or fpp_value > config.paper_triceratops_fpp_max:
+        if fpp.get("status") != "complete" or (fpp_value is None and nfpp_value is None):
+            # Engine-unavailable is missing evidence, not evidence against:
+            # block paper promotion loudly without branding the signal a
+            # false positive (the values were never computed).
             _add_flag(
                 flags,
-                "triceratops_fpp",
+                "triceratops_required",
                 "hard_fail",
-                "TRICERATOPS FPP is above the paper-grade statistical-validation threshold.",
+                "TRICERATOPS FPP evidence did not complete, so paper-grade promotion is blocked.",
             )
-        if nfpp_value is None or nfpp_value > config.paper_triceratops_nfpp_max:
-            _add_flag(
-                flags,
-                "triceratops_nfpp",
-                "hard_fail",
-                "TRICERATOPS nearby FPP is above the paper-grade validation threshold.",
-            )
+        else:
+            if fpp_value is None or fpp_value > config.paper_triceratops_fpp_max:
+                _add_flag(
+                    flags,
+                    "triceratops_fpp",
+                    "hard_fail",
+                    "TRICERATOPS FPP is above the paper-grade statistical-validation threshold.",
+                )
+            if nfpp_value is None or nfpp_value > config.paper_triceratops_nfpp_max:
+                _add_flag(
+                    flags,
+                    "triceratops_nfpp",
+                    "hard_fail",
+                    "TRICERATOPS nearby FPP is above the paper-grade validation threshold.",
+                )
 
     contamination = catalog_context.get("contamination") if isinstance(catalog_context, dict) else None
     if isinstance(contamination, dict) and contamination.get("capable_neighbor_count", 0):
@@ -1328,9 +1417,10 @@ def analyze_light_curve_arrays(
         }
 
         physics_radius, physics_mass, physics_teff, physics_source = _stellar_context_for_physics(
-            stellar_radius_solar=stellar_radius_solar,
-            stellar_mass_solar=stellar_mass_solar,
-            stellar_teff=stellar_teff,
+            stellar_radius_solar=effective_stellar["radius_solar"],
+            stellar_mass_solar=effective_stellar["mass_solar"],
+            stellar_teff=effective_stellar["teff"],
+            provenance=stellar_context_source,
         )
         physics = asdict(
             infer_planet_physics(
@@ -1359,13 +1449,14 @@ def analyze_light_curve_arrays(
                 centroid_shift_pixels=centroid_shift_pixels,
                 centroid_uncertainty_pixels=centroid_uncertainty_pixels,
                 stellar_rotation_period=stellar_rotation_period,
+                low_snr_threshold=config.promotion_snr,
             )
         )
         observed_transits = _observed_transit_count(bls_result.search_time, candidate)
         period_alias_code = _period_alias_code(candidate, evaluated_candidates)
         alias_flags = [period_alias_code] if period_alias_code else []
         red_noise_beta = estimate_red_noise_beta(
-            np.asarray(bls_result.search_flux) - np.nanmedian(bls_result.search_flux)
+            out_of_transit_residuals(bls_result.search_time, bls_result.search_flux, candidate)
         )
         effective_snr = candidate.signal_to_noise / red_noise_beta if red_noise_beta else candidate.signal_to_noise
         candidate_metadata = dict(candidate.metadata or {})
@@ -1811,10 +1902,16 @@ def analyze_light_curve_arrays(
             "luminosity_solar": stellar_luminosity_solar,
             "density_solar": stellar_density_solar,
             "rotation_period": stellar_rotation_period,
-            "effective_radius_solar": stellar_radius_solar or 1.0,
-            "effective_mass_solar": stellar_mass_solar or 1.0,
-            "effective_teff": stellar_teff or 5778.0,
-            "physics_source": "user_supplied" if stellar_radius_solar and stellar_mass_solar else "solar_like_fallback",
+            "effective_radius_solar": effective_stellar["radius_solar"] or 1.0,
+            "effective_mass_solar": effective_stellar["mass_solar"] or 1.0,
+            "effective_teff": effective_stellar["teff"] or 5778.0,
+            "provenance": dict(stellar_context_source),
+            "physics_source": _stellar_context_for_physics(
+                stellar_radius_solar=effective_stellar["radius_solar"],
+                stellar_mass_solar=effective_stellar["mass_solar"],
+                stellar_teff=effective_stellar["teff"],
+                provenance=stellar_context_source,
+            )[3],
         },
         "preprocessing": bls_result.metadata,
     }

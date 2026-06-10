@@ -26,6 +26,36 @@ class CandidateEvidence:
     explanation: tuple[str, ...]
 
 
+def out_of_transit_residuals(
+    time: np.ndarray,
+    flux: np.ndarray,
+    candidate: TransitCandidate,
+    *,
+    width_factor: float = 0.75,
+) -> np.ndarray:
+    """Return median-subtracted flux residuals with the candidate transit excluded.
+
+    Red-noise (beta) estimation must run on out-of-transit residuals: a real
+    transit is a coherent dip, so binned scatter that includes it inflates beta
+    and punishes exactly the strongest signals (Pont, Zucker & Queloz 2006 use
+    residuals after the transit model is removed). ``width_factor`` widens the
+    excluded window slightly beyond the boxed half-duration to keep ingress and
+    egress wings out of the noise estimate. Falls back to the full series when
+    the mask would leave too few cadences to bin.
+    """
+    time_arr = np.asarray(time, dtype=np.float64)
+    flux_arr = np.asarray(flux, dtype=np.float64)
+    if candidate.period <= 0 or candidate.duration <= 0 or time_arr.shape != flux_arr.shape:
+        return flux_arr - np.nanmedian(flux_arr)
+    phase = ((time_arr - candidate.epoch + 0.5 * candidate.period) % candidate.period) - 0.5 * candidate.period
+    out_of_transit = np.abs(phase) > width_factor * candidate.duration
+    values = flux_arr[out_of_transit]
+    values = values[np.isfinite(values)]
+    if values.size < 64:
+        return flux_arr - np.nanmedian(flux_arr)
+    return values - np.nanmedian(values)
+
+
 def estimate_red_noise_beta(residuals: np.ndarray, bin_sizes: tuple[int, ...] = (5, 10, 20, 40)) -> float:
     values = np.asarray(residuals, dtype=np.float64)
     values = values[np.isfinite(values)]
@@ -93,7 +123,7 @@ def build_candidate_evidence(
     quality_flag_fraction: float,
     config,
 ) -> CandidateEvidence:
-    residuals = np.asarray(search_flux, dtype=np.float64) - np.nanmedian(search_flux)
+    residuals = out_of_transit_residuals(search_time, search_flux, candidate)
     beta = estimate_red_noise_beta(residuals)
     effective_snr = float(candidate.signal_to_noise / beta) if beta > 0 else float(candidate.signal_to_noise)
     coverage = phase_coverage_score(search_time, candidate)

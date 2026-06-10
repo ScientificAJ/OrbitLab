@@ -22,6 +22,13 @@ class ValidationMetrics:
     centroid_significance: float | None
     centroid_shift_flag: bool
     false_positive_flags: tuple[str, ...]
+    # Sampling support behind the odd/even statistic: the smaller in-transit
+    # point count and the smaller distinct-event count across the two
+    # parities. Median-depth comparisons from a handful of cadences (30-min
+    # FFI data can have 1-2 points per event) are too noisy to support a
+    # hard false-positive verdict on their own.
+    odd_even_min_points: int | None = None
+    odd_even_min_events: int | None = None
 
 
 def _robust_scatter(values: np.ndarray) -> float:
@@ -47,7 +54,11 @@ def odd_even_depth(time: np.ndarray, flux: np.ndarray, candidate: TransitCandida
 def odd_even_depths_with_uncertainty(
     time: np.ndarray, flux: np.ndarray, candidate: TransitCandidate
 ) -> tuple[float, float, float, float]:
-    transit_number = np.floor((time - candidate.epoch) / candidate.period).astype(int)
+    # Nearest-integer event numbering: the in-transit window is centered on
+    # the epoch, so floor() would split every event's points across two
+    # adjacent transit numbers and mix odd/even samples, collapsing the
+    # depth difference this test exists to measure.
+    transit_number = np.round((time - candidate.epoch) / candidate.period).astype(int)
     phase = np.abs(((time - candidate.epoch + 0.5 * candidate.period) % candidate.period) - 0.5 * candidate.period)
     in_transit = phase < 0.5 * candidate.duration
     out_of_transit = phase > candidate.duration
@@ -71,6 +82,22 @@ def odd_even_depths_with_uncertainty(
         depths.append(max(0.0, baseline - float(np.nanmedian(values))))
         errors.append(float(scatter / math.sqrt(values.size)) if np.isfinite(scatter) and scatter > 0 else float("nan"))
     return depths[0], depths[1], errors[0], errors[1]
+
+
+def odd_even_sampling(time: np.ndarray, flux: np.ndarray, candidate: TransitCandidate) -> tuple[int, int]:
+    """Return (min in-transit points, min distinct events) across parities."""
+    finite = np.isfinite(time) & np.isfinite(flux)
+    t = np.asarray(time)[finite]
+    transit_number = np.round((t - candidate.epoch) / candidate.period).astype(int)
+    phase = np.abs(((t - candidate.epoch + 0.5 * candidate.period) % candidate.period) - 0.5 * candidate.period)
+    in_transit = phase < 0.5 * candidate.duration
+    counts = []
+    events = []
+    for parity in (1, 0):
+        members = in_transit & (transit_number % 2 == parity)
+        counts.append(int(np.count_nonzero(members)))
+        events.append(int(np.unique(transit_number[members]).size))
+    return min(counts), min(events)
 
 
 def odd_even_significance(odd_depth: float, even_depth: float, odd_err: float, even_err: float) -> float | None:
@@ -131,9 +158,10 @@ def false_positive_flags(
     centroid_shift_pixels: float | None,
     centroid_significance: float | None,
     sap_pdcsap_agreement: float | None,
+    low_snr_threshold: float = 7.1,
 ) -> tuple[str, ...]:
     flags: list[str] = []
-    if candidate.signal_to_noise < 7.1:
+    if candidate.signal_to_noise < low_snr_threshold:
         flags.append("low_snr")
     if not duration_ok:
         flags.append("implausible_duration")
@@ -167,6 +195,7 @@ def validate_candidate(
     centroid_shift_pixels: float | None = None,
     centroid_uncertainty_pixels: float | None = None,
     stellar_rotation_period: float | None = None,
+    low_snr_threshold: float = 7.1,
 ) -> ValidationMetrics:
     time_arr = np.asarray(time)
     flux_arr = np.asarray(flux)
@@ -178,6 +207,7 @@ def validate_candidate(
         float(abs(odd_depth - even_depth)) if np.isfinite(odd_depth) and np.isfinite(even_depth) else float("nan")
     )
     odd_even_sigma = odd_even_significance(odd_depth, even_depth, odd_err, even_err)
+    odd_even_min_points, odd_even_min_events = odd_even_sampling(time_arr, flux_arr, candidate)
     secondary_depth_value = secondary_eclipse_depth(time_arr, flux_arr, candidate)
     secondary_snr_value = secondary_eclipse_snr(time_arr, flux_arr, candidate)
     duration_ok = duration_plausible(candidate)
@@ -207,10 +237,13 @@ def validate_candidate(
         centroid_shift_pixels=centroid_shift_pixels,
         centroid_significance=centroid_significance,
         sap_pdcsap_agreement=agreement,
+        low_snr_threshold=low_snr_threshold,
     )
     return ValidationMetrics(
         odd_even_depth_delta=odd_even_delta,
         odd_even_sigma=odd_even_sigma,
+        odd_even_min_points=odd_even_min_points,
+        odd_even_min_events=odd_even_min_events,
         secondary_depth=secondary_depth_value,
         secondary_snr=secondary_snr_value,
         duration_plausible=duration_ok,

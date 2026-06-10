@@ -79,7 +79,7 @@ def _run_official_modshift(
     candidate: TransitCandidate,
     *,
     modshift_binary: str | Path | None = None,
-    timeout_seconds: int = 15,
+    timeout_seconds: int = 120,
 ) -> dict[str, float]:
     binary = Path(modshift_binary) if modshift_binary is not None else _default_modshift_binary()
     if not binary.exists():
@@ -262,7 +262,9 @@ def _brightening_significance(
 def _transit_depth_series(
     time: np.ndarray, flux: np.ndarray, candidate: TransitCandidate, *, baseline: float
 ) -> list[float]:
-    transit_number = np.floor((time - candidate.epoch) / candidate.period).astype(int)
+    # Nearest-integer event numbering keeps each epoch-centered event in a
+    # single per-transit depth bin (floor() would split it across two).
+    transit_number = np.round((time - candidate.epoch) / candidate.period).astype(int)
     primary_mask = _window_mask(time, candidate, 0.0, candidate.duration)
     depths: list[float] = []
     for number in np.unique(transit_number[primary_mask]):
@@ -361,7 +363,18 @@ def run_model_shift(
     t, f = _finite_arrays(time, flux)
     if t.size < 16 or candidate.period <= 0 or candidate.duration <= 0:
         return {"status": "insufficient_data", "engine": "dave_model_shift"}
-    modshift = _run_official_modshift(t, f, candidate, modshift_binary=modshift_binary)
+    try:
+        modshift = _run_official_modshift(t, f, candidate, modshift_binary=modshift_binary)
+    except (subprocess.TimeoutExpired, subprocess.CalledProcessError, RuntimeError, OSError, ValueError) as exc:
+        # Engine failure is missing evidence, never a crashed analysis: the
+        # paper-grade gate downstream blocks promotion loudly while the rest
+        # of the evidence chain stays reviewable.
+        return {
+            "status": "failed",
+            "engine": "dave_model_shift",
+            "detail": f"{exc.__class__.__name__}: {exc}",
+            "source": "Official DAVE ModShift binary with DAVE RoboVet thresholds",
+        }
     flags, robovet = _official_robovet_flags(modshift)
 
     return {

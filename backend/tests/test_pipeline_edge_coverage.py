@@ -249,7 +249,7 @@ def test_paper_grade_vetting_threshold_and_pass_edges():
         sweet={"status": "warning"},
         ml={"probability": None},
         catalog_context={"contamination": {"capable_neighbor_count": 1}},
-        fpp={"fpp": 1.0, "nfpp": 1.0},
+        fpp={"status": "complete", "fpp": 1.0, "nfpp": 1.0},
         mission_upper="TESS",
     )
     codes = {flag["code"] for flag in flags}
@@ -278,7 +278,7 @@ def test_paper_grade_vetting_threshold_and_pass_edges():
         sweet={"status": "pass"},
         ml={"probability": config.paper_ml_threshold - 0.01},
         catalog_context={},
-        fpp={"fpp": 0.0, "nfpp": 0.0},
+        fpp={"status": "complete", "fpp": 0.0, "nfpp": 0.0},
         mission_upper="TESS",
     )
     assert review["status"] == "review"
@@ -311,7 +311,7 @@ def test_paper_grade_vetting_threshold_and_pass_edges():
         sweet={"status": "skipped"},
         ml={"probability": 0.9},
         catalog_context={},
-        fpp={"fpp": 0.0, "nfpp": 0.0},
+        fpp={"status": "complete", "fpp": 0.0, "nfpp": 0.0},
         mission_upper="TESS",
     )
     assert required["status"] == "fail"

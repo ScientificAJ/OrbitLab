@@ -161,16 +161,18 @@ Relevant implementation:
 - `backend/orbitlab/science/bls.py`
 - `backend/orbitlab/science/pipeline.py`
 
-The cleaning stage removes non-finite cadences and applies quality filtering where a mission quality array is present. BLS additionally performs robust sigma clipping:
+The cleaning stage removes non-finite cadences and applies quality filtering where a mission quality array is present. BLS additionally performs robust asymmetric sigma clipping:
 
 ```text
 median = nanmedian(flux)
 mad = nanmedian(abs(flux - median))
 robust_sigma = 1.4826 * mad
-keep = abs(flux - median) <= 6.0 * robust_sigma
+keep = (flux - median <= 6.0 * robust_sigma) and (median - flux <= 50.0 * robust_sigma)
 ```
 
 The use of `1.4826 * MAD` estimates Gaussian-equivalent scatter from the median absolute deviation. It is more outlier-resistant than standard deviation when scattered cosmic rays, momentum dumps, or short instrumental artifacts are present.
+
+The clip is intentionally asymmetric. Positive outliers (flares, cosmic rays, scattered light) are removed at 6 robust sigma, but negative excursions are exactly the signal a transit search exists to find: a 1% hot-Jupiter transit over 300 ppm scatter is roughly 30 sigma deep, so a symmetric clip would delete the strongest planets before the periodogram ever ran. The 50-sigma lower bound only removes gross instrumental dropouts.
 
 Data-quality fields emitted:
 
@@ -258,7 +260,8 @@ OrbitLab method:
 7. Cap the period count to an effective maximum.
 8. Run `astropy.timeseries.BoxLeastSquares.power`.
 9. Select the maximum power period.
-10. Compute SNR on the full clipped light curve, not only the binned search light curve.
+10. Refine the peak with a narrow linear grid (±1.5%, 2001 samples). Geometric broad grids leave ~0.1% period error, which drifts folded phases by a large fraction of the transit duration across a full baseline and smears odd/even and secondary diagnostics enough to hide eclipsing binaries.
+11. Compute SNR on the full clipped light curve, not only the binned search light curve.
 
 Key equations:
 
@@ -374,11 +377,18 @@ This avoids the common failure mode where a low-SNR but scientifically reviewabl
 
 Disposition logic:
 
-| Disposition        | Action label       | Meaning                                |
-| ------------------ | ------------------ | -------------------------------------- |
-| `planet_candidate` | `follow_up_needed` | Passed current promotion gates.        |
-| `borderline_tce`   | `review_needed`    | Reviewable signal but not promoted.    |
-| `rejected_signal`  | `none`             | Failed hard evidence gate or too weak. |
+| Disposition        | Action label       | Meaning                                                       |
+| ------------------ | ------------------ | ------------------------------------------------------------- |
+| `planet_candidate` | `follow_up_needed` | Passed current promotion gates.                               |
+| `borderline_tce`   | `review_needed`    | Reviewable signal: not promoted, or required evidence missing. |
+| `rejected_signal`  | `none`             | Evidence-against hard fail, or too weak to review.            |
+
+Hard-fail flags are split into two scientific classes:
+
+- Evidence-against codes (secondary eclipse, odd/even mismatch, implausible duration, DAVE false-positive verdicts, above-threshold TRICERATOPS FPP/NFPP, paper SNR/transit-count shortfalls) reject the signal.
+- Missing-evidence codes (`paper_tls_required`, `dave_model_shift_required`, `sweet_required`, `nigraha_required`, `triceratops_required`) mean a required engine did not complete. They block promotion loudly, but the signal stays a reviewable `borderline_tce`: "DAVE unavailable" is not "signal failed DAVE".
+
+Warning flags are likewise split. Soft review-context warnings (`catalog_contamination`, `nigraha_low_probability`, `known_period_low_snr`, `planetary_secondary`, `weak_residual_signal`, `red_noise`) do not veto a strong promotion because their information is either review context or already priced into effective SNR (red-noise beta deflates effective SNR per Pont, Zucker & Queloz 2006, so blocking on the warning as well would double-penalize). Detection-quality warnings such as `low_snr` or `stellar_rotation_harmonic` still block promotion.
 
 Core promotion thresholds:
 
@@ -386,6 +396,8 @@ Core promotion thresholds:
 promotion_snr = 6.0
 borderline_snr_min = 4.5
 paper_promotion_snr = 7.1
+strong promotion: final_score >= 0.80 and effective_snr >= paper_promotion_snr with only soft warnings
+standard promotion: final_score >= 0.65 and effective_snr >= promotion_snr with no warnings
 ```
 
 Paper-grade gate:
@@ -418,12 +430,14 @@ Validation metrics:
 Odd/even calculation:
 
 ```text
-transit_number = floor((time - epoch) / period)
+transit_number = round((time - epoch) / period)
 in_transit = abs(phase_time) < 0.5 * duration
 odd_depth = baseline - median(flux[in_transit and transit_number odd])
 even_depth = baseline - median(flux[in_transit and transit_number even])
 sigma = abs(odd_depth - even_depth) / sqrt(odd_err^2 + even_err^2)
 ```
+
+Event numbering uses nearest-integer rounding because the in-transit window is centered on the epoch: floor-based numbering would split each event's cadences across two adjacent transit numbers, mixing odd and even samples and collapsing the depth difference this diagnostic exists to measure (the classic eclipsing-binary half-period discriminator).
 
 Secondary eclipse calculation:
 
@@ -821,9 +835,13 @@ Current limits used:
 | Maximum greenhouse | conservative outer |
 | Early Mars         | optimistic outer   |
 
+Stellar context resolution:
+
+Physics consumes the merged stellar context with per-field provenance, in trust order: (1) explicit analysis-job values, (2) the curated `known_targets` entry, (3) the live TIC catalog row. Solar-like defaults apply only when every source is empty; in that case `interpretation_locked` is set, the physics fields are flagged, and habitability is marked insufficiently constrained. Locked physics is a review warning for the candidate, not a candidacy veto, because the transit detection itself is flux-relative evidence.
+
 Methodology delta:
 
-When stellar radius and mass are not supplied, OrbitLab uses solar-like defaults only for physics continuity and marks habitability as insufficiently constrained. This is useful for display, not for a scientific habitability claim. Kopparapu-style habitable-zone analysis is stronger when stellar parameters and uncertainties are measured.
+When stellar radius and mass are not available from any source, OrbitLab uses solar-like defaults only for physics continuity and marks habitability as insufficiently constrained. This is useful for display, not for a scientific habitability claim. Kopparapu-style habitable-zone analysis is stronger when stellar parameters and uncertainties are measured.
 
 ## Evidence Scoring
 
@@ -832,7 +850,7 @@ Relevant implementation:
 - `backend/orbitlab/science/evidence.py`
 - `backend/orbitlab/science/pipeline.py`
 
-Red-noise beta:
+Red-noise beta (estimated on out-of-transit residuals only — a real transit is a coherent dip, so binned scatter that includes it inflates beta and punishes exactly the strongest signals; Pont, Zucker & Queloz 2006 estimate correlated noise on residuals after the transit model is removed):
 
 ```text
 white_sigma = std(residuals)
