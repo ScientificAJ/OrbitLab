@@ -279,21 +279,33 @@ async function openApp(
     storedTheme?: string | null;
     voyagerUnlocked?: boolean;
     voyagerEnabled?: boolean;
+    firstRunAcknowledged?: boolean;
   } = {},
 ) {
-  const { storedMode = 'advanced', storedTheme, voyagerUnlocked, voyagerEnabled } = options;
+  const {
+    storedMode = 'advanced',
+    storedTheme,
+    voyagerUnlocked,
+    voyagerEnabled,
+    firstRunAcknowledged = true,
+  } = options;
   await installBaseMocks(page);
-  if (storedMode || storedTheme || voyagerUnlocked !== undefined || voyagerEnabled !== undefined) {
-    await page.addInitScript(
-      ({ mode, theme, unlocked, enabled }) => {
-        if (mode) window.localStorage.setItem('orbitlab-mode', mode);
-        if (theme) window.localStorage.setItem('orbitlab-theme', theme);
-        if (unlocked !== undefined) window.localStorage.setItem('orbitlab-voyager-unlocked', String(unlocked));
-        if (enabled !== undefined) window.localStorage.setItem('orbitlab-voyager-enabled', String(enabled));
-      },
-      { mode: storedMode, theme: storedTheme, unlocked: voyagerUnlocked, enabled: voyagerEnabled },
-    );
-  }
+  await page.addInitScript(
+    ({ mode, theme, unlocked, enabled, firstRun }) => {
+      if (mode) window.localStorage.setItem('orbitlab-mode', mode);
+      if (theme) window.localStorage.setItem('orbitlab-theme', theme);
+      if (unlocked !== undefined) window.localStorage.setItem('orbitlab-voyager-unlocked', String(unlocked));
+      if (enabled !== undefined) window.localStorage.setItem('orbitlab-voyager-enabled', String(enabled));
+      if (firstRun) window.localStorage.setItem('orbitlab-first-run-acknowledged', 'true');
+    },
+    {
+      mode: storedMode,
+      theme: storedTheme,
+      unlocked: voyagerUnlocked,
+      enabled: voyagerEnabled,
+      firstRun: firstRunAcknowledged,
+    },
+  );
   await page.goto('/');
   await expect(page.getByText('OrbitLab', { exact: true })).toBeVisible();
 }
@@ -323,6 +335,23 @@ test('app loads without browser console errors', async ({ page }) => {
   await expect(page.getByTestId('orbit-empty-state')).toContainText('Run BLS Search or Analysis');
   await expect(page.getByTestId('orbit-scene').getByTestId(/orbit-label-/)).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('first launch shows the install welcome and hands off to the beginner tour', async ({ page }) => {
+  await openApp(page, { storedMode: null, firstRunAcknowledged: false });
+
+  const welcome = page.getByTestId('first-run-welcome');
+  await expect(welcome).toBeVisible();
+  await expect(welcome).toContainText('First launch detected');
+  await expect(welcome).toContainText('./install.sh');
+
+  await welcome.getByRole('button', { name: /Start exploring/ }).click();
+  await expect(welcome).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Choose a mission' })).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Choose a mission' })).toBeVisible();
+  await expect(page.getByTestId('first-run-welcome')).toHaveCount(0);
 });
 
 test('beginner guidance provides tour, coach marks, helper text, and tooltips', async ({ page }) => {

@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { BeginnerEmptyGuide, HelpTip, TourOverlay, beginnerTourSteps } from './Guidance';
+import {
+  BeginnerEmptyGuide,
+  FirstRunWelcome,
+  HelpTip,
+  INSTALL_COMMAND,
+  TourOverlay,
+  beginnerTourSteps,
+} from './Guidance';
 
 describe('HelpTip', () => {
   it('renders an accessible help marker with the label as title', () => {
@@ -83,5 +90,34 @@ describe('TourOverlay', () => {
 
   it('exposes six beginner tour steps with stable ids', () => {
     expect(beginnerTourSteps.map((s) => s.id)).toEqual(['mission', 'search', 'target', 'product', 'run', 'plots']);
+  });
+});
+
+describe('FirstRunWelcome', () => {
+  it('renders the install command, payload list, and dismiss affordances', async () => {
+    const onDismiss = vi.fn();
+    render(<FirstRunWelcome onDismiss={onDismiss} />);
+
+    expect(screen.getByRole('dialog', { name: 'Welcome aboard OrbitLab' })).toBeInTheDocument();
+    expect(screen.getByText(INSTALL_COMMAND)).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'What the installer sets up' }).children).toHaveLength(6);
+
+    await userEvent.click(screen.getByRole('button', { name: /Start exploring/ }));
+    expect(onDismiss).toHaveBeenCalledOnce();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Close welcome' }));
+    expect(onDismiss).toHaveBeenCalledTimes(2);
+  });
+
+  it('stays on the Copy label when the clipboard write fails', async () => {
+    const onDismiss = vi.fn();
+    const writeText = vi.fn().mockRejectedValue(new Error('clipboard blocked'));
+    Object.defineProperty(window.navigator, 'clipboard', { value: { writeText }, configurable: true });
+    render(<FirstRunWelcome onDismiss={onDismiss} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy install command' }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(INSTALL_COMMAND));
+    expect(screen.queryByText('Copied')).not.toBeInTheDocument();
+    expect(screen.getByText('Copy')).toBeInTheDocument();
   });
 });

@@ -90,6 +90,16 @@ The repository includes deterministic UI captures generated from the mocked demo
 
 ## Quick Start
 
+One-shot setup (recommended — the app also points first-time users here with a welcome popup):
+
+```bash
+./install.sh
+```
+
+It installs missing system packages, the Python environment with all extras, locked frontend packages, the TESS/Kepler/K2 model artifacts, the pinned DAVE ModShift vetting binary, Playwright browsers for e2e tests, and pre-pulls the Docker images so the first start is fast. It is idempotent, so re-running it is always safe.
+
+Manual setup, if you prefer the individual steps:
+
 ```bash
 python3 -m venv .venv
 . .venv/bin/activate

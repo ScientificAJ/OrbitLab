@@ -18,7 +18,14 @@ import {
   X,
 } from 'lucide-react';
 import { Fragment, type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { BeginnerEmptyGuide, HelpTip, TourOverlay, beginnerTourSteps, type TourStepId } from './components/Guidance';
+import {
+  BeginnerEmptyGuide,
+  FirstRunWelcome,
+  HelpTip,
+  TourOverlay,
+  beginnerTourSteps,
+  type TourStepId,
+} from './components/Guidance';
 import { OrbitScene } from './components/OrbitScene';
 import { SciencePlot } from './components/SciencePlot';
 import { useModalState } from './hooks/useModalState';
@@ -277,6 +284,7 @@ type Mission = 'TESS' | 'Kepler' | 'K2';
 
 const MODE_STORAGE_KEY = 'orbitlab-mode';
 const THEME_STORAGE_KEY = 'orbitlab-theme';
+const FIRST_RUN_ACK_STORAGE_KEY = 'orbitlab-first-run-acknowledged';
 const TOUR_COMPLETED_STORAGE_KEY = 'orbitlab-beginner-tour-completed';
 const VOYAGER_UNLOCKED_STORAGE_KEY = 'orbitlab-voyager-unlocked';
 const VOYAGER_ENABLED_STORAGE_KEY = 'orbitlab-voyager-enabled';
@@ -304,6 +312,7 @@ function parseOptionalPositiveNumber(value: string) {
 export default function App() {
   const [mode, setMode] = useState<OrbitLabMode>(readStoredMode);
   const [theme, setTheme] = useState<ThemeName>(readStoredTheme);
+  const [firstRunAcknowledged, setFirstRunAcknowledged] = useState(() => readStoredBoolean(FIRST_RUN_ACK_STORAGE_KEY));
   const [tourCompleted, setTourCompleted] = useState(() => readStoredBoolean(TOUR_COMPLETED_STORAGE_KEY));
   const [tourStepIndex, setTourStepIndex] = useState(0);
   const [voyagerUnlocked, setVoyagerUnlocked] = useState(() => readStoredBoolean(VOYAGER_UNLOCKED_STORAGE_KEY));
@@ -358,6 +367,7 @@ export default function App() {
     (modal) => modal === 'bls' && blsRunning,
   );
 
+  const firstRunWelcomeShown = useRef(false);
   const analysisToken = useRef<number>(0);
   const searchToken = useRef<number>(0);
   const productToken = useRef<number>(0);
@@ -371,7 +381,9 @@ export default function App() {
     refreshModelStatus();
     refreshHealth();
     let tourTimeout: number | undefined;
-    if (mode === 'beginner' && !readStoredBoolean(TOUR_COMPLETED_STORAGE_KEY)) {
+    if (!readStoredBoolean(FIRST_RUN_ACK_STORAGE_KEY)) {
+      tourTimeout = window.setTimeout(() => openModal('firstRun'), 350);
+    } else if (mode === 'beginner' && !readStoredBoolean(TOUR_COMPLETED_STORAGE_KEY)) {
       tourTimeout = window.setTimeout(() => openModal('tour'), 350);
     }
     const interval = window.setInterval(refreshHealth, 30_000);
@@ -400,6 +412,20 @@ export default function App() {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    window.localStorage.setItem(FIRST_RUN_ACK_STORAGE_KEY, String(firstRunAcknowledged));
+  }, [firstRunAcknowledged]);
+
+  // Any way out of the first-run welcome (button, X, overlay click, Escape)
+  // counts as acknowledged so the popup never nags a returning user.
+  useEffect(() => {
+    if (activeModal === 'firstRun') {
+      firstRunWelcomeShown.current = true;
+    } else if (firstRunWelcomeShown.current && !firstRunAcknowledged) {
+      setFirstRunAcknowledged(true);
+    }
+  }, [activeModal, firstRunAcknowledged]);
 
   useEffect(() => {
     window.localStorage.setItem(TOUR_COMPLETED_STORAGE_KEY, String(tourCompleted));
@@ -622,6 +648,16 @@ export default function App() {
   function startBeginnerTour() {
     setTourStepIndex(0);
     openModal('tour');
+  }
+
+  function dismissFirstRunWelcome() {
+    setFirstRunAcknowledged(true);
+    if (mode === 'beginner' && !tourCompleted) {
+      setTourStepIndex(0);
+      setActiveModal('tour');
+    } else {
+      setActiveModal(null);
+    }
   }
 
   function finishBeginnerTour() {
@@ -2069,6 +2105,8 @@ export default function App() {
           </div>
         </ModalShell>
       )}
+
+      {activeModal === 'firstRun' && <FirstRunWelcome onDismiss={dismissFirstRunWelcome} />}
 
       {activeModal === 'tour' && (
         <TourOverlay

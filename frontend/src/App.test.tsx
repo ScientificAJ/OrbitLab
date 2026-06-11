@@ -164,6 +164,7 @@ function blsPreview(overrides: Partial<BlsPreviewResult> = {}): BlsPreviewResult
 beforeEach(() => {
   vi.resetAllMocks();
   localStorage.clear();
+  localStorage.setItem('orbitlab-first-run-acknowledged', 'true');
   localStorage.setItem('orbitlab-beginner-tour-completed', 'true');
   mocked.fetchModelStatus.mockResolvedValue(models());
   mocked.fetchHealth.mockResolvedValue(health());
@@ -818,6 +819,70 @@ describe('App – modals, sessions, theme, tour', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('App – first-run installer welcome', () => {
+  it('shows the install welcome on first launch and hands off to the beginner tour', async () => {
+    localStorage.removeItem('orbitlab-first-run-acknowledged');
+    localStorage.removeItem('orbitlab-beginner-tour-completed');
+    const user = userEvent.setup();
+    await renderApp();
+    const welcome = await screen.findByTestId('first-run-welcome');
+    expect(welcome).toHaveTextContent('./install.sh');
+    expect(welcome).toHaveTextContent('First launch detected');
+    await user.click(within(welcome).getByRole('button', { name: /Start exploring/ }));
+    expect(screen.queryByTestId('first-run-welcome')).not.toBeInTheDocument();
+    expect(localStorage.getItem('orbitlab-first-run-acknowledged')).toBe('true');
+    expect(screen.getByText('Choose a mission')).toBeInTheDocument();
+  });
+
+  it('closes without the tour in advanced mode and persists the acknowledgement', async () => {
+    localStorage.removeItem('orbitlab-first-run-acknowledged');
+    localStorage.removeItem('orbitlab-beginner-tour-completed');
+    localStorage.setItem('orbitlab-mode', 'advanced');
+    const user = userEvent.setup();
+    await renderApp();
+    const welcome = await screen.findByTestId('first-run-welcome');
+    await user.click(within(welcome).getByRole('button', { name: 'Close welcome' }));
+    expect(screen.queryByTestId('first-run-welcome')).not.toBeInTheDocument();
+    expect(screen.queryByText('Choose a mission')).not.toBeInTheDocument();
+    expect(localStorage.getItem('orbitlab-first-run-acknowledged')).toBe('true');
+  });
+
+  it('dismisses when clicking the overlay backdrop', async () => {
+    localStorage.removeItem('orbitlab-first-run-acknowledged');
+    await renderApp();
+    const welcome = await screen.findByTestId('first-run-welcome');
+    fireEvent.mouseDown(welcome.closest('.modal-overlay')!);
+    await waitFor(() => expect(screen.queryByTestId('first-run-welcome')).not.toBeInTheDocument());
+    expect(localStorage.getItem('orbitlab-first-run-acknowledged')).toBe('true');
+  });
+
+  it('treats Escape as acknowledgement so the welcome never nags again', async () => {
+    localStorage.removeItem('orbitlab-first-run-acknowledged');
+    localStorage.removeItem('orbitlab-beginner-tour-completed');
+    await renderApp();
+    await screen.findByTestId('first-run-welcome');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByTestId('first-run-welcome')).not.toBeInTheDocument());
+    expect(localStorage.getItem('orbitlab-first-run-acknowledged')).toBe('true');
+  });
+
+  it('copies the install command and confirms with a copied state', async () => {
+    localStorage.removeItem('orbitlab-first-run-acknowledged');
+    const user = userEvent.setup();
+    await renderApp();
+    const welcome = await screen.findByTestId('first-run-welcome');
+    await user.click(within(welcome).getByRole('button', { name: 'Copy install command' }));
+    expect(await within(welcome).findByText('Copied')).toBeInTheDocument();
+    expect(await window.navigator.clipboard.readText()).toBe('./install.sh');
+  });
+
+  it('does not reopen the welcome once acknowledged', async () => {
+    await renderApp();
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    expect(screen.queryByTestId('first-run-welcome')).not.toBeInTheDocument();
   });
 });
 

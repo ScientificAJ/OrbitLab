@@ -1,5 +1,5 @@
-import { CircleHelp } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { Check, CircleHelp, Copy, Rocket, Sparkles, X } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 export const beginnerTourSteps = [
   {
@@ -50,6 +50,87 @@ export function BeginnerEmptyGuide({ title, children }: { title: string; childre
     <div className="beginner-empty-guide">
       <strong>{title}</strong>
       <span>{children}</span>
+    </div>
+  );
+}
+
+export const INSTALL_COMMAND = './install.sh';
+
+const installerPayload = [
+  'Python science + API stack',
+  'Locked frontend packages',
+  'TESS / Kepler / K2 ML models',
+  'DAVE ModShift vetting binary',
+  'Docker services, pre-pulled',
+  'Playwright e2e browsers',
+];
+
+export function FirstRunWelcome({ onDismiss }: { onDismiss: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const copyTimeout = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    return () => window.clearTimeout(copyTimeout.current);
+  }, []);
+
+  async function copyInstallCommand() {
+    try {
+      await navigator.clipboard.writeText(INSTALL_COMMAND);
+      setCopied(true);
+      window.clearTimeout(copyTimeout.current);
+      copyTimeout.current = window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div
+      className="modal-overlay first-run-overlay"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onDismiss();
+      }}
+    >
+      <section
+        className="first-run-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="first-run-title"
+        data-testid="first-run-welcome"
+      >
+        <div className="first-run-aurora" aria-hidden="true" />
+        <button type="button" className="first-run-close" aria-label="Close welcome" onClick={onDismiss}>
+          <X size={18} />
+        </button>
+        <div className="first-run-beacon" aria-hidden="true">
+          <Rocket size={26} />
+        </div>
+        <p className="first-run-eyebrow">
+          <Sparkles size={12} /> First launch detected
+        </p>
+        <h2 id="first-run-title">Welcome aboard OrbitLab</h2>
+        <p className="first-run-copy">
+          Looks like this is your first time in the lab. One command from the repository root installs everything the
+          full mission stack needs:
+        </p>
+        <div className="first-run-command">
+          <code>{INSTALL_COMMAND}</code>
+          <button type="button" onClick={copyInstallCommand} aria-label="Copy install command">
+            {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+        <ul className="first-run-payload" aria-label="What the installer sets up">
+          {installerPayload.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <footer className="first-run-actions">
+          <p className="first-run-note">Already installed? You are set — this will not appear again.</p>
+          <button type="button" className="first-run-launch" onClick={onDismiss}>
+            <Rocket size={15} /> Start exploring
+          </button>
+        </footer>
+      </section>
     </div>
   );
 }

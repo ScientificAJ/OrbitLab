@@ -14,6 +14,8 @@ test.describe('live OrbitLab smoke', () => {
     const models = await response.json();
     expect(models).toHaveProperty('nigraha_tess');
 
+    // Live smoke targets the running stack, not the one-time install welcome.
+    await page.addInitScript(() => window.localStorage.setItem('orbitlab-first-run-acknowledged', 'true'));
     await page.goto('/');
     await expect(page.getByText('OrbitLab')).toBeVisible();
     await expect(page.getByRole('button', { name: /Search/ })).toBeVisible();
