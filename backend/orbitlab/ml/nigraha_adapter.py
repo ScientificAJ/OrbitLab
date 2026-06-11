@@ -165,6 +165,18 @@ def _transit_depths(time: np.ndarray, flux: np.ndarray, candidate: TransitCandid
     return depths[0], depths[1]
 
 
+def _tls_depth_flux(depth_fraction: float | None) -> float | None:
+    """Convert a fractional transit depth to TLS-convention mean in-transit flux.
+
+    The upstream Nigraha training catalog stores Depth/DepthEven/DepthOdd as
+    the TLS `depth` output: the mean normalized flux during transit
+    (1 - depth_fraction), clipped to [0, 1].
+    """
+    if depth_fraction is None or not np.isfinite(depth_fraction):
+        return None
+    return float(min(1.0, max(0.0, 1.0 - depth_fraction)))
+
+
 def _scalar(value: float | None, name: str, imputed: list[str], default: float = 0.0) -> np.ndarray:
     if value is None or not math.isfinite(float(value)):
         imputed.append(name)
@@ -251,8 +263,16 @@ def build_nigraha_tensors(
     # Raw scalar tensors (post-imputation, pre-standardization). The five transit
     # features stay raw (upstream `raw_columns`); the six stellar features are
     # standardized below using the upstream-recovered (median, std) constants.
+    #
+    # Units contract (verified against the pinned upstream training catalog
+    # `period_info-tces-dl3.csv`): Depth/DepthEven/DepthOdd are TLS-convention
+    # *mean in-transit flux* (1 - depth_fraction, range ~0.27..1.0), NOT the
+    # fractional depth. Feeding the fraction put every target out of the
+    # training distribution and monotonically punished deep transits (a
+    # synthetic hot Jupiter scored 0.07 before this conversion).
+    depth_flux = _tls_depth_flux(candidate.depth)
     scalars = {
-        "Depth": _scalar(candidate.depth, "Depth", imputed, default=0.0),
+        "Depth": _scalar(depth_flux, "Depth", imputed, default=1.0),
         "Duration": _scalar(candidate.duration * 24.0, "Duration", imputed, default=0.0),
         "Teff": _scalar(stellar_teff, "Teff", imputed, default=5778.0),
         "Radius": _scalar(stellar_radius_solar, "Radius", imputed, default=1.0),
@@ -261,8 +281,8 @@ def build_nigraha_tensors(
         "lum": _scalar(stellar_luminosity_solar, "lum", imputed, default=1.0),
         "rho": _scalar(stellar_density_solar, "rho", imputed, default=1.0),
         "rp_rs": _scalar(rp_rs, "rp_rs", imputed, default=0.0),
-        "DepthEven": _scalar(depth_even, "DepthEven", imputed, default=candidate.depth),
-        "DepthOdd": _scalar(depth_odd, "DepthOdd", imputed, default=candidate.depth),
+        "DepthEven": _scalar(_tls_depth_flux(depth_even), "DepthEven", imputed, default=depth_flux or 1.0),
+        "DepthOdd": _scalar(_tls_depth_flux(depth_odd), "DepthOdd", imputed, default=depth_flux or 1.0),
     }
 
     stats = load_norm_stats(norm_stats_path)

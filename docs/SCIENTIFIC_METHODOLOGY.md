@@ -469,7 +469,22 @@ diff_image = out_image - in_image
 pixel_snr = diff_image / std(pixel_flux[out_of_transit], axis=0) * sqrt(N_in_transit)
 ```
 
-Centroids are weighted by positive flux above a low percentile floor:
+The primary centroid measurement is a DV-style point-source fit
+(`backend/orbitlab/science/prf_centroid.py`): an elliptical 2-D Gaussian plus
+flat background is least-squares fitted — weighted by per-pixel out-of-transit
+scatter — to the out-of-transit image (windowed around the target so neighbor
+stars do not bias a single-source model) and to the positive difference image
+(the transit source, full frame). The reported offset is the distance between
+the two fitted positions; its uncertainty comes from the fit covariance scaled
+by the reduced chi-square, so model mismatch (blends, PSF asymmetry) honestly
+inflates the error bar instead of being hidden. Payload provenance is carried
+in `centroid_method` ("psf_fit" or "image_moment_fallback") with the full fit
+records in `psf_fit_out`/`psf_fit_diff`, and the moment-based numbers retained
+as `moment_centroid_*` for audit.
+
+When a fit cannot be supported (too few pixels, non-convergence, position
+pinned at the cutout edge, degenerate covariance), the diagnostic falls back
+to image moments weighted by positive flux above a low percentile floor:
 
 ```text
 floor = percentile(image, 5)
@@ -488,7 +503,7 @@ score = 1 - clip(relative_snr_scatter, 0, 1)
 
 Where research methods are stronger:
 
-Pixel response function (PRF) centroiding and formal centroid uncertainty estimation in mission DV products are stronger than OrbitLab's direct image-moment centroid. OrbitLab's advantage is that the diagnostic is visible, fast, and tied to the user's chosen aperture.
+Mission DV products fit calibrated per-mission PRF models (with multi-source deblending and catalog-position comparison via the WCS) where OrbitLab Phase 1A fits an analytic Gaussian point source; swapping in the Kepler/TESS PRF kernels and adding the WCS-anchored catalog-position offset are the planned Phase 1B upgrades. OrbitLab's advantage is that the diagnostic is visible, fast, and tied to the user's chosen aperture.
 
 ## DAVE ModShift and RoboVet
 
@@ -590,17 +605,20 @@ amplitude = sqrt(a^2 + b^2)
 sigma = amplitude / (robust_residual_scatter / sqrt(N_oot / 2))
 ```
 
-4. Mark a warning if any tested sinusoid has `sigma >= paper_sweet_sigma`.
+4. Mark a warning only when a tested sinusoid is both significant (`sigma >= paper_sweet_sigma`) and large enough to be what the search detected (`amplitude >= paper_sweet_amplitude_depth_fraction * transit_depth`). A significant-but-tiny sinusoid sets `variability_detected` and surfaces as a non-blocking `stellar_variability_note` info flag instead.
 
-Current threshold:
+Current thresholds:
 
 ```text
 paper_sweet_sigma = 3.0
+paper_sweet_amplitude_depth_fraction = 0.5
 ```
+
+The amplitude-vs-depth gate is the DR25 Robovetter's load-bearing condition (Thompson et al. 2018, Sine Wave Event Evaluation Test: fail requires SNR > 50 AND amplitude > transit depth AND P < 5 days). With tens of thousands of out-of-transit cadences the formal amplitude uncertainty shrinks toward zero, so a bare sigma threshold fires on essentially every real star — live verification caught a confirmed hot Jupiter (6024 ppm depth) flagged over a 56 ppm sinusoid. OrbitLab warns at half the published fail amplitude (0.5 x depth) because its flag is review context rather than an auto-fail; the SNR > 50 and P < 5 d fail conditions are intentionally not adopted for the same reason.
 
 Methodology delta:
 
-OrbitLab's SWEET is a DAVE-style reimplementation rather than a direct call into a full upstream SWEET module. It is useful as a harmonic-sinusoid screen, but full DAVE remains stronger for exact historical reproducibility.
+OrbitLab's SWEET is a DAVE-style reimplementation rather than a direct call into a full upstream SWEET module (whose own TESS port notes it was "reproduced from memory" and omits the amplitude gate). It is useful as a harmonic-sinusoid screen, but full DAVE remains stronger for exact historical reproducibility.
 
 ## TIC/Gaia Nearby-Source and Archive Context
 
@@ -777,6 +795,8 @@ Cadence domain guard:
 
 Nigraha's ensemble was trained on 2-minute SPOC cadence. When the analyzed product's median cadence exceeds 300 s (FFI-derived 10/30-minute products), the score is marked `cadence_out_of_domain`: it contributes a neutral ML component to evidence scoring, and paper-grade promotion blocks on `nigraha_out_of_domain` as missing evidence rather than judging an out-of-domain number. Product listings carry `cadence_seconds` and rank short-cadence products first so the ML surface runs in-domain whenever the archive offers it.
 
+Scalar-feature units contract (verified against the pinned upstream training catalog `period_info-tces-dl3.csv` @ c4365b41): `Depth`, `DepthEven`, and `DepthOdd` are TLS-convention mean in-transit flux — `1 - depth_fraction`, trained range ~0.27 to 1.0 — not the fractional depth; `Duration` is in hours; `rp_rs` is the dimensionless radius ratio. Feeding the fractional depth put every target outside the trained range and monotonically punished deep transits (a clean synthetic hot Jupiter scored 0.07; after the units fix the same curve scores >0.99 while pure noise stays at ~0.0001 and a sinusoid at ~0.0000). The adapter converts via `_tls_depth_flux` and the regression suite pins the convention.
+
 One-to-one alignment:
 
 OrbitLab uses the released Nigraha HDF5 weights and reproduces inference with local NumPy operations rather than requiring TensorFlow for the TESS ensemble. It preserves artifact checksums and input tensor checksums.
@@ -908,10 +928,12 @@ Relevant implementation:
 | --------------------- | ----------------------------- | ------------: | ------------------------------------------------------ | ---------------------------------------------------------- |
 | Effective SNR         | `paper_promotion_snr`         |           7.1 | hard fail                                              | Require strong signal before paper promotion.              |
 | Observed transits     | `paper_min_transits`          |             2 | hard fail                                              | Reject single-event promotions.                            |
-| TLS SDE               | `paper_tls_sde_min`           |           7.0 | hard fail                                              | Require published TLS-style detection strength.            |
+| TLS SDE               | `paper_tls_sde_min`           |           7.0 | hard fail (floor)                                      | Require published TLS-style detection strength.            |
+| TLS SDE (calibrated)  | `sde_calibration.toml` per bin |  >= the floor | hard fail below the bin threshold                      | Constant-false-alarm SDE bar per cadence/baseline/red-noise population (`sde_calibration.py`); empirical-null + GEV-tail calibration via `scripts/calibrate_sde_thresholds.py`. Missing table/bin falls back to the floor with `sde_threshold_source = "uncalibrated_floor"` provenance. |
 | TLS transit count     | `paper_min_transits`          |             2 | hard fail                                              | Ensure repeated TLS support.                               |
 | DAVE ModShift         | official binary status        |     pass/fail | hard fail                                              | Reject non-transit-like or significant secondary behavior. |
 | DAVE SWEET            | `paper_sweet_sigma`           |           3.0 | warning or hard fail if not complete                   | Flag sinusoidal variability.                               |
+| DAVE SWEET amplitude  | `paper_sweet_amplitude_depth_fraction` | 0.5 | warning only when amplitude is comparable to depth     | Robovetter sine-wave-event amplitude gate.                 |
 | Nigraha probability   | `paper_ml_threshold`          |           0.4 | warning if low, hard fail if absent for TESS paper run | Require supporting TESS ML evidence.                       |
 | TRICERATOPS FPP       | `paper_triceratops_fpp_max`   |         0.015 | warning above (inconclusive)                           | Statistical validation false-positive ceiling.             |
 | TRICERATOPS FPP       | `paper_triceratops_fpp_reject` |          0.5 | hard fail above                                        | Giacalone et al. 2021 likely-false-positive criterion.     |
@@ -968,6 +990,7 @@ paper_tls_sde_min = 7.0
 paper_min_transits = 2
 paper_ml_threshold = 0.4
 paper_sweet_sigma = 3.0
+paper_sweet_amplitude_depth_fraction = 0.5
 paper_model_shift_objects = 20000
 paper_triceratops_fpp_max = 0.015
 paper_triceratops_nfpp_max = 0.001

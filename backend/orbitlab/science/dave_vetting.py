@@ -303,6 +303,7 @@ def run_sweet_test(
     candidate: TransitCandidate,
     *,
     threshold_sigma: float = 3.0,
+    amplitude_depth_fraction: float = 0.5,
 ) -> dict[str, Any]:
     t, f = _finite_arrays(time, flux)
     if t.size < 16 or candidate.period <= 0 or candidate.duration <= 0:
@@ -312,8 +313,18 @@ def run_sweet_test(
         return {"status": "insufficient_data", "engine": "sweet", "threshold_sigma": threshold_sigma}
     oot_time = t[out_of_transit]
     oot_flux = f[out_of_transit] - float(np.nanmedian(f[out_of_transit]))
+    # A sinusoid is only evidence against the transit when it is large enough
+    # to be what the search detected. The DR25 Robovetter (Thompson et al.
+    # 2018, sec. A.3.3) fails a TCE only when the SWEET amplitude exceeds the
+    # transit depth; a statistically significant but tiny stellar wiggle (56
+    # ppm sine under a 6000 ppm transit) is variability context, not a
+    # false-positive signature. With tens of thousands of cadences the formal
+    # amplitude uncertainty is so small that bare sigma always fires on real
+    # stars, so the amplitude-vs-depth gate is what carries the meaning.
+    depth = float(candidate.depth) if candidate.depth and candidate.depth > 0 else None
     rows = []
     max_sigma = 0.0
+    variability_detected = False
     for label, period in (
         ("half_period", candidate.period / 2.0),
         ("period", candidate.period),
@@ -333,6 +344,11 @@ def run_sweet_test(
         amplitude_uncertainty = residual_scatter / math.sqrt(max(oot_time.size / 2.0, 1.0))
         sigma = amplitude / amplitude_uncertainty if amplitude_uncertainty > 0 else 0.0
         max_sigma = max(max_sigma, sigma)
+        amplitude_depth_ratio = amplitude / depth if depth else None
+        significant = sigma >= threshold_sigma
+        comparable_to_depth = amplitude_depth_ratio is None or amplitude_depth_ratio >= amplitude_depth_fraction
+        if significant:
+            variability_detected = True
         rows.append(
             {
                 "period_tested_days": period,
@@ -340,16 +356,21 @@ def run_sweet_test(
                 "amplitude": amplitude,
                 "sigma": sigma,
                 "threshold_sigma": threshold_sigma,
-                "status": "warning" if sigma >= threshold_sigma else "pass",
+                "amplitude_depth_ratio": amplitude_depth_ratio,
+                "status": "warning" if significant and comparable_to_depth else "pass",
             }
         )
     return {
         "status": "warning" if any(row["status"] == "warning" for row in rows) else "pass",
         "engine": "sweet",
         "threshold_sigma": threshold_sigma,
+        "amplitude_depth_fraction": amplitude_depth_fraction,
         "max_sigma": max_sigma,
+        # True when a sinusoid is statistically present even if far too small
+        # to explain the transit: review context for the evidence panel.
+        "variability_detected": variability_detected,
         "periods": rows,
-        "source": "DAVE SWEET sinusoid search at P/2, P, and 2P",
+        "source": "DAVE SWEET sinusoid search at P/2, P, and 2P with Robovetter amplitude-vs-depth gate",
     }
 
 

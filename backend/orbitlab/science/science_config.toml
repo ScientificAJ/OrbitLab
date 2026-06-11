@@ -15,6 +15,11 @@ paper_tls_sde_min = 7.0
 paper_min_transits = 2
 paper_ml_threshold = 0.4
 paper_sweet_sigma = 3.0
+# DR25 Robovetter sine-wave-event gate (Thompson et al. 2018): a SWEET
+# sinusoid is a false-positive signature only when its amplitude is
+# comparable to the transit depth. 0.5 warns at half the Robovetter fail
+# criterion (amplitude > depth) since our flag is review, not auto-fail.
+paper_sweet_amplitude_depth_fraction = 0.5
 paper_model_shift_objects = 20000
 paper_triceratops_fpp_max = 0.015
 paper_triceratops_nfpp_max = 0.001

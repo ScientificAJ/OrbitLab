@@ -35,6 +35,7 @@ from orbitlab.science.science_config import (
     load_science_config,
     science_config_hash,
 )
+from orbitlab.science.sde_calibration import calibrated_sde_threshold
 from orbitlab.science.sector_consistency import SectorObservation, infer_sector_id, summarize_sector_consistency
 from orbitlab.science.tls_refinement import refine_with_tls, search_with_tls
 from orbitlab.science.tpf_diagnostics import aperture_stability_diagnostics, difference_image_diagnostics
@@ -967,6 +968,7 @@ def _apply_paper_grade_vetting(
         "tls_sde_min": config.paper_tls_sde_min,
         "min_transits": config.paper_min_transits,
         "sweet_sigma": config.paper_sweet_sigma,
+        "sweet_amplitude_depth_fraction": config.paper_sweet_amplitude_depth_fraction,
         "nigraha_probability_threshold": config.paper_ml_threshold,
         "model_shift_objects": config.paper_model_shift_objects,
         "triceratops_fpp_max": config.paper_triceratops_fpp_max,
@@ -995,12 +997,28 @@ def _apply_paper_grade_vetting(
     tls_sde = _finite_float(tls.get("sde"))
     tls_count = tls.get("distinct_transit_count") or tls.get("transit_count")
     if tls_status == "complete":
-        if tls_sde is None or tls_sde < config.paper_tls_sde_min:
+        # The SDE bar is calibrated to a constant false-alarm probability for
+        # this light curve's population (cadence/baseline/red-noise bin);
+        # paper_tls_sde_min stays the published floor and the lookup may only
+        # raise the bar above it.
+        sde_gate = calibrated_sde_threshold(
+            mission=mission_upper,
+            cadence_seconds=support.get("cadence_seconds"),
+            baseline_days=support.get("baseline_days"),
+            red_noise_beta=support.get("red_noise_beta"),
+            config=config,
+        )
+        thresholds["tls_sde_threshold_used"] = sde_gate["threshold"]
+        thresholds["sde_population_bin"] = sde_gate["bin"]
+        thresholds["sde_threshold_source"] = sde_gate["source"]
+        thresholds["sde_table_version"] = sde_gate["table_version"]
+        if tls_sde is None or tls_sde < sde_gate["threshold"]:
             _add_flag(
                 flags,
                 "paper_tls_sde",
                 "hard_fail",
-                "Full TLS search SDE is below the paper-grade threshold.",
+                "Full TLS search SDE is below the paper-grade threshold calibrated for this "
+                "cadence/baseline/noise population.",
             )
         if isinstance(tls_count, int) and tls_count < config.paper_min_transits:
             _add_flag(
@@ -1038,7 +1056,16 @@ def _apply_paper_grade_vetting(
             flags,
             "sweet_sinusoid",
             "warning",
-            "DAVE SWEET found significant sinusoidal variability at P/2, P, or 2P.",
+            "DAVE SWEET found a significant sinusoid at P/2, P, or 2P with amplitude comparable to the "
+            "transit depth (Robovetter sine-wave-event signature).",
+        )
+    elif sweet.get("status") == "pass" and sweet.get("variability_detected"):
+        _add_flag(
+            flags,
+            "stellar_variability_note",
+            "info",
+            "A statistically significant sinusoid exists at the tested periods but is far too small to "
+            "account for the transit depth; recorded as stellar-variability context.",
         )
     elif sweet.get("status") not in {"pass", "warning"}:
         _add_flag(
@@ -1572,6 +1599,8 @@ def analyze_light_curve_arrays(
             "primary_signal_to_noise": primary_signal_to_noise,
             "effective_snr": effective_snr,
             "red_noise_beta": red_noise_beta,
+            "cadence_seconds": _cadence_days_from_time(clean_time) * 86400.0,
+            "baseline_days": float(np.nanmax(clean_time) - np.nanmin(clean_time)),
             "quality_flag_fraction": data_quality["quality_flag_fraction"],
             "is_residual": bool(candidate_metadata.get("is_residual")),
             "known_planet": catalog_match,
@@ -1647,6 +1676,7 @@ def analyze_light_curve_arrays(
                 clean_flux,
                 candidate,
                 threshold_sigma=config.paper_sweet_sigma,
+                amplitude_depth_fraction=config.paper_sweet_amplitude_depth_fraction,
             )
             if mission_upper == "TESS":
                 catalog_context = query_tic_catalog_context(

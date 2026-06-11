@@ -181,8 +181,12 @@ def test_nigraha_service_discriminates_across_stellar_context():
     similar scores; the spread across a context set is the robust signal.)
     """
     clear_norm_stats_cache()
-    # A moderate-depth candidate where stellar context measurably moves the score.
-    time, flux, candidate = _candidate(0.02, 4.5, 0.15, seed=7)
+    # A marginal-depth candidate where stellar context measurably moves the
+    # score. (0.02 dates from when depth features were fed in the wrong units
+    # and everything sat out-of-distribution; under the TLS 1-delta contract a
+    # clean 2% transit saturates near 1.0 for every star, so context spread
+    # must be probed where the model is genuinely uncertain.)
+    time, flux, candidate = _candidate(0.002, 4.5, 0.15, seed=7)
     service = NigrahaService()
 
     contexts = {

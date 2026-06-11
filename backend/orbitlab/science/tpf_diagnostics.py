@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 
 from orbitlab.science.bls import TransitCandidate
+from orbitlab.science.prf_centroid import fit_point_source
 
 
 @dataclass(frozen=True)
@@ -111,7 +112,8 @@ def difference_image_diagnostics(
 
     in_center = _centroid(in_image)
     out_center = _centroid(out_image)
-    diff_center = _centroid(np.where(diff_image > 0, diff_image, 0.0))
+    diff_positive = np.where(diff_image > 0, diff_image, 0.0)
+    diff_center = _centroid(diff_positive)
     centroid_shift_pixels = None
     centroid_uncertainty_pixels = None
     centroid_significance = None
@@ -135,6 +137,39 @@ def difference_image_diagnostics(
         if centroid_uncertainty_pixels > 0 and np.isfinite(centroid_uncertainty_pixels):
             centroid_significance = centroid_shift_pixels / centroid_uncertainty_pixels
 
+    # PSF-fit upgrade (DV-style): localize the transit source by fitting a
+    # point-source model to the difference image and compare against the
+    # fitted out-of-transit target position. When both fits succeed the
+    # fitted offset/uncertainty REPLACE the moment-based values consumed by
+    # the centroid gates (the moment numbers stay available for audit);
+    # otherwise behavior is unchanged and provenance says so.
+    centroid_method = "image_moment_fallback"
+    # The OOT fit is windowed around the target: a single-source model on the
+    # full cutout is biased by neighbor stars. The difference image isolates
+    # the varying source by construction, so it uses the full frame.
+    psf_out = fit_point_source(out_image, pixel_noise=oot_scatter, initial=out_center, fit_radius=3.5)
+    psf_diff = fit_point_source(diff_positive, pixel_noise=oot_scatter, initial=diff_center)
+    moment_shift_pixels = centroid_shift_pixels
+    moment_uncertainty_pixels = centroid_uncertainty_pixels
+    moment_significance = centroid_significance
+    psf_offset_pixels = None
+    psf_offset_uncertainty = None
+    psf_offset_significance = None
+    if psf_out is not None and psf_diff is not None:
+        psf_offset_pixels = math.hypot(psf_diff.row - psf_out.row, psf_diff.col - psf_out.col)
+        psf_offset_uncertainty = math.sqrt(
+            psf_out.row_uncertainty**2
+            + psf_out.col_uncertainty**2
+            + psf_diff.row_uncertainty**2
+            + psf_diff.col_uncertainty**2
+        )
+        if psf_offset_uncertainty > 0 and np.isfinite(psf_offset_uncertainty):
+            psf_offset_significance = psf_offset_pixels / psf_offset_uncertainty
+            centroid_method = "psf_fit"
+            centroid_shift_pixels = psf_offset_pixels
+            centroid_uncertainty_pixels = psf_offset_uncertainty
+            centroid_significance = psf_offset_significance
+
     payload: dict[str, Any] = {
         "status": "complete",
         "in_transit_cadences": int(np.count_nonzero(in_transit)),
@@ -151,6 +186,15 @@ def difference_image_diagnostics(
         "difference_centroid_column": _finite_float(diff_center[1] if diff_center else None),
         "oot_centroid_row": _finite_float(out_center[0] if out_center else None),
         "oot_centroid_column": _finite_float(out_center[1] if out_center else None),
+        "centroid_method": centroid_method,
+        "moment_centroid_shift_pixels": _finite_float(moment_shift_pixels),
+        "moment_centroid_uncertainty_pixels": _finite_float(moment_uncertainty_pixels),
+        "moment_centroid_significance": _finite_float(moment_significance),
+        "psf_offset_pixels": _finite_float(psf_offset_pixels),
+        "psf_offset_uncertainty_pixels": _finite_float(psf_offset_uncertainty),
+        "psf_offset_significance": _finite_float(psf_offset_significance),
+        "psf_fit_out": psf_out.as_dict() if psf_out is not None else None,
+        "psf_fit_diff": psf_diff.as_dict() if psf_diff is not None else None,
     }
     if peak_index is not None:
         payload["peak_pixel"] = {

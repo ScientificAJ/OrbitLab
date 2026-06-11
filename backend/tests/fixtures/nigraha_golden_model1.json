@@ -1,7 +1,7 @@
 {
-  "artifact": "ExoplanetML/Nigraha models_1.hdf5 numpy forward pass with upstream-recovered scalar standardization applied (Keras cross-check pending: orbitlab/nigraha-keras:tf2 image + scripts/original_nigraha_forward.py not present in this environment)",
-  "standardization": "Teff/Radius/logg/Mass/lum/rho standardized via scripts/recover_nigraha_norm_stats.py (upstream catalog period_info-tces-dl3.csv @ c4365b41); transit features raw per upstream raw_columns",
-  "input_tensor_checksum": "10ae807a3e95a9e2180ea6232ae980f223fadacd637fd1c3af74140c2b65ef51",
-  "probability": 0.23987622559070587,
+  "artifact": "ExoplanetML/Nigraha models_1.hdf5 numpy forward pass with upstream-recovered scalar standardization applied and TLS depth-units contract (Depth/DepthEven/DepthOdd as 1-delta mean in-transit flux per upstream period_info-tces-dl3.csv; fixed 2026-06-11). Keras cross-check pending: orbitlab/nigraha-keras:tf2 image + scripts/original_nigraha_forward.py not present in this environment",
+  "standardization": "Teff/Radius/logg/Mass/lum/rho standardized via scripts/recover_nigraha_norm_stats.py (upstream catalog period_info-tces-dl3.csv @ c4365b41); transit features raw per upstream raw_columns, depth features in TLS 1-delta flux convention",
+  "input_tensor_checksum": "ba602be1085f6d02f98efa696a36209cba5f5d525f93acfdb4e72792803c6ee6",
+  "probability": 0.9998987913131714,
   "absolute_tolerance": 1e-05
 }

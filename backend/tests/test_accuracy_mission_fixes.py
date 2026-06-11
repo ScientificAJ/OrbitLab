@@ -534,3 +534,119 @@ def test_detrending_sensitivity_masked_variant_keeps_the_transit():
     masked = [m for m in report["methods"] if m.get("label") == "transit_masked_wotan_biweight_0.75d"]
     assert masked and masked[0]["status"] == "passed"
     assert masked[0]["period_error_fraction"] is not None and masked[0]["period_error_fraction"] <= 0.02
+
+
+def test_sweet_requires_amplitude_comparable_to_depth():
+    from orbitlab.science.dave_vetting import run_sweet_test
+
+    rng = np.random.default_rng(7)
+    time = np.linspace(0.0, 27.0, 18000)
+
+    # Deep planet on a star with a real-but-tiny sinusoid (56 ppm vs 6000 ppm
+    # depth): the WASP-126 b live false-warning case. Statistically the sine
+    # is many sigma, but it cannot be what the search detected.
+    cand = TransitCandidate(3.2872, 0.5, 0.15, 0.006, 12.0, 30.0)
+    phase = ((time - cand.epoch + 0.5 * cand.period) % cand.period) - 0.5 * cand.period
+    flux = 1.0 + rng.normal(0, 4e-4, time.size) + 6e-5 * np.sin(2 * np.pi * time / (cand.period / 2))
+    flux[np.abs(phase) <= 0.5 * cand.duration] -= cand.depth
+    report = run_sweet_test(time, flux, cand)
+    assert report["status"] == "pass"
+    assert report["variability_detected"] is True
+    assert report["max_sigma"] > 3.0
+    assert all("amplitude_depth_ratio" in row for row in report["periods"])
+
+    # A sinusoid masquerading as the candidate itself (amplitude == reported
+    # depth) is the genuine Robovetter sine-wave-event signature: still warns.
+    amp = 0.002
+    flux2 = 1.0 + rng.normal(0, 3e-4, time.size) + amp * np.sin(2 * np.pi * time / 2.0)
+    cand2 = TransitCandidate(2.0, 0.5, 0.2, amp, 12.0, 9.0)
+    report2 = run_sweet_test(time, flux2, cand2)
+    assert report2["status"] == "warning"
+    ratios = {row["period_label"]: row["amplitude_depth_ratio"] for row in report2["periods"]}
+    assert ratios["period"] == pytest.approx(1.0, abs=0.15)
+
+
+def test_sweet_variability_note_is_info_not_blocking():
+    from orbitlab.science.pipeline import _apply_paper_grade_vetting
+
+    config = load_science_config()
+    candidate = TransitCandidate(3.2876, 0.5, 0.1, 0.006, 12.0, 30.0)
+    flags: list[dict] = []
+    _apply_paper_grade_vetting(
+        flags=flags,
+        candidate=candidate,
+        config=config,
+        support={"effective_snr": 30.0, "observed_transit_count": 8},
+        tls={"status": "complete", "sde": 25.0, "distinct_transit_count": 8},
+        model_shift={"status": "pass", "hard_fail": False},
+        sweet={"status": "pass", "variability_detected": True},
+        ml={"probability": 0.9},
+        catalog_context={},
+        fpp={"status": "complete", "fpp": 0.001, "nfpp": 0.0001},
+        mission_upper="TESS",
+    )
+    codes = {flag["code"]: flag["severity"] for flag in flags}
+    assert codes.get("stellar_variability_note") == "info"
+    assert "sweet_sinusoid" not in codes
+
+    # Info flags must not block a strong promotion.
+    info_flags = [{"code": "stellar_variability_note", "severity": "info", "message": "context"}]
+    disposition, *_ = _disposition(candidate, info_flags, config, {"effective_snr": 30.0, "final_score": 0.9})
+    assert disposition == "planet_candidate"
+
+
+def test_nigraha_depth_features_use_tls_flux_convention():
+    from orbitlab.ml.nigraha_adapter import build_nigraha_tensors
+
+    rng = np.random.default_rng(5)
+    time = np.linspace(0.0, 27.0, 6000)
+    depth = 0.006
+    cand = TransitCandidate(3.2872, 0.8, 0.12, depth, 12.0, 30.0)
+    phase = ((time - cand.epoch + 0.5 * cand.period) % cand.period) - 0.5 * cand.period
+    flux = 1.0 + rng.normal(0, 3e-4, time.size)
+    flux[np.abs(phase) <= 0.5 * cand.duration] -= depth
+
+    tensors = build_nigraha_tensors(time, flux, cand, stellar_teff=5800.0, stellar_radius_solar=1.0)
+
+    # Upstream training catalog (period_info-tces-dl3.csv) stores these as the
+    # TLS mean in-transit flux: 1 - depth_fraction, observed range ~0.27..1.0.
+    assert float(tensors.scalar_features["Depth"][0, 0]) == pytest.approx(1.0 - depth, abs=1e-6)
+    for name in ("Depth", "DepthEven", "DepthOdd"):
+        value = float(tensors.scalar_features[name][0, 0])
+        assert 0.27 <= value <= 1.0, f"{name}={value} outside the upstream training range"
+
+
+@pytest.mark.skipif(
+    not __import__("pathlib").Path(".orbitlab/models/nigraha/global_nodropout").exists(),
+    reason="Nigraha ensemble weights not present (run from repo root)",
+)
+def test_nigraha_scores_deep_and_shallow_planets_in_domain():
+    from orbitlab.ml.nigraha_adapter import build_nigraha_tensors
+    from orbitlab.ml.nigraha_service import NigrahaService
+
+    rng = np.random.default_rng(11)
+    time = np.linspace(0.0, 27.0, 18000)
+    service = NigrahaService()
+
+    def probability(depth):
+        cand = TransitCandidate(3.2872, 0.8, 0.12, depth, 12.0, 30.0)
+        phase = ((time - cand.epoch + 0.5 * cand.period) % cand.period) - 0.5 * cand.period
+        flux = 1.0 + rng.normal(0, 3e-4, time.size)
+        in_transit = np.abs(phase) <= 0.5 * cand.duration
+        flux[in_transit] -= depth * np.clip(
+            (0.5 * cand.duration - np.abs(phase[in_transit])) / (0.1 * cand.duration), 0, 1
+        )
+        tensors = build_nigraha_tensors(time, flux, cand, stellar_teff=5800.0, stellar_radius_solar=1.0)
+        return service.predict(tensors).probability
+
+    deep = probability(0.006)  # hot-Jupiter class; scored 0.31 before the units fix
+    shallow = probability(0.001)
+    assert deep > 0.5, f"deep transit must score in-domain, got {deep}"
+    assert shallow > 0.5, f"shallow transit must keep scoring well, got {shallow}"
+
+    # Discrimination must survive the fix: a no-signal curve scores near zero.
+    noise_cand = TransitCandidate(3.2872, 0.8, 0.12, 0.002, 12.0, 30.0)
+    noise_tensors = build_nigraha_tensors(
+        time, 1.0 + rng.normal(0, 3e-4, time.size), noise_cand, stellar_teff=5800.0, stellar_radius_solar=1.0
+    )
+    assert service.predict(noise_tensors).probability < 0.1

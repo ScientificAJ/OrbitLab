@@ -24,6 +24,7 @@ CORE_CONFIG_KEYS = {
     "paper_min_transits",
     "paper_ml_threshold",
     "paper_sweet_sigma",
+    "paper_sweet_amplitude_depth_fraction",
     "paper_model_shift_objects",
     "paper_triceratops_fpp_max",
     "paper_triceratops_nfpp_max",
@@ -65,6 +66,7 @@ class ScienceConfig:
     paper_min_transits: int
     paper_ml_threshold: float
     paper_sweet_sigma: float
+    paper_sweet_amplitude_depth_fraction: float
     paper_model_shift_objects: int
     paper_triceratops_fpp_max: float
     paper_triceratops_nfpp_max: float
@@ -108,6 +110,7 @@ def load_science_config(path: Path = CONFIG_PATH) -> ScienceConfig:
         paper_min_transits=int(data["paper_min_transits"]),
         paper_ml_threshold=float(data["paper_ml_threshold"]),
         paper_sweet_sigma=float(data["paper_sweet_sigma"]),
+        paper_sweet_amplitude_depth_fraction=float(data["paper_sweet_amplitude_depth_fraction"]),
         paper_model_shift_objects=int(data["paper_model_shift_objects"]),
         paper_triceratops_fpp_max=float(data["paper_triceratops_fpp_max"]),
         paper_triceratops_nfpp_max=float(data["paper_triceratops_nfpp_max"]),

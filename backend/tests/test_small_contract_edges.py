@@ -534,6 +534,7 @@ paper_tls_sde_min = 7
 paper_min_transits = 3
 paper_ml_threshold = 0.5
 paper_sweet_sigma = 3
+paper_sweet_amplitude_depth_fraction = 0.5
 paper_model_shift_objects = 2
 paper_triceratops_fpp_max = 0.01
 paper_triceratops_nfpp_max = 0.001
