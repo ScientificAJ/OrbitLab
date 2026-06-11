@@ -377,7 +377,59 @@ def extract_light_curve_bundle_from_tpf(
         pixel_scale_arcsec=_tpf_pixel_scale_arcsec(tpf),
         reference_row=float(getattr(tpf, "row", np.nan)) if np.isfinite(getattr(tpf, "row", np.nan)) else None,
         reference_column=float(getattr(tpf, "column", np.nan)) if np.isfinite(getattr(tpf, "column", np.nan)) else None,
+        **_tpf_wcs_metadata(tpf),
     )
+
+
+def _tpf_wcs_metadata(tpf) -> dict:
+    """WCS/mission anchoring for difference-image source localization.
+
+    Every field degrades to None independently: a TPF with a broken WCS or
+    missing mission headers still produces a working bundle.
+    """
+    metadata: dict = {
+        "target_pixel_row": None,
+        "target_pixel_col": None,
+        "target_ra": None,
+        "target_dec": None,
+        "wcs_pixel_scale_matrix": None,
+        "mission_name": str(getattr(tpf, "mission", "")) or None,
+        "kepler_channel": None,
+        "tess_camera": None,
+        "tess_ccd": None,
+        "tess_sector": None,
+    }
+    ra = getattr(tpf, "ra", None)
+    dec = getattr(tpf, "dec", None)
+    wcs = getattr(tpf, "wcs", None)
+    if ra is not None and dec is not None and np.isfinite(ra) and np.isfinite(dec):
+        metadata["target_ra"] = float(ra)
+        metadata["target_dec"] = float(dec)
+        if wcs is not None:
+            try:
+                col, row = wcs.world_to_pixel_values(float(ra), float(dec))
+                if np.isfinite(col) and np.isfinite(row):
+                    metadata["target_pixel_col"] = float(col)
+                    metadata["target_pixel_row"] = float(row)
+            except Exception:
+                pass
+    if wcs is not None:
+        try:
+            matrix = np.asarray(wcs.pixel_scale_matrix, dtype=float)
+            if matrix.shape == (2, 2) and np.all(np.isfinite(matrix)):
+                metadata["wcs_pixel_scale_matrix"] = ((float(matrix[0, 0]), float(matrix[0, 1])),
+                                                      (float(matrix[1, 0]), float(matrix[1, 1])))
+        except Exception:
+            pass
+    for source_attr, key in (("channel", "kepler_channel"), ("camera", "tess_camera"),
+                             ("ccd", "tess_ccd"), ("sector", "tess_sector")):
+        value = getattr(tpf, source_attr, None)
+        try:
+            if value is not None and np.isfinite(float(value)):
+                metadata[key] = int(value)
+        except (TypeError, ValueError):
+            pass
+    return metadata
 
 
 def extract_light_curve_from_tpf(

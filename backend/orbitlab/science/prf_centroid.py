@@ -69,6 +69,7 @@ def fit_point_source(
     pixel_noise: np.ndarray | None = None,
     initial: tuple[float, float] | None = None,
     fit_radius: float | None = None,
+    kernel=None,
 ) -> PsfFitResult | None:
     """Fit a point source + flat background to a pixel image.
 
@@ -116,13 +117,24 @@ def fit_point_source(
     amplitude0 = max(float(np.nanmax(values)) - background0, 1.0e-12)
     r0, c0 = guess if guess is not None else (arr.shape[0] / 2.0, arr.shape[1] / 2.0)
     max_dim = float(max(arr.shape))
-    x0 = np.array([r0, c0, 1.2, 1.2, amplitude0, background0], dtype=np.float64)
-    lower = np.array([-0.5, -0.5, 0.3, 0.3, 0.0, -np.inf])
-    upper = np.array([arr.shape[0] - 0.5, arr.shape[1] - 0.5, max_dim, max_dim, np.inf, np.inf])
+    if kernel is None:
+        x0 = np.array([r0, c0, 1.2, 1.2, amplitude0, background0], dtype=np.float64)
+        lower = np.array([-0.5, -0.5, 0.3, 0.3, 0.0, -np.inf])
+        upper = np.array([arr.shape[0] - 0.5, arr.shape[1] - 0.5, max_dim, max_dim, np.inf, np.inf])
+    else:
+        # Mission PRF kernel: the profile shape is fixed by the calibration
+        # product, so only position, amplitude, and background are free.
+        x0 = np.array([r0, c0, amplitude0, background0], dtype=np.float64)
+        lower = np.array([-0.5, -0.5, 0.0, -np.inf])
+        upper = np.array([arr.shape[0] - 0.5, arr.shape[1] - 0.5, np.inf, np.inf])
     x0 = np.clip(x0, lower + 1.0e-6, upper - 1.0e-6)
 
     def residuals(params: np.ndarray) -> np.ndarray:
-        res = _model(params, rows_flat, cols_flat) - values
+        if kernel is None:
+            model = _model(params, rows_flat, cols_flat)
+        else:
+            model = params[2] * kernel(rows_flat, cols_flat, params[0], params[1]) + params[3]
+        res = model - values
         return res * weights if weights is not None else res
 
     try:
@@ -159,15 +171,21 @@ def fit_point_source(
     if not np.all(np.isfinite(position_variances)) or np.any(position_variances < 0):
         return None
 
+    if kernel is None:
+        amplitude, background = float(fit.x[4]), float(fit.x[5])
+        sigma_row, sigma_col = float(fit.x[2]), float(fit.x[3])
+    else:
+        amplitude, background = float(fit.x[2]), float(fit.x[3])
+        sigma_row = sigma_col = float("nan")
     return PsfFitResult(
         row=float(fit.x[0]),
         col=float(fit.x[1]),
         row_uncertainty=float(np.sqrt(position_variances[0])),
         col_uncertainty=float(np.sqrt(position_variances[1])),
-        amplitude=float(fit.x[4]),
-        background=float(fit.x[5]),
-        sigma_row=float(fit.x[2]),
-        sigma_col=float(fit.x[3]),
+        amplitude=amplitude,
+        background=background,
+        sigma_row=sigma_row,
+        sigma_col=sigma_col,
         reduced_chi2=reduced_chi2,
         converged=bool(fit.success),
         n_pixels=n_pixels,

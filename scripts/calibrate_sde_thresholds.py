@@ -48,11 +48,17 @@ DEFAULT_OUT = ROOT / "backend" / "orbitlab" / "science" / "sde_calibration.toml"
 # synthetic curves lands in the bucket it calibrates).
 BINS: dict[str, dict] = {
     "tess_short_cadence_short_baseline_quiet": {"cadence_s": 120.0, "baseline_d": 27.0, "red": False},
-    "tess_short_cadence_short_baseline_red": {"cadence_s": 120.0, "baseline_d": 27.0, "red": True},
+    # Red bins are generated for audit but DEFERRED at runtime (no
+    # sde_threshold key): a single AR(1) noise family is not representative
+    # of the beta > 1.3 population, and its null SDE quantiles (28+) sit
+    # above real confirmed planets (WASP-126 b: TLS SDE 17.4 at beta 1.76),
+    # so shipping them would false-reject. Red-noise curves keep the
+    # published floor plus the Pont beta deflation of effective SNR.
+    "tess_short_cadence_short_baseline_red": {"cadence_s": 120.0, "baseline_d": 27.0, "red": True, "defer": True},
     "tess_long_cadence_short_baseline_quiet": {"cadence_s": 1800.0, "baseline_d": 27.0, "red": False},
-    "tess_long_cadence_short_baseline_red": {"cadence_s": 1800.0, "baseline_d": 27.0, "red": True},
+    "tess_long_cadence_short_baseline_red": {"cadence_s": 1800.0, "baseline_d": 27.0, "red": True, "defer": True},
     "kepler_long_cadence_short_baseline_quiet": {"cadence_s": 1800.0, "baseline_d": 80.0, "red": False},
-    "kepler_long_cadence_short_baseline_red": {"cadence_s": 1800.0, "baseline_d": 80.0, "red": True},
+    "kepler_long_cadence_short_baseline_red": {"cadence_s": 1800.0, "baseline_d": 80.0, "red": True, "defer": True},
 }
 
 SEARCH_GRID = {
@@ -104,15 +110,20 @@ def _max_sde(time: np.ndarray, flux: np.ndarray) -> float | None:
 
 def _threshold_from_sample(sample: np.ndarray, fap: float) -> tuple[float, float]:
     empirical = float(np.quantile(sample, 1.0 - min(fap * 10.0, 0.5)))
+    fitted = empirical
     try:
         from scipy.stats import genextreme
 
         shape, loc, scale = genextreme.fit(sample)
-        fitted = float(genextreme.ppf(1.0 - fap, shape, loc=loc, scale=scale))
-        if not np.isfinite(fitted) or fitted <= 0:
-            fitted = empirical
+        candidate = float(genextreme.ppf(1.0 - fap, shape, loc=loc, scale=scale))
+        # GEV tail fits on a few hundred maxima can diverge (heavy-tail shape
+        # estimates produced 1e19 and ~0 on real runs). Only trust the fit
+        # when it lands in a sane band around the empirical quantile; the
+        # threshold is never allowed below the empirical value.
+        if np.isfinite(candidate) and empirical <= candidate <= 1.5 * empirical:
+            fitted = candidate
     except Exception:
-        fitted = empirical
+        pass
     return empirical, fitted
 
 
@@ -141,13 +152,19 @@ def calibrate_bin(name: str, spec: dict, *, n_null: int, fap: float, seed: int) 
         return None
     sample = np.asarray(sdes)
     empirical, fitted = _threshold_from_sample(sample, fap)
-    return {
-        "sde_threshold": round(fitted, 3),
+    record = {
         "sde_empirical_q": round(empirical, 3),
         "sde_null_median": round(float(np.median(sample)), 3),
         "sde_null_max": round(float(sample.max()), 3),
         "n_null": len(sdes),
     }
+    if spec.get("defer"):
+        # Audit statistics only: omitting sde_threshold makes the runtime
+        # lookup fall back to the published floor for this bin.
+        record["deferred"] = "true"
+    else:
+        record["sde_threshold"] = round(fitted, 3)
+    return record
 
 
 def main() -> int:

@@ -22,6 +22,22 @@ class TpfLightCurveBundle:
     pixel_scale_arcsec: float | None
     reference_row: float | None
     reference_column: float | None
+    # WCS/catalog anchoring for difference-image source localization: the
+    # target's expected cutout pixel, its sky position, and the local WCS
+    # linear transform (deg/pixel, includes rotation) so catalog neighbors
+    # can be placed on cutout pixels. Mission identifiers select the PRF
+    # kernel. All optional: absent metadata degrades to the Gaussian fit
+    # without catalog anchoring.
+    target_pixel_row: float | None = None
+    target_pixel_col: float | None = None
+    target_ra: float | None = None
+    target_dec: float | None = None
+    wcs_pixel_scale_matrix: tuple[tuple[float, float], tuple[float, float]] | None = None
+    mission_name: str | None = None
+    kepler_channel: int | None = None
+    tess_camera: int | None = None
+    tess_ccd: int | None = None
+    tess_sector: int | None = None
 
 
 def _finite_float(value: float | None) -> float | None:
@@ -87,6 +103,9 @@ def difference_image_diagnostics(
     pixel_flux: np.ndarray | None,
     candidate: TransitCandidate,
     pixel_scale_arcsec: float | None = None,
+    target_pixel: tuple[float, float] | None = None,
+    neighbor_pixels: list[dict] | None = None,
+    prf_kernel=None,
 ) -> dict[str, Any]:
     if pixel_flux is None:
         return {"status": "unavailable", "reason": "target pixel flux cube was not provided"}
@@ -146,9 +165,18 @@ def difference_image_diagnostics(
     centroid_method = "image_moment_fallback"
     # The OOT fit is windowed around the target: a single-source model on the
     # full cutout is biased by neighbor stars. The difference image isolates
-    # the varying source by construction, so it uses the full frame.
-    psf_out = fit_point_source(out_image, pixel_noise=oot_scatter, initial=out_center, fit_radius=3.5)
-    psf_diff = fit_point_source(diff_positive, pixel_noise=oot_scatter, initial=diff_center)
+    # the varying source by construction, so it uses the full frame. A
+    # mission PRF kernel replaces the analytic Gaussian when available.
+    psf_out = fit_point_source(
+        out_image, pixel_noise=oot_scatter, initial=out_center, fit_radius=3.5, kernel=prf_kernel
+    )
+    psf_diff = fit_point_source(diff_positive, pixel_noise=oot_scatter, initial=diff_center, kernel=prf_kernel)
+    if prf_kernel is not None and (psf_out is None or psf_diff is None):
+        # The mission kernel could not support both fits; the analytic
+        # Gaussian is the documented fallback before image moments.
+        psf_out = fit_point_source(out_image, pixel_noise=oot_scatter, initial=out_center, fit_radius=3.5)
+        psf_diff = fit_point_source(diff_positive, pixel_noise=oot_scatter, initial=diff_center)
+        prf_kernel = None
     moment_shift_pixels = centroid_shift_pixels
     moment_uncertainty_pixels = centroid_uncertainty_pixels
     moment_significance = centroid_significance
@@ -165,10 +193,51 @@ def difference_image_diagnostics(
         )
         if psf_offset_uncertainty > 0 and np.isfinite(psf_offset_uncertainty):
             psf_offset_significance = psf_offset_pixels / psf_offset_uncertainty
-            centroid_method = "psf_fit"
+            centroid_method = "mission_prf_fit" if prf_kernel is not None else "psf_fit"
             centroid_shift_pixels = psf_offset_pixels
             centroid_uncertainty_pixels = psf_offset_uncertainty
             centroid_significance = psf_offset_significance
+
+    # Catalog anchoring: compare the fitted transit-source position against
+    # the target's WCS-expected pixel and against catalogued neighbors. The
+    # neighbor indictment requires BOTH conditions: the source is >=3 sigma
+    # away from the target AND lands within 3 sigma (or one pixel) of a
+    # specific catalogued neighbor — a bare offset is review, not evidence.
+    catalog_offset_pixels = None
+    catalog_offset_significance = None
+    transit_source_neighbor = None
+    if psf_diff is not None:
+        diff_uncertainty = math.hypot(psf_diff.row_uncertainty, psf_diff.col_uncertainty)
+        if target_pixel is not None and all(np.isfinite(v) for v in target_pixel):
+            catalog_offset_pixels = math.hypot(
+                psf_diff.row - float(target_pixel[0]), psf_diff.col - float(target_pixel[1])
+            )
+            if diff_uncertainty > 0 and np.isfinite(diff_uncertainty):
+                catalog_offset_significance = catalog_offset_pixels / diff_uncertainty
+        if (
+            neighbor_pixels
+            and catalog_offset_significance is not None
+            and catalog_offset_significance >= 3.0
+            and diff_uncertainty > 0
+        ):
+            best = None
+            for neighbor in neighbor_pixels:
+                row = neighbor.get("pixel_row")
+                col = neighbor.get("pixel_col")
+                if row is None or col is None or not (np.isfinite(row) and np.isfinite(col)):
+                    continue
+                separation = math.hypot(psf_diff.row - float(row), psf_diff.col - float(col))
+                if best is None or separation < best[0]:
+                    best = (separation, neighbor)
+            if best is not None and best[0] <= max(3.0 * diff_uncertainty, 1.0):
+                separation, neighbor = best
+                transit_source_neighbor = {
+                    "tic_id": neighbor.get("tic_id") or neighbor.get("id"),
+                    "separation_pixels": float(separation),
+                    "separation_sigma": float(separation / diff_uncertainty),
+                    "tmag": neighbor.get("tmag"),
+                    "target_offset_sigma": float(catalog_offset_significance),
+                }
 
     payload: dict[str, Any] = {
         "status": "complete",
@@ -195,6 +264,9 @@ def difference_image_diagnostics(
         "psf_offset_significance": _finite_float(psf_offset_significance),
         "psf_fit_out": psf_out.as_dict() if psf_out is not None else None,
         "psf_fit_diff": psf_diff.as_dict() if psf_diff is not None else None,
+        "catalog_offset_pixels": _finite_float(catalog_offset_pixels),
+        "catalog_offset_significance": _finite_float(catalog_offset_significance),
+        "transit_source_neighbor": transit_source_neighbor,
     }
     if peak_index is not None:
         payload["peak_pixel"] = {

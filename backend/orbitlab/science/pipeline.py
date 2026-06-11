@@ -28,6 +28,7 @@ from orbitlab.science.known_targets import (
     match_known_planet,
     resolve_known_target,
 )
+from orbitlab.science.mission_prf import load_kepler_prf_kernel, load_tess_prf_kernel
 from orbitlab.science.physics import infer_planet_physics
 from orbitlab.science.science_config import (
     config_usage_audit,
@@ -157,6 +158,51 @@ def _supported_transit_count(
         baseline - float(np.nanmedian(flux_arr[in_transit & (phase_number == event)])) >= minimum_depth
         for event in np.unique(phase_number[in_transit])
     )
+
+
+def _vetting_arrays_for_candidate(
+    time: np.ndarray,
+    flux: np.ndarray,
+    candidate,
+    ledger_candidates,
+) -> tuple[np.ndarray, np.ndarray, int]:
+    """Remove sibling TCEs' in-transit cadences before per-TCE vetting.
+
+    Kepler/TESS DV vets each TCE on a light curve with the other detected
+    signals removed. Without this, a sibling planet's transits read as a
+    "significant secondary" in ModShift and as secondary/odd-even structure
+    in validation, falsely rejecting real members of multi-planet systems
+    (live: L 98-59 d was rejected on dave_sig_sec_in_model_shift because
+    planet c's transits were still in its vetting flux).
+
+    Returns (time, flux, masked_sibling_count). Falls back to the unmasked
+    arrays when masking would gut the candidate's own in-transit coverage
+    (commensurate periods / overlapping windows).
+    """
+    time_arr = np.asarray(time)
+    flux_arr = np.asarray(flux)
+    keep = np.ones(time_arr.shape, dtype=bool)
+    masked = 0
+    for other in ledger_candidates:
+        if other is candidate or other.period <= 0 or other.duration <= 0:
+            continue
+        other_phase = ((time_arr - other.epoch + 0.5 * other.period) % other.period) - 0.5 * other.period
+        window = np.abs(other_phase) <= other.duration
+        if np.any(window):
+            keep &= ~window
+            masked += 1
+    if masked == 0:
+        return time_arr, flux_arr, 0
+    if candidate.period > 0 and candidate.duration > 0:
+        own_phase = ((time_arr - candidate.epoch + 0.5 * candidate.period) % candidate.period) - (
+            0.5 * candidate.period
+        )
+        own_in_transit = np.abs(own_phase) <= 0.5 * candidate.duration
+        before = int(np.count_nonzero(own_in_transit))
+        after = int(np.count_nonzero(own_in_transit & keep))
+        if before > 0 and (after < 6 or after < 0.5 * before):
+            return time_arr, flux_arr, 0
+    return time_arr[keep], flux_arr[keep], masked
 
 
 def _period_alias_code(candidate, accepted_candidates) -> str | None:
@@ -1346,6 +1392,102 @@ def _attach_ml_domain_evidence(
     return next_ml
 
 
+def _difference_image_anchoring(
+    *,
+    tpf_metadata: dict | None,
+    pixel_flux: np.ndarray | None,
+    mission_upper: str,
+    target_id: str,
+    paper_grade_mode: bool,
+) -> tuple:
+    """Pre-compute target_pixel, neighbor_pixels, and prf_kernel for PRF centroiding.
+
+    Returns (target_pixel, neighbor_pixels, prf_kernel), any of which may be None.
+    Failures are silent: missing WCS or network errors degrade to None without
+    breaking the analysis run.
+    """
+    if tpf_metadata is None or pixel_flux is None:
+        return None, None, None
+
+    target_row = tpf_metadata.get("target_pixel_row")
+    target_col = tpf_metadata.get("target_pixel_col")
+    target_pixel = (
+        (float(target_row), float(target_col)) if (target_row is not None and target_col is not None) else None
+    )
+
+    prf_kernel = None
+    if mission_upper == "TESS":
+        camera = tpf_metadata.get("tess_camera")
+        ccd = tpf_metadata.get("tess_ccd")
+        sector = tpf_metadata.get("tess_sector")
+        pixel_flux_arr = np.asarray(pixel_flux)
+        ccd_row = float(target_row) if target_row is not None else None
+        ccd_col = float(target_col) if target_col is not None else None
+        prf_kernel = load_tess_prf_kernel(
+            camera=camera, ccd=ccd, sector=sector, ccd_row=ccd_row, ccd_col=ccd_col
+        )
+    elif mission_upper in ("KEPLER", "K2"):
+        channel = tpf_metadata.get("kepler_channel")
+        pixel_flux_arr = np.asarray(pixel_flux)
+        shape = pixel_flux_arr.shape[1:] if pixel_flux_arr.ndim == 3 else (11, 11)
+        ccd_row = float(target_row) if target_row is not None else None
+        ccd_col = float(target_col) if target_col is not None else None
+        prf_kernel = load_kepler_prf_kernel(
+            channel=channel, shape=shape, corner_column=ccd_col, corner_row=ccd_row
+        )
+
+    neighbor_pixels = None
+    # Neighbor pixels require WCS to transform catalog RA/Dec into pixel coords.
+    target_ra = tpf_metadata.get("target_ra")
+    target_dec = tpf_metadata.get("target_dec")
+    wcs_matrix = tpf_metadata.get("wcs_pixel_scale_matrix")
+    if (
+        paper_grade_mode
+        and mission_upper == "TESS"
+        and target_ra is not None
+        and target_dec is not None
+        and wcs_matrix is not None
+        and target_pixel is not None
+    ):
+        try:
+            from orbitlab.science.catalog_context import query_tic_catalog_context
+
+            estimated_depth = 0.01  # placeholder; neighbor query not depth-filtered
+            catalog = query_tic_catalog_context(target_id, observed_depth=estimated_depth)
+            neighbors_raw = catalog.get("neighbors") if isinstance(catalog, dict) else None
+            if neighbors_raw:
+                # WCS linear transform: Δpixel = inv(scale_matrix) @ [Δra*cos(dec), Δdec]
+                m = np.asarray(wcs_matrix, dtype=np.float64)  # degrees/pixel
+                try:
+                    m_inv = np.linalg.inv(m)
+                except np.linalg.LinAlgError:
+                    m_inv = None
+                if m_inv is not None:
+                    cos_dec = np.cos(np.radians(float(target_dec)))
+                    neighbor_pixels = []
+                    for nb in neighbors_raw:
+                        nb_ra = nb.get("ra")
+                        nb_dec = nb.get("dec")
+                        if nb_ra is None or nb_dec is None:
+                            continue
+                        delta_ra_deg = (float(nb_ra) - float(target_ra)) * cos_dec
+                        delta_dec_deg = float(nb_dec) - float(target_dec)
+                        delta_pix = m_inv @ np.array([delta_ra_deg, delta_dec_deg])
+                        nb_row = float(target_pixel[0]) + float(delta_pix[1])
+                        nb_col = float(target_pixel[1]) + float(delta_pix[0])
+                        neighbor_pixels.append({
+                            "tic_id": nb.get("tic_id") or nb.get("id"),
+                            "pixel_row": nb_row,
+                            "pixel_col": nb_col,
+                            "tmag": nb.get("tmag"),
+                            "separation_arcsec": nb.get("separation_arcsec"),
+                        })
+        except Exception:
+            neighbor_pixels = None
+
+    return target_pixel, neighbor_pixels, prf_kernel
+
+
 def analyze_light_curve_arrays(
     *,
     target_id: str,
@@ -1372,6 +1514,7 @@ def analyze_light_curve_arrays(
     pixel_flux: np.ndarray | None = None,
     aperture_mask: np.ndarray | None = None,
     pixel_scale_arcsec: float | None = None,
+    tpf_metadata: dict | None = None,
     sector_observations: list[SectorObservation] | None = None,
 ) -> dict:
     config = load_science_config()
@@ -1396,6 +1539,14 @@ def analyze_light_curve_arrays(
         clean_flux, detrending = detrend_with_wotan(clean_time, clean_flux, method="biweight")
     data_quality = _data_quality_payload(np.asarray(time), np.asarray(flux), quality, clean_time, clean_flux)
     known_target = resolve_known_target(target_id)
+    mission_upper = mission.upper()
+    target_pixel, neighbor_pixels, prf_kernel = _difference_image_anchoring(
+        tpf_metadata=tpf_metadata,
+        pixel_flux=pixel_flux,
+        mission_upper=mission_upper,
+        target_id=target_id,
+        paper_grade_mode=paper_grade_mode,
+    )
 
     try:
         primary, bls_result, guided_candidates = _select_primary_candidate(
@@ -1468,7 +1619,6 @@ def analyze_light_curve_arrays(
     folded_curves: dict[str, dict[str, list[float]]] = {}
     tce_payloads = []
     planet_candidate_payloads = []
-    mission_upper = mission.upper()
     if mission_upper not in {"TESS", "KEPLER", "K2"}:
         raise ValueError(f"unsupported mission: {mission}")
     consistency_observations = sector_observations or [
@@ -1562,13 +1712,19 @@ def analyze_light_curve_arrays(
             pixel_flux=pixel_flux,
             candidate=candidate,
             pixel_scale_arcsec=pixel_scale_arcsec,
+            target_pixel=target_pixel,
+            neighbor_pixels=neighbor_pixels,
+            prf_kernel=prf_kernel,
         )
         centroid_shift_pixels = difference_image.get("centroid_shift_pixels")
         centroid_uncertainty_pixels = difference_image.get("centroid_uncertainty_pixels")
+        vetting_time, vetting_flux, masked_siblings = _vetting_arrays_for_candidate(
+            clean_time, clean_flux, candidate, ledger_candidates
+        )
         validation = asdict(
             validate_candidate(
-                clean_time,
-                clean_flux,
+                vetting_time,
+                vetting_flux,
                 candidate,
                 centroid_shift_pixels=centroid_shift_pixels,
                 centroid_uncertainty_pixels=centroid_uncertainty_pixels,
@@ -1576,6 +1732,7 @@ def analyze_light_curve_arrays(
                 low_snr_threshold=config.promotion_snr,
             )
         )
+        validation["sibling_signals_masked"] = masked_siblings
         covered_transits = _observed_transit_count(bls_result.search_time, candidate)
         observed_transits = _supported_transit_count(
             bls_result.search_time,
@@ -1609,6 +1766,17 @@ def analyze_light_curve_arrays(
             ),
         }
         flags = _structured_flags(candidate, validation, config, support)
+        if difference_image.get("transit_source_neighbor"):
+            nb = difference_image["transit_source_neighbor"]
+            nb_id = nb.get("tic_id") or "unknown"
+            nb_sigma = nb.get("target_offset_sigma") or 0.0
+            _add_flag(
+                flags,
+                "centroid_neighbor_source",
+                "hard_fail",
+                f"Transit source localizes {nb_sigma:.1f}σ from target and within fit uncertainty of "
+                f"catalogued neighbor TIC {nb_id}: pixel contamination evidence against on-target transit.",
+            )
         ml, service, tess_service, k2_service = _ml_payload_for_candidate(
             mission_upper=mission_upper,
             clean_time=clean_time,
@@ -1666,14 +1834,14 @@ def analyze_light_curve_arrays(
                 )
             )
             model_shift = run_model_shift(
-                clean_time,
-                clean_flux,
+                vetting_time,
+                vetting_flux,
                 candidate,
                 objects_evaluated=config.paper_model_shift_objects,
             )
             sweet = run_sweet_test(
-                clean_time,
-                clean_flux,
+                vetting_time,
+                vetting_flux,
                 candidate,
                 threshold_sigma=config.paper_sweet_sigma,
                 amplitude_depth_fraction=config.paper_sweet_amplitude_depth_fraction,

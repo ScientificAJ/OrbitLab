@@ -650,3 +650,38 @@ def test_nigraha_scores_deep_and_shallow_planets_in_domain():
         time, 1.0 + rng.normal(0, 3e-4, time.size), noise_cand, stellar_teff=5800.0, stellar_radius_solar=1.0
     )
     assert service.predict(noise_tensors).probability < 0.1
+
+
+def test_sibling_tce_masking_unblocks_multiplanet_members():
+    from orbitlab.science.dave_vetting import run_model_shift
+    from orbitlab.science.pipeline import _vetting_arrays_for_candidate
+
+    rng = np.random.default_rng(17)
+    time = np.linspace(0.0, 27.0, 19440)
+    flux = 1.0 + rng.normal(0, 2e-4, time.size)
+    inner = TransitCandidate(3.6907, 1.2, 0.045, 0.0005, 12.0, 16.0)
+    outer = TransitCandidate(7.4513, 3.0, 0.05, 0.0004, 9.0, 9.0)
+    for planet in (inner, outer):
+        phase = ((time - planet.epoch + 0.5 * planet.period) % planet.period) - 0.5 * planet.period
+        flux[np.abs(phase) <= 0.5 * planet.duration] -= planet.depth
+
+    vetting_time, vetting_flux, masked = _vetting_arrays_for_candidate(time, flux, outer, [inner, outer])
+    assert masked == 1
+    assert vetting_time.size < time.size
+
+    # The live L 98-59 d failure mode: the sibling's transits read as a
+    # significant secondary and hard-fail a real planet.
+    contaminated = run_model_shift(time, flux, outer, objects_evaluated=20000)
+    assert contaminated["hard_fail"] is True
+    assert "sig_sec_in_model_shift" in contaminated["flags"]
+
+    cleaned = run_model_shift(vetting_time, vetting_flux, outer, objects_evaluated=20000)
+    assert cleaned["hard_fail"] is False
+    assert cleaned["flags"] == []
+
+    # Pathological masking (commensurate windows) falls back to unmasked
+    # rather than gutting the candidate's own transits.
+    twin = TransitCandidate(outer.period, outer.epoch, outer.duration, 0.0006, 9.0, 9.0)
+    fallback_time, _, fallback_masked = _vetting_arrays_for_candidate(time, flux, outer, [twin, outer])
+    assert fallback_masked == 0
+    assert fallback_time.size == time.size

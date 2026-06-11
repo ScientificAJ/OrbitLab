@@ -93,6 +93,18 @@ def run_analysis_job(self, job_id: str) -> str:
                 pixel_flux=diagnostic_pixel_flux,
                 aperture_mask=bundle.selected_mask,
                 pixel_scale_arcsec=bundle.pixel_scale_arcsec,
+                tpf_metadata={
+                    "target_pixel_row": bundle.target_pixel_row,
+                    "target_pixel_col": bundle.target_pixel_col,
+                    "target_ra": bundle.target_ra,
+                    "target_dec": bundle.target_dec,
+                    "wcs_pixel_scale_matrix": bundle.wcs_pixel_scale_matrix,
+                    "mission_name": bundle.mission_name,
+                    "kepler_channel": bundle.kepler_channel,
+                    "tess_camera": bundle.tess_camera,
+                    "tess_ccd": bundle.tess_ccd,
+                    "tess_sector": bundle.tess_sector,
+                },
             )
             result_id = str(uuid4())
             payload["result_id"] = result_id
