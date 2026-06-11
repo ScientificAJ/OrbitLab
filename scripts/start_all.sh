@@ -4,22 +4,195 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG_DIR="$ROOT/.orbitlab/logs"
 PID_DIR="$ROOT/.orbitlab/pids"
+STATE_DIR="$ROOT/.orbitlab/bootstrap"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 BACKEND_PORT="${BACKEND_PORT:-8000}"
 BACKEND_HOST="${BACKEND_HOST:-127.0.0.1}"
 FRONTEND_HOST="${FRONTEND_HOST:-127.0.0.1}"
 TF_IMAGE="${ORBITLAB_KEPLER_TF_IMAGE:-tensorflow/tensorflow:1.5.0-py3}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+MIN_PYTHON_MINOR=11
+MIN_NODE_MAJOR=20
+DOCKER=()
 
-mkdir -p "$LOG_DIR" "$PID_DIR"
+mkdir -p "$LOG_DIR" "$PID_DIR" "$STATE_DIR"
 cd "$ROOT"
 
 log() {
   printf '[orbitlab] %s\n' "$*"
 }
 
-need_cmd() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    printf 'Missing required command: %s\n' "$1" >&2
+have_cmd() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+as_root() {
+  if [[ "$(id -u)" == "0" ]]; then
+    "$@"
+  elif have_cmd sudo; then
+    sudo "$@"
+  else
+    printf 'Root privileges are required to install missing system packages. Install sudo or rerun as root.\n' >&2
+    exit 1
+  fi
+}
+
+apt_package_available() {
+  apt-cache show "$1" >/dev/null 2>&1
+}
+
+install_system_dependencies() {
+  local packages=()
+  have_cmd git || packages+=(git)
+  have_cmd make || packages+=(make)
+  have_cmd g++ || packages+=(g++)
+  if ! have_cmd "$PYTHON_BIN"; then
+    packages+=(python3 python3-venv)
+  fi
+  if ! have_cmd node || ! have_cmd npm; then
+    packages+=(nodejs npm)
+  fi
+  have_cmd docker || packages+=(docker.io)
+
+  if have_cmd "$PYTHON_BIN" && ! "$PYTHON_BIN" -c 'import ensurepip, venv' >/dev/null 2>&1; then
+    packages+=(python3-venv)
+  fi
+
+  if (( ${#packages[@]} > 0 )); then
+    if ! have_cmd apt-get; then
+      printf 'Missing system tools: %s\n' "${packages[*]}" >&2
+      printf 'Automatic system-package installation currently supports Debian/Ubuntu via apt-get.\n' >&2
+      exit 1
+    fi
+    log "installing missing system packages: ${packages[*]}"
+    as_root apt-get update
+    as_root apt-get install -y "${packages[@]}"
+  fi
+
+  if ! docker compose version >/dev/null 2>&1; then
+    if ! have_cmd apt-get; then
+      printf 'Docker Compose plugin is required: docker compose\n' >&2
+      exit 1
+    fi
+    local compose_package=""
+    if apt_package_available docker-compose-v2; then
+      compose_package="docker-compose-v2"
+    elif apt_package_available docker-compose-plugin; then
+      compose_package="docker-compose-plugin"
+    fi
+    if [[ -z "$compose_package" ]]; then
+      printf 'Docker Compose plugin is missing and no apt package candidate was found.\n' >&2
+      exit 1
+    fi
+    log "installing Docker Compose plugin: $compose_package"
+    as_root apt-get update
+    as_root apt-get install -y "$compose_package"
+  fi
+}
+
+verify_tool_versions() {
+  local python_minor
+  python_minor="$("$PYTHON_BIN" -c 'import sys; print(sys.version_info.minor if sys.version_info.major == 3 else -1)')"
+  if (( python_minor < MIN_PYTHON_MINOR )); then
+    printf 'Python 3.%s+ is required; found %s\n' "$MIN_PYTHON_MINOR" "$("$PYTHON_BIN" --version 2>&1)" >&2
+    exit 1
+  fi
+
+  local node_major
+  node_major="$(node --version | sed -E 's/^v([0-9]+).*/\1/')"
+  if [[ ! "$node_major" =~ ^[0-9]+$ ]] || (( node_major < MIN_NODE_MAJOR )); then
+    printf 'Node.js %s+ is required; found %s. Install a current Node.js release and rerun.\n' \
+      "$MIN_NODE_MAJOR" "$(node --version 2>&1)" >&2
+    exit 1
+  fi
+}
+
+configure_docker() {
+  if docker info >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    DOCKER=(docker)
+    return
+  fi
+
+  if have_cmd systemctl; then
+    as_root systemctl start docker >/dev/null 2>&1 || true
+  elif have_cmd service; then
+    as_root service docker start >/dev/null 2>&1 || true
+  fi
+
+  if docker info >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    DOCKER=(docker)
+  elif [[ "$(id -u)" == "0" ]]; then
+    printf 'Docker daemon is unavailable after installation/start attempt.\n' >&2
+    exit 1
+  elif have_cmd sudo && sudo docker info >/dev/null 2>&1 && sudo docker compose version >/dev/null 2>&1; then
+    DOCKER=(sudo docker)
+  else
+    printf 'Docker daemon is unavailable or inaccessible. Start Docker and rerun this script.\n' >&2
+    exit 1
+  fi
+}
+
+manifest_hash() {
+  git hash-object "$@"
+}
+
+sync_project_dependencies() {
+  if [[ ! -x "$ROOT/.venv/bin/python" ]]; then
+    log "creating Python virtual environment"
+    "$PYTHON_BIN" -m venv "$ROOT/.venv"
+  fi
+
+  local python_hash
+  python_hash="$(manifest_hash pyproject.toml)"
+  if [[ ! -f "$STATE_DIR/python-dependencies.sha" ]] || [[ "$(<"$STATE_DIR/python-dependencies.sha")" != "$python_hash" ]]; then
+    log "installing Python API, science, ML, and development dependencies"
+    .venv/bin/python -m pip install --upgrade pip
+    .venv/bin/python -m pip install -e ".[dev,science,api,ml]"
+    printf '%s\n' "$python_hash" >"$STATE_DIR/python-dependencies.sha"
+  fi
+
+  local frontend_hash
+  frontend_hash="$(manifest_hash frontend/package-lock.json)"
+  if [[ ! -d "$ROOT/frontend/node_modules" ]] || [[ ! -f "$STATE_DIR/frontend-dependencies.sha" ]] \
+    || [[ "$(<"$STATE_DIR/frontend-dependencies.sha")" != "$frontend_hash" ]] \
+    || ! npm ls --prefix frontend --depth=0 >/dev/null 2>&1; then
+    log "installing locked frontend dependencies"
+    npm ci --prefix frontend
+    printf '%s\n' "$frontend_hash" >"$STATE_DIR/frontend-dependencies.sha"
+  fi
+}
+
+artifact_ready() {
+  .venv/bin/python - "$1" <<'PY' >/dev/null 2>&1
+import sys
+from orbitlab.ml.artifact_registry import artifact_status
+
+raise SystemExit(0 if artifact_status(sys.argv[1]).get("status") == "ready" else 1)
+PY
+}
+
+provision_science_dependencies() {
+  local nigraha_id="nigraha-tess-global-nodropout-binary-ensemble"
+  local kepler_id="kepler-astronet-cnn-bilstm-attention"
+  local k2_id="k2-exomac-kkt-randomforest"
+
+  if ! artifact_ready "$nigraha_id"; then
+    log "Nigraha/TESS ensemble is not ready; fetching and registering it"
+    scripts/fetch_nigraha_weights.py
+  fi
+  if ! artifact_ready "$kepler_id"; then
+    log "Kepler/K1 checkpoint is not ready; fetching and registering it"
+    scripts/fetch_kepler_astronet.py
+  fi
+  if ! artifact_ready "$k2_id"; then
+    log "K2 ExoMAC-KKT model is not ready; fetching and registering it"
+    scripts/fetch_k2_exomac_kkt.py
+  fi
+
+  log "ensuring pinned DAVE ModShift binary is built"
+  scripts/build_dave_modshift.sh >/dev/null
+  if [[ ! -x "$ROOT/.orbitlab/external/DAVE/vetting/modshift" ]]; then
+    printf 'DAVE ModShift build did not produce an executable binary.\n' >&2
     exit 1
   fi
 }
@@ -68,46 +241,25 @@ start_process() {
   printf '%s\n' "$!" >"$pid_file"
 }
 
-need_cmd docker
-need_cmd npm
+install_system_dependencies
+verify_tool_versions
+sync_project_dependencies
+provision_science_dependencies
 
-if [[ ! -x "$ROOT/.venv/bin/python" ]]; then
-  printf 'Missing .venv. Create it and install dependencies first: python3 -m venv .venv && .venv/bin/pip install -e ".[dev,science,api,ml]"\n' >&2
-  exit 1
+if [[ "${BOOTSTRAP_ONLY:-0}" == "1" ]]; then
+  log "bootstrap complete"
+  exit 0
 fi
 
-if ! docker compose version >/dev/null 2>&1; then
-  printf 'Docker Compose plugin is required: docker compose\n' >&2
-  exit 1
-fi
+configure_docker
 
 log "starting Docker services from docker-compose.yml"
-docker compose up -d
+"${DOCKER[@]}" compose up -d
 wait_port 127.0.0.1 6379 redis
 wait_port 127.0.0.1 5435 postgres
 
 log "ensuring Kepler/K1 TensorFlow Docker runtime image exists"
-docker image inspect "$TF_IMAGE" >/dev/null 2>&1 || docker pull "$TF_IMAGE"
-
-if ! .venv/bin/python - <<'PY' >/dev/null 2>&1
-from orbitlab.ml.artifact_registry import KEPLER_ASTRONET_MODEL_ID, artifact_status
-
-raise SystemExit(0 if artifact_status(KEPLER_ASTRONET_MODEL_ID).get("status") == "ready" else 1)
-PY
-then
-  log "Kepler/K1 checkpoint is not ready; fetching and registering it"
-  scripts/fetch_kepler_astronet.py
-fi
-
-if ! .venv/bin/python - <<'PY' >/dev/null 2>&1
-from orbitlab.ml.artifact_registry import K2_EXOMAC_MODEL_ID, artifact_status
-
-raise SystemExit(0 if artifact_status(K2_EXOMAC_MODEL_ID).get("status") == "ready" else 1)
-PY
-then
-  log "K2 ExoMAC-KKT model is not ready; fetching and registering it"
-  scripts/fetch_k2_exomac_kkt.py
-fi
+"${DOCKER[@]}" image inspect "$TF_IMAGE" >/dev/null 2>&1 || "${DOCKER[@]}" pull "$TF_IMAGE"
 
 export DATABASE_URL="${DATABASE_URL:-postgresql+psycopg://orbitlab:orbitlab@127.0.0.1:5435/orbitlab}"
 export REDIS_URL="${REDIS_URL:-redis://127.0.0.1:6379/0}"
@@ -118,11 +270,6 @@ wait_port "$BACKEND_HOST" "$BACKEND_PORT" backend
 
 if [[ "${START_CELERY:-0}" == "1" ]]; then
   start_process celery .venv/bin/celery -A orbitlab.worker.celery_app worker --loglevel=INFO
-fi
-
-if [[ ! -d "$ROOT/frontend/node_modules" ]]; then
-  log "installing frontend dependencies"
-  npm install --prefix frontend
 fi
 
 start_process frontend npm run dev --prefix frontend -- --host "$FRONTEND_HOST" --port "$FRONTEND_PORT"
