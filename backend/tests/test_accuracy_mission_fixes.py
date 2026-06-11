@@ -17,6 +17,7 @@ from orbitlab.science.pipeline import (
     SOFT_REVIEW_WARNING_CODES,
     _disposition,
     _observed_transit_count,
+    _supported_transit_count,
 )
 from orbitlab.science.science_config import load_science_config
 from orbitlab.science.validation import odd_even_depths_with_uncertainty, odd_even_significance
@@ -96,6 +97,16 @@ def test_observed_transit_count_counts_each_event_once():
     # 27 / 3 = 9 events fit the baseline; epoch-centered events must not be
     # double-counted across the floor boundary.
     assert _observed_transit_count(time, candidate) == 9
+
+
+def test_supported_transit_count_rejects_single_event_period_alias():
+    time = np.linspace(0.0, 27.0, 5400)
+    flux = np.ones_like(time)
+    flux[(time >= 13.0) & (time <= 13.3)] -= 0.01
+    candidate = TransitCandidate(13.5, 13.15, 0.3, 0.01, 10.0, 20.0)
+
+    assert _observed_transit_count(time, candidate) >= 2
+    assert _supported_transit_count(time, flux, candidate, min_depth_fraction=0.5) == 1
 
 
 def test_disposition_missing_evidence_blocks_promotion_without_rejection():
@@ -188,6 +199,51 @@ def test_odd_even_sampling_counts_points_and_events():
     assert min_points <= 8, "30-minute cadence yields only a couple of in-transit points per event"
 
 
+def test_odd_even_uncertainty_respects_event_to_event_depth_variation():
+    rng = np.random.default_rng(29)
+    period, epoch, duration = 3.2, 0.8, 0.16
+    time = np.linspace(0.0, 27.0, 5400)
+    flux = 1.0 + rng.normal(0.0, 2.0e-4, size=time.size)
+    event_number = np.round((time - epoch) / period).astype(int)
+    phase = ((time - epoch + 0.5 * period) % period) - 0.5 * period
+    in_transit = np.abs(phase) <= 0.5 * duration
+    # Both parity populations describe the same planet-depth distribution,
+    # but ordinary transit-to-transit variability makes their sample medians
+    # differ. Pooled-cadence errors would become overconfident here.
+    event_offsets = {event: rng.normal(0.0, 4.0e-4) for event in np.unique(event_number[in_transit])}
+    for event, offset in event_offsets.items():
+        flux[in_transit & (event_number == event)] -= 0.004 + offset
+
+    candidate = TransitCandidate(period, epoch, duration, 0.004, 10.0, 30.0)
+    odd_depth, even_depth, odd_err, even_err = odd_even_depths_with_uncertainty(time, flux, candidate)
+    sigma = odd_even_significance(odd_depth, even_depth, odd_err, even_err)
+
+    assert sigma is not None and sigma < 3.0
+
+
+def test_large_pooled_odd_even_effect_still_rejects_binary():
+    from orbitlab.science.pipeline import _structured_flags
+
+    config = load_science_config()
+    candidate = TransitCandidate(2.0, 0.4, 0.1, 0.01, 10.0, 30.0)
+    flags = _structured_flags(
+        candidate,
+        {
+            "duration_plausible": True,
+            "secondary_depth": 0.0,
+            "odd_even_depth_delta": 0.0025,
+            "odd_even_sigma": 1.8,
+            "odd_even_pooled_sigma": 5.7,
+            "odd_even_min_points": 70,
+            "odd_even_min_events": 7,
+        },
+        config,
+        {"effective_snr": 20.0},
+    )
+    flag = next(flag for flag in flags if flag["code"] == "odd_even_depth_mismatch")
+    assert flag["severity"] == "hard_fail"
+
+
 def test_triceratops_tic_fallback_from_product_uri():
     from orbitlab.science.triceratops_fpp import parse_tic_from_product_uri
 
@@ -265,6 +321,59 @@ def test_nigraha_out_of_domain_cadence_is_missing_evidence_not_a_low_score():
 
     assert _ml_probability({"probability": 0.0009, "cadence_out_of_domain": True}) is None
     assert _ml_probability({"probability": 0.7}) == pytest.approx(0.7)
+
+
+def test_triceratops_inconclusive_zone_is_review_not_rejection():
+    from orbitlab.science.pipeline import _apply_paper_grade_vetting
+
+    config = load_science_config()
+    candidate = TransitCandidate(3.2876, 0.5, 0.1, 0.0063, 12.0, 30.0)
+
+    def gate(fpp_payload):
+        flags: list[dict] = []
+        _apply_paper_grade_vetting(
+            flags=flags,
+            candidate=candidate,
+            config=config,
+            support={"effective_snr": 30.0, "observed_transit_count": 8},
+            tls={"status": "complete", "sde": 25.0, "distinct_transit_count": 8},
+            model_shift={"status": "pass", "hard_fail": False},
+            sweet={"status": "pass"},
+            ml={"probability": 0.9},
+            catalog_context={},
+            fpp=fpp_payload,
+            mission_upper="TESS",
+        )
+        return {flag["code"]: flag["severity"] for flag in flags}
+
+    # WASP-126 b live values (confirmed planet): the Giacalone et al. 2021
+    # gray zone withholds validation but is not evidence against.
+    codes = gate({"status": "complete", "fpp": 0.0704, "nfpp": 0.0278})
+    assert codes.get("triceratops_fpp_inconclusive") == "warning"
+    assert codes.get("triceratops_nfpp_inconclusive") == "warning"
+    assert "triceratops_fpp" not in codes
+    assert "triceratops_nfpp" not in codes
+
+    # The rejection zone still hard-fails outright.
+    assert gate({"status": "complete", "fpp": 0.62, "nfpp": 0.0})["triceratops_fpp"] == "hard_fail"
+    assert gate({"status": "complete", "fpp": 0.001, "nfpp": 0.2})["triceratops_nfpp"] == "hard_fail"
+
+    # The validation zone adds no TRICERATOPS flags at all.
+    validated = gate({"status": "complete", "fpp": 0.001, "nfpp": 0.0001})
+    assert not any(code.startswith("triceratops") for code in validated)
+
+    # A partial payload is missing evidence, never a false-positive verdict.
+    assert gate({"status": "complete", "fpp": 0.001, "nfpp": None})["triceratops_required"] == "hard_fail"
+
+    # Inconclusive warnings are soft review context: a strong candidate stays
+    # promotable instead of being rejected on a gray-zone statistic.
+    assert {"triceratops_fpp_inconclusive", "triceratops_nfpp_inconclusive"} <= SOFT_REVIEW_WARNING_CODES
+    soft_flags = [
+        {"code": "triceratops_fpp_inconclusive", "severity": "warning", "message": "gray zone"},
+        {"code": "triceratops_nfpp_inconclusive", "severity": "warning", "message": "gray zone"},
+    ]
+    disposition, *_ = _disposition(candidate, soft_flags, config, {"effective_snr": 30.0, "final_score": 0.9})
+    assert disposition == "planet_candidate"
 
 
 def test_trilegal_ca_bundle_failure_is_tolerated(monkeypatch, tmp_path):
@@ -345,6 +454,64 @@ def test_cached_trilegal_file_is_passed_to_triceratops(monkeypatch, tmp_path):
     assert report["status"] == "complete"
     assert report["target_id"] == 307210830, "TIC must be recovered from the product URI for name searches"
     assert report["trilegal_source"] == "cached_file"
+
+
+def test_triceratops_retries_alternate_monte_carlo_path_and_rejects_nonfinite(monkeypatch, tmp_path):
+    import sys
+    import types
+
+    import orbitlab.science.triceratops_fpp as tf
+
+    monkeypatch.setattr(tf, "_calibration_dir", lambda: tmp_path)
+    cached = tmp_path / "trilegal" / "307210830_TRILEGAL.csv"
+    cached.parent.mkdir(parents=True)
+    cached.write_text("stars", encoding="utf-8")
+
+    attempts: list[bool] = []
+
+    class _RetryTarget:
+        FPP = 0.01
+        NFPP = 0.0001
+        probs = None
+
+        def __init__(self, **kwargs):
+            pass
+
+        def calc_probs(self, **kwargs):
+            attempts.append(kwargs["parallel"])
+            if len(attempts) == 1:
+                raise IndexError("invalid index to scalar variable")
+
+    fake_module = types.ModuleType("triceratops.triceratops")
+    fake_module.target = _RetryTarget
+    monkeypatch.setitem(sys.modules, "triceratops", types.ModuleType("triceratops"))
+    monkeypatch.setitem(sys.modules, "triceratops.triceratops", fake_module)
+    candidate = TransitCandidate(2.0, 0.4, 0.1, 0.002, 9.0, 10.0)
+    time = np.linspace(0.0, 10.0, 600)
+    flux = np.ones_like(time)
+
+    report = tf.run_triceratops_fpp(
+        target_id="L 98-59",
+        product_uri="hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+        time=time,
+        flux=flux + np.random.default_rng(4).normal(0.0, 3.0e-4, time.size),
+        candidate=candidate,
+        samples=1000,
+        parallel=True,
+    )
+    assert attempts == [True, False]
+    assert report["parallel"] is False
+
+    _RetryTarget.FPP = float("nan")
+    with pytest.raises(RuntimeError, match="non-finite FPP/NFPP"):
+        tf.run_triceratops_fpp(
+            target_id="L 98-59",
+            product_uri="hlsp_tess-spoc_tess_phot_0000000307210830-s0008_tess_v1_tp.fits",
+            time=time,
+            flux=flux + np.random.default_rng(5).normal(0.0, 3.0e-4, time.size),
+            candidate=candidate,
+            samples=1000,
+        )
 
 
 def test_detrending_sensitivity_masked_variant_keeps_the_transit():

@@ -385,10 +385,10 @@ Disposition logic:
 
 Hard-fail flags are split into two scientific classes:
 
-- Evidence-against codes (secondary eclipse, odd/even mismatch, implausible duration, DAVE false-positive verdicts, above-threshold TRICERATOPS FPP/NFPP, paper SNR/transit-count shortfalls) reject the signal.
+- Evidence-against codes (secondary eclipse, odd/even mismatch, implausible duration, DAVE false-positive verdicts, TRICERATOPS FPP/NFPP in the Giacalone et al. 2021 likely-false-positive zone, paper SNR/transit-count shortfalls) reject the signal.
 - Missing-evidence codes (`paper_tls_required`, `dave_model_shift_required`, `sweet_required`, `nigraha_required`, `triceratops_required`) mean a required engine did not complete. They block promotion loudly, but the signal stays a reviewable `borderline_tce`: "DAVE unavailable" is not "signal failed DAVE".
 
-Warning flags are likewise split. Soft review-context warnings (`catalog_contamination`, `nigraha_low_probability`, `known_period_low_snr`, `planetary_secondary`, `weak_residual_signal`, `red_noise`) do not veto a strong promotion because their information is either review context or already priced into effective SNR (red-noise beta deflates effective SNR per Pont, Zucker & Queloz 2006, so blocking on the warning as well would double-penalize). Detection-quality warnings such as `low_snr` or `stellar_rotation_harmonic` still block promotion.
+Warning flags are likewise split. Soft review-context warnings (`catalog_contamination`, `nigraha_low_probability`, `known_period_low_snr`, `planetary_secondary`, `weak_residual_signal`, `red_noise`, `odd_even_depth_mismatch`, `triceratops_fpp_inconclusive`, `triceratops_nfpp_inconclusive`) do not veto a strong promotion because their information is either review context or already priced into effective SNR (red-noise beta deflates effective SNR per Pont, Zucker & Queloz 2006, so blocking on the warning as well would double-penalize). Detection-quality warnings such as `low_snr` or `stellar_rotation_harmonic` still block promotion.
 
 Core promotion thresholds:
 
@@ -420,7 +420,7 @@ Validation metrics:
 | Metric                        | Formula or rule                         | Threshold behavior                               |
 | ----------------------------- | --------------------------------------- | ------------------------------------------------ |
 | Duration plausibility         | `0 < duration < 0.5 * period`           | Implausible duration is hard fail.               |
-| Odd/even depth delta          | `abs(depth_odd - depth_even)`           | sigma >= 3.0 hard fail in structured flags.      |
+| Odd/even depth delta          | `abs(depth_odd - depth_even)`           | Event-level sigma >= 3.0 hard fail; a pooled sigma >= 3.0 is only hard when the parity split is also >= 20% of transit depth. |
 | Secondary eclipse SNR         | secondary depth over robust scatter     | SNR >= 5.0 hard fail in structured flags.        |
 | Stellar rotation harmonic     | period/rotation near 0.25, 0.5, 1, 2, 4 | warning.                                         |
 | Centroid significance         | `centroid_shift / centroid_uncertainty` | >= 2 sigma warning, >= 3 sigma stronger warning. |
@@ -432,12 +432,14 @@ Odd/even calculation:
 ```text
 transit_number = round((time - epoch) / period)
 in_transit = abs(phase_time) < 0.5 * duration
-odd_depth = baseline - median(flux[in_transit and transit_number odd])
-even_depth = baseline - median(flux[in_transit and transit_number even])
+event_depth = baseline - median(flux[in each distinct transit event])
+odd_depth = median(event_depths for odd events)
+even_depth = median(event_depths for even events)
+odd_err/even_err = robust standard error of the median event depth
 sigma = abs(odd_depth - even_depth) / sqrt(odd_err^2 + even_err^2)
 ```
 
-Event numbering uses nearest-integer rounding because the in-transit window is centered on the epoch: floor-based numbering would split each event's cadences across two adjacent transit numbers, mixing odd and even samples and collapsing the depth difference this diagnostic exists to measure (the classic eclipsing-binary half-period discriminator).
+Event numbering uses nearest-integer rounding because the in-transit window is centered on the epoch: floor-based numbering would split each event's cadences across two adjacent transit numbers, mixing odd and even samples and collapsing the depth difference this diagnostic exists to measure (the classic eclipsing-binary half-period discriminator). Uncertainty is estimated across distinct event depths when each parity has at least three events; treating every cadence as independent makes long, densely sampled light curves arbitrarily overconfident and can falsely reject real planets with ordinary transit-to-transit variation. OrbitLab retains the cadence-pooled significance only as a large-effect guard: it becomes hard evidence when it exceeds the configured sigma threshold and the parity depth split is at least 20% of the detected transit depth.
 
 Secondary eclipse calculation:
 
@@ -669,7 +671,7 @@ Research methodology:
 - TRICERATOPS is a Bayesian tool for vetting and validating TESS Objects of Interest.
 - Its documentation states that it computes false-positive probability (FPP) and nearby false-positive probability (NFPP) by analyzing transit data and the surrounding field of stars.
 - The TESS example demonstrates `target = tr.target(ID, sectors)`, aperture/nearby-star inspection, optional `calc_depths`, and `target.calc_probs(time, flux_0, flux_err_0, P_orb)`.
-- Giacalone et al. define validation criteria using `FPP < 0.015` and `NFPP < 1e-3`.
+- Giacalone et al. define validation criteria using `FPP < 0.015` and `NFPP < 1e-3`, and rejection criteria using `FPP > 0.5` (likely false positive) and `NFPP > 0.1` (likely nearby false positive). Between the two regimes the statistic is inconclusive: it withholds validation but is not evidence against the signal.
 
 OrbitLab method:
 
@@ -704,10 +706,14 @@ samples = 1000000
 Current thresholds:
 
 ```text
-paper_triceratops_fpp_max = 0.015
-paper_triceratops_nfpp_max = 0.001
+paper_triceratops_fpp_max = 0.015      # validation ceiling
+paper_triceratops_nfpp_max = 0.001     # validation ceiling
+paper_triceratops_fpp_reject = 0.5     # likely-false-positive floor
+paper_triceratops_nfpp_reject = 0.1    # likely-nearby-false-positive floor
 paper_triceratops_samples = 1000000
 ```
+
+Threshold semantics map TRICERATOPS' three regimes onto OrbitLab flags: values within the validation ceilings add no flags; values above a rejection floor are evidence-against hard fails (`triceratops_fpp` / `triceratops_nfpp`); values in between raise soft review warnings (`triceratops_fpp_inconclusive` / `triceratops_nfpp_inconclusive`) that block paper-grade statistical validation without branding the signal a false positive — confirmed planets routinely land in this gray zone.
 
 One-to-one alignment:
 
@@ -907,8 +913,10 @@ Relevant implementation:
 | DAVE ModShift         | official binary status        |     pass/fail | hard fail                                              | Reject non-transit-like or significant secondary behavior. |
 | DAVE SWEET            | `paper_sweet_sigma`           |           3.0 | warning or hard fail if not complete                   | Flag sinusoidal variability.                               |
 | Nigraha probability   | `paper_ml_threshold`          |           0.4 | warning if low, hard fail if absent for TESS paper run | Require supporting TESS ML evidence.                       |
-| TRICERATOPS FPP       | `paper_triceratops_fpp_max`   |         0.015 | hard fail                                              | Statistical validation false-positive threshold.           |
-| TRICERATOPS NFPP      | `paper_triceratops_nfpp_max`  |         0.001 | hard fail                                              | Nearby false-positive threshold.                           |
+| TRICERATOPS FPP       | `paper_triceratops_fpp_max`   |         0.015 | warning above (inconclusive)                           | Statistical validation false-positive ceiling.             |
+| TRICERATOPS FPP       | `paper_triceratops_fpp_reject` |          0.5 | hard fail above                                        | Giacalone et al. 2021 likely-false-positive criterion.     |
+| TRICERATOPS NFPP      | `paper_triceratops_nfpp_max`  |         0.001 | warning above (inconclusive)                           | Nearby false-positive validation ceiling.                  |
+| TRICERATOPS NFPP      | `paper_triceratops_nfpp_reject` |         0.1 | hard fail above                                        | Likely-nearby-false-positive criterion.                    |
 | Catalog contamination | `paper_catalog_radius_arcsec` |    120 arcsec | warning                                                | Identify nearby stars capable of mimicking depth.          |
 
 ## Module-by-Module Research Comparison
@@ -930,7 +938,7 @@ Relevant implementation:
 | `dave_vetting.py` RoboVet         | Applies exact upstream inequalities.                                                                                                     | DAVE `RoboVet.py`.                                                    | `.orbitlab/external/DAVE/vetting/RoboVet.py`.  | Strong for copied logic.                                                  | Full DAVE end-to-end trap-fit context remains stronger.                                  |
 | `dave_vetting.py` SWEET           | Fits sin/cos harmonics at P/2, P, 2P.                                                                                                    | DAVE SWEET sinusoid screen.                                           | DAVE vetting family.                           | Approximate.                                                              | Official SWEET in full DAVE is better for exact reproduction.                            |
 | `catalog_context.py`              | TIC/Gaia neighbor screening and NASA Archive TOI/confirmed context.                                                                      | TESS follow-up context and archive federation.                        | Astroquery MAST and NASA Archive.              | Strong for live catalog/API use.                                          | Does not replace follow-up observations.                                                 |
-| `triceratops_fpp.py`              | Calls real `target.calc_depths` when aperture pixels are available, then `target.calc_probs`, emits FPP/NFPP and scenario probabilities. | TRICERATOPS Bayesian FPP/NFPP with nearby-source context.             | `stevengiacalone/triceratops`.                 | Strong for `calc_probs`, thresholds, and selected-aperture depth context. | Contrast-curve and follow-up-observation constraints remain stronger when available.     |
+| `triceratops_fpp.py`              | Calls real `target.calc_depths` with TRICERATOPS' own default 5x5 aperture, then `target.calc_probs`, and emits FPP/NFPP and scenario probabilities. | TRICERATOPS Bayesian FPP/NFPP with nearby-source context.             | `stevengiacalone/triceratops`.                 | Strong for `calc_probs` and thresholds; selected-TPF-aperture coordinates are not passed across the incompatible pixel frame. | WCS-converted aperture, contrast-curve, and follow-up-observation constraints remain stronger when available. |
 | `nigraha_adapter.py`              | Builds global/local/odd-even tensors and scalar features.                                                                                | Nigraha TESS CNN input representation.                                | `ExoplanetML/Nigraha`.                         | Partial.                                                                  | Full upstream TFRecord/training/catalog workflow is stronger.                            |
 | `nigraha_service.py`              | Runs checksum-validated 10-HDF5 ensemble in NumPy.                                                                                       | Nigraha supervised ML ensemble.                                       | `ExoplanetML/Nigraha`.                         | Strong for inference from released weights.                               | Upstream TensorFlow pipeline is stronger for exact training reproduction.                |
 | `benchmarks/science_benchmark.py` | Runs a truth-set harness over known-planet, injected, false-positive, scrambled, and stellar-variability cases.                          | Kepler DR25 completeness/reliability benchmark discipline.            | Local benchmark runner.                        | Attached as a repeatable project check.                                   | NASA archive-scale benchmark products are broader and calibrated on mission populations. |
@@ -949,6 +957,8 @@ aperture_percentiles = [80, 85, 90, 92, 95]
 max_duration_period_ratio = 0.2
 secondary_eclipse_hard_fail_snr = 5.0
 odd_even_hard_fail_sigma = 3.0
+odd_even_large_effect_fraction = 0.2
+transit_support_depth_fraction = 0.5
 centroid_hard_fail_pixels = 1.0
 quality_flag_dominance_fraction = 0.5
 red_noise_warning_beta = 1.5
@@ -961,6 +971,8 @@ paper_sweet_sigma = 3.0
 paper_model_shift_objects = 20000
 paper_triceratops_fpp_max = 0.015
 paper_triceratops_nfpp_max = 0.001
+paper_triceratops_fpp_reject = 0.5
+paper_triceratops_nfpp_reject = 0.1
 paper_triceratops_samples = 1000000
 paper_catalog_radius_arcsec = 120.0
 ```

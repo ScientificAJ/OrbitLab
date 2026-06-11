@@ -4,6 +4,8 @@ aperture_percentiles = [80, 85, 90, 92, 95]
 max_duration_period_ratio = 0.2
 secondary_eclipse_hard_fail_snr = 5.0
 odd_even_hard_fail_sigma = 3.0
+odd_even_large_effect_fraction = 0.2
+transit_support_depth_fraction = 0.5
 centroid_hard_fail_pixels = 1.0
 quality_flag_dominance_fraction = 0.5
 red_noise_warning_beta = 1.5
@@ -16,6 +18,12 @@ paper_sweet_sigma = 3.0
 paper_model_shift_objects = 20000
 paper_triceratops_fpp_max = 0.015
 paper_triceratops_nfpp_max = 0.001
+# Giacalone et al. 2021 rejection criteria: FPP > 0.5 is "likely false
+# positive", NFPP > 0.1 is "likely nearby false positive". Values between
+# the validation maxima above and these limits are statistically
+# inconclusive: review evidence, not evidence against the signal.
+paper_triceratops_fpp_reject = 0.5
+paper_triceratops_nfpp_reject = 0.1
 paper_triceratops_samples = 1000000
 paper_catalog_radius_arcsec = 120.0
 

@@ -234,28 +234,40 @@ def run_triceratops_fpp(
                 calc_depths_mode = "triceratops_default_5x5"
             except (TypeError, ValueError, RuntimeError, AttributeError, IndexError, KeyError) as exc:
                 calc_depths_detail = str(exc)
-        target.calc_probs(
-            time=binned_time,
-            flux_0=binned_flux,
-            flux_err_0=flux_err,
-            P_orb=float(candidate.period),
-            N=int(samples),
-            parallel=parallel,
-            verbose=0,
-        )
+        calc_probs_kwargs = {
+            "time": binned_time,
+            "flux_0": binned_flux,
+            "flux_err_0": flux_err,
+            "P_orb": float(candidate.period),
+            "N": int(samples),
+            "verbose": 0,
+        }
+        parallel_used = parallel
+        try:
+            target.calc_probs(**calc_probs_kwargs, parallel=parallel_used)
+        except IndexError:
+            # TRICERATOPS' scalar and vectorized Monte Carlo paths can hit
+            # different degenerate-draw edge cases. Retry the supported
+            # alternate path before declaring required FPP evidence missing.
+            parallel_used = not parallel_used
+            target.calc_probs(**calc_probs_kwargs, parallel=parallel_used)
     if trilegal_source == "live_query" and not _harvest_trilegal_result(tic_id):
         trilegal_source = "unavailable_scenarios_reduced"
     probs = getattr(target, "probs", None)
     probabilities = probs.to_dict(orient="records") if hasattr(probs, "to_dict") else None
+    fpp = float(target.FPP)
+    nfpp = float(target.NFPP)
+    if not np.isfinite(fpp) or not np.isfinite(nfpp):
+        raise RuntimeError("TRICERATOPS returned non-finite FPP/NFPP; evidence is unusable")
     return {
         "status": "complete",
         "engine": "triceratops",
         "target_id": tic_id,
         "sector": sector,
-        "fpp": float(target.FPP),
-        "nfpp": float(target.NFPP),
+        "fpp": fpp,
+        "nfpp": nfpp,
         "samples": int(samples),
-        "parallel": parallel,
+        "parallel": parallel_used,
         "fpp_uncertainty": None,
         "nfpp_uncertainty": None,
         "aperture_available": aperture_pixels is not None,

@@ -13,6 +13,8 @@ CORE_CONFIG_KEYS = {
     "max_duration_period_ratio",
     "secondary_eclipse_hard_fail_snr",
     "odd_even_hard_fail_sigma",
+    "odd_even_large_effect_fraction",
+    "transit_support_depth_fraction",
     "centroid_hard_fail_pixels",
     "quality_flag_dominance_fraction",
     "red_noise_warning_beta",
@@ -25,6 +27,8 @@ CORE_CONFIG_KEYS = {
     "paper_model_shift_objects",
     "paper_triceratops_fpp_max",
     "paper_triceratops_nfpp_max",
+    "paper_triceratops_fpp_reject",
+    "paper_triceratops_nfpp_reject",
     "paper_triceratops_samples",
     "paper_catalog_radius_arcsec",
 }
@@ -50,6 +54,8 @@ class ScienceConfig:
     max_duration_period_ratio: float
     secondary_eclipse_hard_fail_snr: float
     odd_even_hard_fail_sigma: float
+    odd_even_large_effect_fraction: float
+    transit_support_depth_fraction: float
     centroid_hard_fail_pixels: float
     quality_flag_dominance_fraction: float
     red_noise_warning_beta: float
@@ -62,6 +68,8 @@ class ScienceConfig:
     paper_model_shift_objects: int
     paper_triceratops_fpp_max: float
     paper_triceratops_nfpp_max: float
+    paper_triceratops_fpp_reject: float
+    paper_triceratops_nfpp_reject: float
     paper_triceratops_samples: int
     paper_catalog_radius_arcsec: float
     search_profiles: dict[str, SearchProfile]
@@ -89,6 +97,8 @@ def load_science_config(path: Path = CONFIG_PATH) -> ScienceConfig:
         max_duration_period_ratio=float(data["max_duration_period_ratio"]),
         secondary_eclipse_hard_fail_snr=float(data["secondary_eclipse_hard_fail_snr"]),
         odd_even_hard_fail_sigma=float(data["odd_even_hard_fail_sigma"]),
+        odd_even_large_effect_fraction=float(data["odd_even_large_effect_fraction"]),
+        transit_support_depth_fraction=float(data["transit_support_depth_fraction"]),
         centroid_hard_fail_pixels=float(data["centroid_hard_fail_pixels"]),
         quality_flag_dominance_fraction=float(data["quality_flag_dominance_fraction"]),
         red_noise_warning_beta=float(data["red_noise_warning_beta"]),
@@ -101,6 +111,8 @@ def load_science_config(path: Path = CONFIG_PATH) -> ScienceConfig:
         paper_model_shift_objects=int(data["paper_model_shift_objects"]),
         paper_triceratops_fpp_max=float(data["paper_triceratops_fpp_max"]),
         paper_triceratops_nfpp_max=float(data["paper_triceratops_nfpp_max"]),
+        paper_triceratops_fpp_reject=float(data["paper_triceratops_fpp_reject"]),
+        paper_triceratops_nfpp_reject=float(data["paper_triceratops_nfpp_reject"]),
         paper_triceratops_samples=int(data["paper_triceratops_samples"]),
         paper_catalog_radius_arcsec=float(data["paper_catalog_radius_arcsec"]),
         search_profiles=profiles,

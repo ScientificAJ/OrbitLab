@@ -28,6 +28,10 @@ All notable OrbitLab changes are tracked here.
 - Nigraha cadence-domain guard: FFI-cadence (>300 s) TESS products mark ML scores `cadence_out_of_domain` — neutral in evidence scoring and missing-evidence (`nigraha_out_of_domain`) for paper-grade gates — instead of letting an out-of-domain score read as evidence against a planet.
 - Product listings infer and expose `cadence_seconds` and rank short-cadence (2-minute) products first, so mission ML models run inside their training domain whenever the archive offers fast cadence.
 - DAVE ModShift runs in a scratch directory; it no longer litters the repository root with `orbitlab-modshift-*` artifacts.
+- Odd/even parity significance is computed from per-event depths (uncertainty of the median event depth), so long, densely sampled light curves can no longer become arbitrarily overconfident and falsely reject real planets with ordinary transit-to-transit variation; the cadence-pooled statistic survives only as a large-effect (>=20% of depth) eclipsing-binary guard.
+- Transit counting now requires measured per-event depth support (>=50% of the detected depth), so coverage of an empty phase window no longer counts as an observed transit; raw coverage is reported separately as `covered_transit_count`.
+- TRICERATOPS `calc_probs` retries the alternate Monte Carlo path on `IndexError` edge cases, rejects non-finite FPP/NFPP loudly, and runs parallel by default; live TESS runs now produce real FPP/NFPP through the repaired TRILEGAL chain.
+- TRICERATOPS FPP/NFPP gating follows Giacalone et al. 2021 three-zone semantics: validated (no flags) below 0.015/0.001, likely false positive (evidence-against rejection) above 0.5/0.1, and a statistically inconclusive gray zone in between that blocks paper-grade validation as a soft review warning instead of falsely rejecting confirmed planets (this falsely rejected WASP-126 b live).
 
 ## v0.2.0 - 2026-06-03
 

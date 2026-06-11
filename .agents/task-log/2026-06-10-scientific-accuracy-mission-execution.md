@@ -56,7 +56,7 @@
   physics failures none, escapes none. Reports in
   `.orbitlab/benchmarks/accuracy-mission-after*`.
 
-## Verification so far
+## Verification completed in the original execution
 
 - backend pytest full suite: 369 passed (after updating 3 tests asserting the
   old conflated semantics + 1 fixture missing fpp status).
@@ -64,8 +64,14 @@
 - ruff: clean. Frontend greps show no hard-coded changed flag codes.
 - docs/SCIENTIFIC_METHODOLOGY.md updated (clip, beta, odd/even, disposition
   classes, refinement, stellar provenance).
-- Deep-mode benchmark running in background; preflight + unmocked live run on
-  real planet names (L 98-59 / TIC 307210830 cached TPF, Kepler-10) next.
+- Deep-mode benchmark completed in
+  `.orbitlab/benchmarks/accuracy-mission-after-deep/`; the report passed its
+  10-case deep-mode denominator but recorded six detrending-sensitivity
+  `unstable_result` statuses.
+- Preflight and unmocked named-planet runs completed. Later completion audit
+  found that round 3 still falsely rejected WASP-126 b and both TESS targets
+  lacked usable TRICERATOPS FPP evidence; those are not considered closed by
+  this original execution log.
 
 ## Live unmocked verification (Phase 6, real planet names, paper mode)
 
@@ -89,9 +95,13 @@ Round 2 results (vs NASA Exoplanet Archive):
 - Kepler-10: result recorded in
   `.orbitlab/benchmarks/live-planet-verification-round2/kepler-10/`.
 
-## Remaining known gaps (honest)
+## Remaining known gaps found by the completion audit
 
 - PRF-fit centroiding still image-moment based (uncertainty propagated).
 - Per-population TLS SDE recalibration not runtime-implemented.
 - Sinusoidal variability case intentionally stays a reviewable borderline TCE
   (near-escape list), not auto-rejected.
+- Round-3 live verification falsely rejects WASP-126 b on an overconfident
+  pooled-cadence odd/even statistic.
+- TRICERATOPS reaches `calc_probs` but does not yet produce usable finite FPP
+  evidence in the live TESS runs.

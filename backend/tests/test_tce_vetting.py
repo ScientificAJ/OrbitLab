@@ -22,6 +22,13 @@ def _light_curve(period=0.9414760262, depth=0.005, noise=0.0008654):
     return time.astype(np.float32), flux.astype(np.float32)
 
 
+def _inject_candidate(time: np.ndarray, flux: np.ndarray, candidate: TransitCandidate) -> np.ndarray:
+    injected = np.asarray(flux, dtype=np.float32).copy()
+    phase = ((time - candidate.epoch + 0.5 * candidate.period) % candidate.period) - 0.5 * candidate.period
+    injected[np.abs(phase) <= 0.5 * candidate.duration] -= candidate.depth
+    return injected
+
+
 def test_science_config_hash_is_stable_hex():
     digest = science_config_hash()
 
@@ -47,7 +54,11 @@ def test_tic_like_borderline_signal_is_preserved_as_review_needed(monkeypatch):
             "duration": np.array([candidate.duration], dtype=np.float32),
         }
         search_time = np.linspace(0, 27, 256, dtype=np.float32)
-        search_flux = 1.0 + 0.001 * np.sin(np.linspace(0, 12, 256, dtype=np.float32))
+        search_flux = _inject_candidate(
+            search_time,
+            1.0 + 0.001 * np.sin(np.linspace(0, 12, 256, dtype=np.float32)),
+            candidate,
+        )
         clean_time = search_time
         clean_flux = search_flux
         metadata = {"min_period_days": 0.5, "max_period_days": 10.0}
@@ -214,7 +225,11 @@ def test_paper_grade_analysis_records_triceratops_failure(monkeypatch):
         # White noise: keeps red-noise beta near 1 so this test isolates the
         # missing-evidence (TRICERATOPS unavailable) path without tripping
         # the paper_low_snr evidence-against gate.
-        search_flux = (1.0 + _mock_rng.normal(0.0, 0.0005, 600)).astype(np.float32)
+        search_flux = _inject_candidate(
+            search_time,
+            (1.0 + _mock_rng.normal(0.0, 0.0005, 600)).astype(np.float32),
+            candidate,
+        )
         clean_time = search_time
         clean_flux = search_flux
         metadata = {"min_period_days": 0.5, "max_period_days": 10.0}
@@ -407,7 +422,11 @@ def test_analysis_uses_solar_like_physics_fallback_when_stellar_context_is_missi
             "duration": np.array([candidate.duration], dtype=np.float32),
         }
         search_time = np.linspace(0, 20, 800, dtype=np.float32)
-        search_flux = 1.0 + 0.001 * np.sin(np.linspace(0, 18, 800, dtype=np.float32))
+        search_flux = _inject_candidate(
+            search_time,
+            1.0 + 0.001 * np.sin(np.linspace(0, 18, 800, dtype=np.float32)),
+            candidate,
+        )
         clean_time = search_time
         clean_flux = search_flux
         metadata = {"min_period_days": 0.5, "max_period_days": 10.0}
@@ -454,7 +473,11 @@ def test_harmonic_residual_signal_stays_in_tce_ledger_but_is_not_promoted(monkey
             "duration": np.array([primary.duration, harmonic.duration], dtype=np.float32),
         }
         search_time = np.linspace(0, 24, 900, dtype=np.float32)
-        search_flux = 1.0 + 0.001 * np.sin(np.linspace(0, 20, 900, dtype=np.float32))
+        search_flux = _inject_candidate(
+            search_time,
+            1.0 + 0.001 * np.sin(np.linspace(0, 20, 900, dtype=np.float32)),
+            primary,
+        )
         clean_time = search_time
         clean_flux = search_flux
         metadata = {"min_period_days": 0.5, "max_period_days": 12.0}

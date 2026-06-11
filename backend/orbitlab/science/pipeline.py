@@ -129,6 +129,35 @@ def _observed_transit_count(time: np.ndarray, candidate) -> int:
     return int(np.unique(phase_number[in_transit]).size)
 
 
+def _supported_transit_count(
+    time: np.ndarray,
+    flux: np.ndarray,
+    candidate,
+    *,
+    min_depth_fraction: float,
+) -> int:
+    """Count distinct events whose measured median depth supports the period."""
+    if candidate.period <= 0 or candidate.duration <= 0 or candidate.depth <= 0:
+        return 0
+    time_arr = np.asarray(time)
+    flux_arr = np.asarray(flux)
+    finite = np.isfinite(time_arr) & np.isfinite(flux_arr)
+    time_arr = time_arr[finite]
+    flux_arr = flux_arr[finite]
+    phase_number = np.round((time_arr - candidate.epoch) / candidate.period).astype(int)
+    phase = ((time_arr - candidate.epoch + 0.5 * candidate.period) % candidate.period) - 0.5 * candidate.period
+    in_transit = np.abs(phase) <= 0.5 * candidate.duration
+    out_of_transit = np.abs(phase) >= candidate.duration
+    baseline = (
+        float(np.nanmedian(flux_arr[out_of_transit])) if np.any(out_of_transit) else float(np.nanmedian(flux_arr))
+    )
+    minimum_depth = candidate.depth * min_depth_fraction
+    return sum(
+        baseline - float(np.nanmedian(flux_arr[in_transit & (phase_number == event)])) >= minimum_depth
+        for event in np.unique(phase_number[in_transit])
+    )
+
+
 def _period_alias_code(candidate, accepted_candidates) -> str | None:
     if candidate.period <= 0:
         return None
@@ -763,10 +792,29 @@ def _structured_flags(candidate, validation: dict, config, support: dict | None 
                 flags, "secondary_eclipse", "hard_fail", "Secondary eclipse evidence exceeds hard-fail threshold."
             )
     odd_even_sigma = validation.get("odd_even_sigma")
+    odd_even_pooled_sigma = validation.get("odd_even_pooled_sigma")
+    odd_even_delta = validation.get("odd_even_depth_delta")
+    odd_even_depth_ratio = (
+        float(odd_even_delta) / float(candidate.depth)
+        if isinstance(odd_even_delta, (int, float))
+        and np.isfinite(odd_even_delta)
+        and candidate.depth > 0
+        else None
+    )
+    large_pooled_parity_effect = (
+        isinstance(odd_even_pooled_sigma, (int, float))
+        and np.isfinite(odd_even_pooled_sigma)
+        and odd_even_pooled_sigma >= config.odd_even_hard_fail_sigma
+        and odd_even_depth_ratio is not None
+        and odd_even_depth_ratio >= config.odd_even_large_effect_fraction
+    )
     if (
-        isinstance(odd_even_sigma, (int, float))
-        and np.isfinite(odd_even_sigma)
-        and odd_even_sigma >= config.odd_even_hard_fail_sigma
+        (
+            isinstance(odd_even_sigma, (int, float))
+            and np.isfinite(odd_even_sigma)
+            and odd_even_sigma >= config.odd_even_hard_fail_sigma
+        )
+        or large_pooled_parity_effect
     ):
         # A hard binary verdict needs real sampling behind it: with 30-min
         # FFI cadence a transit can contribute 1-2 points per event, and a
@@ -849,6 +897,12 @@ SOFT_REVIEW_WARNING_CODES = frozenset(
         # blocking on the warning as well would double-penalize strong
         # signals on mildly variable stars.
         "red_noise",
+        "odd_even_depth_mismatch",
+        # Inconclusive TRICERATOPS odds withhold statistical validation (the
+        # paper-grade gate still blocks on them) but are not detection-quality
+        # doubts: a confirmed planet can sit in the FPP gray zone.
+        "triceratops_fpp_inconclusive",
+        "triceratops_nfpp_inconclusive",
     }
 )
 
@@ -917,6 +971,8 @@ def _apply_paper_grade_vetting(
         "model_shift_objects": config.paper_model_shift_objects,
         "triceratops_fpp_max": config.paper_triceratops_fpp_max,
         "triceratops_nfpp_max": config.paper_triceratops_nfpp_max,
+        "triceratops_fpp_reject": config.paper_triceratops_fpp_reject,
+        "triceratops_nfpp_reject": config.paper_triceratops_nfpp_reject,
     }
     effective_snr = float(support.get("effective_snr", candidate.signal_to_noise))
     observed_transits = support.get("observed_transit_count")
@@ -1021,7 +1077,7 @@ def _apply_paper_grade_vetting(
 
         fpp_value = _finite_float(fpp.get("fpp"))
         nfpp_value = _finite_float(fpp.get("nfpp"))
-        if fpp.get("status") != "complete" or (fpp_value is None and nfpp_value is None):
+        if fpp.get("status") != "complete" or fpp_value is None or nfpp_value is None:
             # Engine-unavailable is missing evidence, not evidence against:
             # block paper promotion loudly without branding the signal a
             # false positive (the values were never computed).
@@ -1032,19 +1088,42 @@ def _apply_paper_grade_vetting(
                 "TRICERATOPS FPP evidence did not complete, so paper-grade promotion is blocked.",
             )
         else:
-            if fpp_value is None or fpp_value > config.paper_triceratops_fpp_max:
+            # Giacalone et al. 2021 defines two regimes: validation
+            # (FPP < 0.015 and NFPP < 0.001) and rejection (FPP > 0.5 likely
+            # FP, NFPP > 0.1 likely nearby FP). In between, the statistic is
+            # inconclusive — it withholds validation but is not evidence
+            # against the signal, so it must not reject confirmed planets
+            # whose FPP simply lands in the gray zone.
+            if fpp_value > config.paper_triceratops_fpp_reject:
                 _add_flag(
                     flags,
                     "triceratops_fpp",
                     "hard_fail",
-                    "TRICERATOPS FPP is above the paper-grade statistical-validation threshold.",
+                    "TRICERATOPS FPP exceeds the Giacalone et al. 2021 likely-false-positive threshold.",
                 )
-            if nfpp_value is None or nfpp_value > config.paper_triceratops_nfpp_max:
+            elif fpp_value > config.paper_triceratops_fpp_max:
+                _add_flag(
+                    flags,
+                    "triceratops_fpp_inconclusive",
+                    "warning",
+                    "TRICERATOPS FPP is above the statistical-validation threshold but below the "
+                    "likely-false-positive threshold; the scenario odds are inconclusive and need review.",
+                )
+            if nfpp_value > config.paper_triceratops_nfpp_reject:
                 _add_flag(
                     flags,
                     "triceratops_nfpp",
                     "hard_fail",
-                    "TRICERATOPS nearby FPP is above the paper-grade validation threshold.",
+                    "TRICERATOPS nearby FPP exceeds the Giacalone et al. 2021 likely-nearby-false-positive "
+                    "threshold.",
+                )
+            elif nfpp_value > config.paper_triceratops_nfpp_max:
+                _add_flag(
+                    flags,
+                    "triceratops_nfpp_inconclusive",
+                    "warning",
+                    "TRICERATOPS nearby FPP is above the validation threshold but below the likely-nearby-"
+                    "false-positive threshold; nearby-source scenarios need review.",
                 )
 
     contamination = catalog_context.get("contamination") if isinstance(catalog_context, dict) else None
@@ -1470,7 +1549,13 @@ def analyze_light_curve_arrays(
                 low_snr_threshold=config.promotion_snr,
             )
         )
-        observed_transits = _observed_transit_count(bls_result.search_time, candidate)
+        covered_transits = _observed_transit_count(bls_result.search_time, candidate)
+        observed_transits = _supported_transit_count(
+            bls_result.search_time,
+            bls_result.search_flux,
+            candidate,
+            min_depth_fraction=config.transit_support_depth_fraction,
+        )
         period_alias_code = _period_alias_code(candidate, evaluated_candidates)
         alias_flags = [period_alias_code] if period_alias_code else []
         red_noise_beta = estimate_red_noise_beta(
@@ -1481,6 +1566,7 @@ def analyze_light_curve_arrays(
         catalog_match = candidate_metadata.get("catalog_match")
         support = {
             "observed_transit_count": observed_transits,
+            "covered_transit_count": covered_transits,
             "period_alias_code": period_alias_code,
             "candidate_rank": index,
             "primary_signal_to_noise": primary_signal_to_noise,
@@ -1577,7 +1663,7 @@ def analyze_light_curve_arrays(
                         candidate=candidate,
                         aperture_mask=aperture_mask,
                         samples=config.paper_triceratops_samples,
-                        parallel=False,
+                        parallel=True,
                     )
                 except Exception as exc:
                     fpp = {
@@ -1681,6 +1767,7 @@ def analyze_light_curve_arrays(
             "local_noise_snr": evidence["effective_snr"],
             "duration_period_ratio": duration_period_ratio,
             "transit_count": observed_transits,
+            "covered_transit_count": covered_transits,
             "phase_coverage_score": evidence["phase_coverage_score"],
             "alias_flags": alias_flags,
             "period_source": candidate_metadata.get("period_source", "blind_bls"),
@@ -1724,6 +1811,7 @@ def analyze_light_curve_arrays(
                 "sde": candidate.power,
                 "transit_count": observed_transits,
                 "observed_transit_count": observed_transits,
+                "covered_transit_count": covered_transits,
                 "local_noise_snr": evidence["effective_snr"],
                 "duration_period_ratio": duration_period_ratio,
                 "phase_coverage_score": evidence["phase_coverage_score"],

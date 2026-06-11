@@ -29,6 +29,9 @@ class ValidationMetrics:
     # hard false-positive verdict on their own.
     odd_even_min_points: int | None = None
     odd_even_min_events: int | None = None
+    # Cadence-pooled parity significance, retained only as a large-effect
+    # guard alongside the event-level odd_even_sigma.
+    odd_even_pooled_sigma: float | None = None
 
 
 def _robust_scatter(values: np.ndarray) -> float:
@@ -73,14 +76,34 @@ def odd_even_depths_with_uncertainty(
     depths = []
     errors = []
     for parity in (1, 0):
-        values = flux[in_transit & (transit_number % 2 == parity)]
+        members = in_transit & (transit_number % 2 == parity)
+        values = flux[members]
         values = values[np.isfinite(values)]
         if values.size == 0:
             depths.append(float("nan"))
             errors.append(float("nan"))
             continue
-        depths.append(max(0.0, baseline - float(np.nanmedian(values))))
-        errors.append(float(scatter / math.sqrt(values.size)) if np.isfinite(scatter) and scatter > 0 else float("nan"))
+        event_depths = np.asarray(
+            [
+                max(0.0, baseline - float(np.nanmedian(flux[members & (transit_number == event)])))
+                for event in np.unique(transit_number[members])
+            ],
+            dtype=np.float64,
+        )
+        depths.append(float(np.nanmedian(event_depths)))
+        event_scatter = _robust_scatter(event_depths)
+        if event_depths.size >= 3 and np.isfinite(event_scatter) and event_scatter > 0:
+            # Odd/even is a comparison between populations of transit events,
+            # not thousands of independent cadences. Use the uncertainty of
+            # the median event depth so transit-to-transit variability is not
+            # mistaken for an arbitrarily significant binary signature.
+            errors.append(float(1.2533 * event_scatter / math.sqrt(event_depths.size)))
+        else:
+            errors.append(
+                float(1.2533 * scatter / math.sqrt(values.size))
+                if np.isfinite(scatter) and scatter > 0
+                else float("nan")
+            )
     return depths[0], depths[1], errors[0], errors[1]
 
 
@@ -105,6 +128,32 @@ def odd_even_significance(odd_depth: float, even_depth: float, odd_err: float, e
     if denom <= 0 or not np.isfinite(denom):
         return None
     return float(abs(odd_depth - even_depth) / denom)
+
+
+def odd_even_pooled_significance(time: np.ndarray, flux: np.ndarray, candidate: TransitCandidate) -> float | None:
+    """Cadence-pooled parity significance, retained only as a large-effect guard."""
+    transit_number = np.round((time - candidate.epoch) / candidate.period).astype(int)
+    phase = np.abs(((time - candidate.epoch + 0.5 * candidate.period) % candidate.period) - 0.5 * candidate.period)
+    in_transit = phase < 0.5 * candidate.duration
+    out_of_transit = phase > candidate.duration
+    baseline = (
+        float(np.nanmedian(flux[out_of_transit])) if np.count_nonzero(out_of_transit) else float(np.nanmedian(flux))
+    )
+    scatter = (
+        _robust_scatter(flux[out_of_transit] - baseline)
+        if np.count_nonzero(out_of_transit)
+        else _robust_scatter(flux - baseline)
+    )
+    depths = []
+    errors = []
+    for parity in (1, 0):
+        values = flux[in_transit & (transit_number % 2 == parity)]
+        values = values[np.isfinite(values)]
+        if values.size == 0:
+            return None
+        depths.append(max(0.0, baseline - float(np.nanmedian(values))))
+        errors.append(float(scatter / math.sqrt(values.size)) if np.isfinite(scatter) and scatter > 0 else float("nan"))
+    return odd_even_significance(depths[0], depths[1], errors[0], errors[1])
 
 
 def secondary_eclipse_depth(time: np.ndarray, flux: np.ndarray, candidate: TransitCandidate) -> float:
@@ -207,6 +256,7 @@ def validate_candidate(
         float(abs(odd_depth - even_depth)) if np.isfinite(odd_depth) and np.isfinite(even_depth) else float("nan")
     )
     odd_even_sigma = odd_even_significance(odd_depth, even_depth, odd_err, even_err)
+    odd_even_pooled_sigma = odd_even_pooled_significance(time_arr, flux_arr, candidate)
     odd_even_min_points, odd_even_min_events = odd_even_sampling(time_arr, flux_arr, candidate)
     secondary_depth_value = secondary_eclipse_depth(time_arr, flux_arr, candidate)
     secondary_snr_value = secondary_eclipse_snr(time_arr, flux_arr, candidate)
@@ -242,6 +292,7 @@ def validate_candidate(
     return ValidationMetrics(
         odd_even_depth_delta=odd_even_delta,
         odd_even_sigma=odd_even_sigma,
+        odd_even_pooled_sigma=odd_even_pooled_sigma,
         odd_even_min_points=odd_even_min_points,
         odd_even_min_events=odd_even_min_events,
         secondary_depth=secondary_depth_value,

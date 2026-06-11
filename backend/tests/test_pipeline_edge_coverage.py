@@ -44,6 +44,11 @@ def _analysis_time_flux() -> tuple[np.ndarray, np.ndarray]:
 
 def _bls_result(candidate: TransitCandidate) -> BlsResult:
     time, flux = _analysis_time_flux()
+    # Put the candidate's transits into the flux so depth-supported transit
+    # counting sees real events behind the mocked search result.
+    phase = ((time - candidate.epoch + 0.5 * candidate.period) % candidate.period) - 0.5 * candidate.period
+    flux = flux.copy()
+    flux[np.abs(phase) <= 0.5 * candidate.duration] -= candidate.depth
     return BlsResult(
         candidate=candidate,
         periodogram={
