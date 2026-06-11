@@ -41,6 +41,17 @@ jobs:
       - name: Fetch Nigraha test artifact
         run: python scripts/fetch_nigraha_weights.py
 
+      - name: Cache pinned DAVE ModShift build
+        uses: actions/cache@v5
+        with:
+          path: .orbitlab/external/DAVE
+          key: ${{ runner.os }}-${{ runner.arch }}-dave-modshift-${{ hashFiles('scripts/build_dave_modshift.sh') }}
+
+      - name: Build pinned DAVE ModShift
+        run: |
+          scripts/build_dave_modshift.sh
+          test -x .orbitlab/external/DAVE/vetting/modshift
+
       - name: Lint backend and scripts
         run: ruff check backend scripts
 

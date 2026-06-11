@@ -672,10 +672,12 @@ def test_sibling_tce_masking_unblocks_multiplanet_members():
     # The live L 98-59 d failure mode: the sibling's transits read as a
     # significant secondary and hard-fail a real planet.
     contaminated = run_model_shift(time, flux, outer, objects_evaluated=20000)
+    assert contaminated.get("status") in {"pass", "fail"}, contaminated
     assert contaminated["hard_fail"] is True
     assert "sig_sec_in_model_shift" in contaminated["flags"]
 
     cleaned = run_model_shift(vetting_time, vetting_flux, outer, objects_evaluated=20000)
+    assert cleaned.get("status") in {"pass", "fail"}, cleaned
     assert cleaned["hard_fail"] is False
     assert cleaned["flags"] == []
 
