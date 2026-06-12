@@ -1252,6 +1252,10 @@ export function OrbitScene({
       } else {
         (transitShadow.material as THREE.MeshBasicMaterial).opacity = 0;
         (transitChord.material as THREE.MeshBasicMaterial).opacity = 0;
+        // Re-derive the base framing every frame so the drag transform below
+        // never compounds on its own previous output.
+        camera.position.set(0, cameraHeight, cameraDistance);
+        camera.lookAt(0, 0, 0);
       }
 
       // Theater free-look: drag offsets re-orbit the camera around the origin.
