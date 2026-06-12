@@ -317,6 +317,7 @@ class WebGLRenderer {
   setSize = vi.fn();
   render = vi.fn();
   dispose = vi.fn();
+  forceContextLoss = vi.fn();
 }
 
 class CanvasTexture {

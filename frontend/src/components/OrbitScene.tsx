@@ -1309,6 +1309,11 @@ export function OrbitScene({
         else if (disposable.material) disposeMaterial(disposable.material);
       });
       renderer.dispose();
+      // Release the GL context synchronously. Without this, rapid effect
+      // rebuilds (selection, speed, zoom, data refresh) stack up live WebGL
+      // contexts until Chrome refuses to create new ones (~16 cap) and the
+      // scene silently degrades to the static fallback.
+      renderer.forceContextLoss();
       if (renderer.domElement.parentElement === mount) {
         mount.removeChild(renderer.domElement);
       }
