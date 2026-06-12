@@ -2443,3 +2443,191 @@ label,
     align-items: stretch;
   }
 }
+
+/* ── Theater Mode ─────────────────────────────────────────── */
+.orbit-theater-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(0, 4, 12, 0);
+  animation: theater-fade-in 0.3s ease forwards;
+}
+@keyframes theater-fade-in {
+  to {
+    background: rgba(0, 4, 12, 0.96);
+  }
+}
+
+.orbit-theater-container {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: theater-scale-in 0.32s var(--ease-premium) forwards;
+  transform-origin: center center;
+}
+@keyframes theater-scale-in {
+  from {
+    transform: scale(0.88);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.orbit-theater-exit {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  padding: 6px 14px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.orbit-theater-exit:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+/* [CREATIVE: keyboard hint chip inside the exit button, mission-software style] */
+.orbit-theater-exit kbd {
+  font-family: inherit;
+  font-size: 10px;
+  padding: 1px 5px;
+  margin-left: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.orbit-expand-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 20;
+  opacity: 0;
+  transition:
+    opacity 0.2s,
+    background 0.15s;
+  background: rgba(3, 10, 15, 0.55);
+  border: 1px solid rgba(120, 220, 232, 0.25);
+  border-radius: 6px;
+  color: rgba(220, 240, 248, 0.8);
+  padding: 5px 9px;
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1;
+}
+.orbit-scene:hover .orbit-expand-btn,
+.orbit-expand-btn:focus-visible {
+  opacity: 1;
+}
+.orbit-expand-btn:hover {
+  background: rgba(120, 220, 232, 0.18);
+  color: #fff;
+}
+
+/* [CREATIVE: respect reduced-motion — theater appears instantly, no zoom] */
+@media (prefers-reduced-motion: reduce) {
+  .orbit-theater-backdrop,
+  .orbit-theater-container {
+    animation: none;
+  }
+  .orbit-theater-backdrop {
+    background: rgba(0, 4, 12, 0.96);
+  }
+}
+
+/* ── HUD Enhancements ──────────────────────────────────────── */
+.orbit-metric-badge .confidence-bar-track {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+.orbit-metric-badge .confidence-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: currentColor;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.orbit-mission-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(2, 8, 20, 0.78);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(80, 160, 255, 0.2);
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+  padding: 14px 20px;
+  animation: slide-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  z-index: 10;
+  /* [CREATIVE: faint targeting-computer grid behind the mission strip] */
+  background-image:
+    repeating-linear-gradient(0deg, rgba(80, 160, 255, 0.045) 0 1px, transparent 1px 18px),
+    repeating-linear-gradient(90deg, rgba(80, 160, 255, 0.045) 0 1px, transparent 1px 18px);
+}
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.orbit-mission-panel {
+  padding: 0 16px;
+  border-right: 1px solid rgba(80, 160, 255, 0.1);
+}
+.orbit-mission-panel:last-child {
+  border-right: none;
+}
+.orbit-mission-panel h4 {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: #4a7090;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+.orbit-mission-panel .stat {
+  font-size: 12px;
+  color: #a8c8f0;
+  margin: 3px 0;
+  font-family: monospace;
+}
+.orbit-mission-panel .stat strong {
+  color: #e8f4ff;
+}
+
+.orbit-arc-svg {
+  display: block;
+  margin: 0 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-mission-overlay {
+    animation: none;
+  }
+}
