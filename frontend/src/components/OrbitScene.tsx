@@ -2,6 +2,7 @@ import { Pause, Play, RotateCcw, Gauge, ZoomIn, ZoomOut } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { Candidate } from '../lib/api';
+import { OrbitSceneTheater } from './OrbitSceneTheater';
 
 type Props = {
   candidates: Candidate[];
@@ -258,6 +259,7 @@ export function OrbitScene({
   const [zoomMode, setZoomMode] = useState(1);
   const [cameraReset, setCameraReset] = useState(0);
   const [selectionPulse, setSelectionPulse] = useState(false);
+  const [theaterMode, setTheaterMode] = useState(false);
   const renderData = useMemo(() => candidateRenderData(candidates, selectedId), [candidates, selectedId]);
   const selected = candidates.find((candidate) => candidate.candidate_id === selectedId) ?? candidates[0];
   const selectedRenderData =
@@ -271,6 +273,28 @@ export function OrbitScene({
       window.clearTimeout(timeout);
     };
   }, [candidates.length, selectedId]);
+
+  // Keyboard shortcut: F toggles theater mode when focus is inside the scene
+  // (or whenever theater is already active, so F also exits).
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'f' && event.key !== 'F') return;
+      const target = event.target as HTMLElement | null;
+      // [CREATIVE: never hijack F while the user is typing in a form field]
+      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      const mount = mountRef.current;
+      const focusInScene =
+        mount != null &&
+        document.activeElement != null &&
+        (document.activeElement === mount || mount.contains(document.activeElement));
+      setTheaterMode((prev) => {
+        if (prev) return false;
+        return focusInScene ? true : prev;
+      });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -667,8 +691,24 @@ export function OrbitScene({
     };
   }, [renderData, selectedId, onSelectCandidate, isPlaying, speedMode, zoomMode, cameraReset, candidates.length]);
 
-  return (
-    <div className={`orbit-scene ${selectionPulse ? 'selection-pulse' : ''}`} ref={mountRef} data-testid="orbit-scene">
+  const sceneContent = (
+    <div
+      className={`orbit-scene ${selectionPulse ? 'selection-pulse' : ''} ${theaterMode ? 'theater' : ''}`}
+      ref={mountRef}
+      data-testid="orbit-scene"
+      tabIndex={0}
+      style={theaterMode ? { width: '100vw', height: '100vh', borderRadius: 0 } : undefined}
+    >
+      <button
+        type="button"
+        className="orbit-expand-btn"
+        aria-label="Enter theater mode"
+        title="Theater mode (F)"
+        data-testid="orbit-expand-btn"
+        onClick={() => setTheaterMode(true)}
+      >
+        ⛶
+      </button>
       <div className="orbit-hud" aria-label="Orbit simulation controls">
         <button
           type="button"
@@ -796,5 +836,11 @@ export function OrbitScene({
         </div>
       )}
     </div>
+  );
+
+  return theaterMode ? (
+    <OrbitSceneTheater onExit={() => setTheaterMode(false)}>{sceneContent}</OrbitSceneTheater>
+  ) : (
+    sceneContent
   );
 }
