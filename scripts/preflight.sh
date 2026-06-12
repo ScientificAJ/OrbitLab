@@ -46,7 +46,7 @@ else
 fi
 
 log "shell syntax"
-bash -n scripts/start_all.sh
+bash -n install.sh
 bash -n scripts/preflight.sh
 
 log "python compile checks"

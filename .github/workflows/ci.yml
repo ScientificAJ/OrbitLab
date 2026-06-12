@@ -154,7 +154,7 @@ jobs:
         run: python -m json.tool .github/rulesets/main.json
 
       - name: Validate shell scripts
-        run: bash -n scripts/preflight.sh scripts/start_all.sh
+        run: bash -n scripts/preflight.sh install.sh
 
       - name: Compile automation scripts
         run: |

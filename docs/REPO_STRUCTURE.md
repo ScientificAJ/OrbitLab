@@ -19,7 +19,7 @@ OrbitLab is organized around source, operations, documentation, and local runtim
 
 ## Operations
 
-- `scripts/start_all.sh` - starts Docker services, backend, and frontend for local development.
+- `install.sh` (repository root) - installs all dependencies and starts Docker services, backend, and frontend for local development.
 - `scripts/fetch_kepler_astronet.py` - downloads and verifies the registered Kepler/K1 checkpoint.
 - `scripts/fetch_nigraha_weights.py` - downloads and registers Nigraha/TESS artifacts.
 - `scripts/predict_kepler_astronet_tf.py` - TensorFlow 1.x Docker-side Kepler inference helper.
@@ -60,7 +60,7 @@ Local runtime files belong under `.orbitlab/`, which is intentionally ignored by
 - `.orbitlab/mast/` - downloaded MAST products.
 - `.orbitlab/models/` - downloaded model artifacts.
 - `.orbitlab/logs/` - local server logs.
-- `.orbitlab/pids/` - local process ids from `scripts/start_all.sh`.
+- `.orbitlab/pids/` - local process ids from `./install.sh`.
 - `.orbitlab/orbitlab.db` - default SQLite database when `DATABASE_URL` is not set.
 - `.orbitlab/releases/` - locally generated release-room packets.
 - `.orbitlab/benchmarks/` - local benchmark reports and baselines.

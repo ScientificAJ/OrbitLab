@@ -343,7 +343,7 @@ test('first launch shows the install welcome and hands off to the beginner tour'
   const welcome = page.getByTestId('first-run-welcome');
   await expect(welcome).toBeVisible();
   await expect(welcome).toContainText('First launch detected');
-  await expect(welcome).toContainText('scripts/start_all.sh');
+  await expect(welcome).toContainText('./install.sh');
 
   await welcome.getByRole('button', { name: /Start exploring/ }).click();
   await expect(welcome).toHaveCount(0);

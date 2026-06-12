@@ -2,7 +2,7 @@
 
 Operational scripts live here so the root stays focused on project configuration.
 
-- `start_all.sh` starts Docker Compose services plus the local backend and frontend.
+- `../install.sh` (repository root) installs all dependencies and starts Docker Compose services plus the local backend and frontend.
 - `fetch_kepler_astronet.py` fetches the verified Kepler/K1 AstroNet checkpoint.
 - `fetch_k2_exomac_kkt.py` fetches and registers the pretrained K2-capable ExoMAC-KKT artifact bundle.
 - `fetch_nigraha_weights.py` fetches the registered TESS/Nigraha artifacts.

@@ -7,7 +7,7 @@ engines, and payload semantics work together.
 ## Start And Check
 
 ```bash
-scripts/start_all.sh
+./install.sh
 curl -sS http://127.0.0.1:8000/api/v1/health
 python .claude/skills/orbitlab-scientist/scripts/api_probe.py --help
 ```

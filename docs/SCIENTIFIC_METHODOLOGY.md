@@ -1211,7 +1211,7 @@ scripts/preflight.sh
 5. Start the app.
 
 ```bash
-scripts/start_all.sh
+./install.sh
 ```
 
 6. Run analysis in default Accuracy/paper mode.

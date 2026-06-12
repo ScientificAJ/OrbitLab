@@ -47,7 +47,7 @@ OrbitLab is the opposite tradeoff: a usable, beginner friendly and easy to under
 - Reports model availability at `GET /api/v1/models` using local artifact checksums.
 - Keeps model downloads reproducible through pinned fetch scripts.
 - Publishes release-room provenance assets for public releases so benchmark, model, calibration, SBOM, and attestation evidence are inspectable outside the app.
-- Starts the local stack with `scripts/start_all.sh`.
+- Starts the local stack with `./install.sh`.
 
 ## Model Readiness
 
@@ -93,10 +93,10 @@ The repository includes deterministic UI captures generated from the mocked demo
 One-shot setup and launch (recommended — the app also points first-time users here with a welcome popup):
 
 ```bash
-scripts/start_all.sh
+./install.sh
 ```
 
-It installs missing system packages, the Python environment with all extras, locked frontend packages, the TESS/Kepler/K2 model artifacts, the pinned DAVE ModShift vetting binary, and Playwright browsers for e2e tests, then starts the Docker services, backend, and frontend. Re-running it is always safe. Use `BOOTSTRAP_ONLY=1 scripts/start_all.sh` to install dependencies (and pre-pull Docker images) without starting the stack.
+It installs missing system packages, the Python environment with all extras, locked frontend packages, the TESS/Kepler/K2 model artifacts, the pinned DAVE ModShift vetting binary, and Playwright browsers for e2e tests, then starts the Docker services, backend, and frontend. Re-running it is always safe. Use `BOOTSTRAP_ONLY=1 ./install.sh` to install dependencies (and pre-pull Docker images) without starting the stack.
 
 Manual setup, if you prefer the individual steps:
 
@@ -120,7 +120,7 @@ scripts/fetch_k2_exomac_kkt.py
 Start the full local stack:
 
 ```bash
-scripts/start_all.sh
+./install.sh
 ```
 
 The script starts Docker Compose services, ensures the Kepler/K1 TensorFlow runtime image is present, fetches registered Kepler and K2 artifacts when needed, then starts the backend and frontend. Logs and pid files live under `.orbitlab/`.

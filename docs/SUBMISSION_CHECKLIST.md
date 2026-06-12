@@ -6,7 +6,7 @@ Use this before a judged demo.
 
 ## Local Dry Run
 
-1. Start the stack with `scripts/start_all.sh`.
+1. Start the stack with `./install.sh`.
 2. Open the frontend and confirm `GET /api/v1/health` reports `status: ok`.
 3. Search a target from `docs/DEMO_TARGETS.md`.
 4. Select a real product and keep the target/product IDs visible.

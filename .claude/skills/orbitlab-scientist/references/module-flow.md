@@ -34,7 +34,7 @@ user query
 ```
 
 API prefix is `/api/v1` (`backend/orbitlab/config.py`). Backend default port
-8000, frontend 5173 (`scripts/start_all.sh`).
+8000, frontend 5173 (`./install.sh`).
 
 ## Factor → Module Map
 

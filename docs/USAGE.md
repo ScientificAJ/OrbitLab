@@ -18,7 +18,7 @@ npm ci --prefix frontend
 Start the full local stack:
 
 ```bash
-scripts/start_all.sh
+./install.sh
 ```
 
 The script starts Docker services, the FastAPI backend, and the Vite frontend. It prints the local URLs when startup completes:
@@ -33,7 +33,7 @@ Logs and pid files are written under `.orbitlab/`.
 Start the app bound to all network interfaces:
 
 ```bash
-FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 scripts/start_all.sh
+FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 ./install.sh
 ```
 
 Find this machine's LAN address:

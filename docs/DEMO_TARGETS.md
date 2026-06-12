@@ -40,7 +40,7 @@ These targets are practical starting points for local demos and smoke checks. Re
 
 ## Recommended Demo Script
 
-1. Start `scripts/start_all.sh`.
+1. Start `./install.sh`.
 2. Open the frontend URL printed by the script.
 3. Search `TIC 307210830` with mission `TESS`.
 4. Select a visible target pixel product and keep the product ID in view.

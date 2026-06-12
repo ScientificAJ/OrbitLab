@@ -54,7 +54,7 @@ export function BeginnerEmptyGuide({ title, children }: { title: string; childre
   );
 }
 
-export const INSTALL_COMMAND = 'scripts/start_all.sh';
+export const INSTALL_COMMAND = './install.sh';
 
 const installerPayload = [
   'Python science + API stack',
