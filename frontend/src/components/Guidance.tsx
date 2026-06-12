@@ -54,15 +54,15 @@ export function BeginnerEmptyGuide({ title, children }: { title: string; childre
   );
 }
 
-export const INSTALL_COMMAND = './install.sh';
+export const INSTALL_COMMAND = 'scripts/start_all.sh';
 
 const installerPayload = [
   'Python science + API stack',
   'Locked frontend packages',
   'TESS / Kepler / K2 ML models',
   'DAVE ModShift vetting binary',
-  'Docker services, pre-pulled',
   'Playwright e2e browsers',
+  'Docker services + live stack',
 ];
 
 export function FirstRunWelcome({ onDismiss }: { onDismiss: () => void }) {
@@ -110,8 +110,8 @@ export function FirstRunWelcome({ onDismiss }: { onDismiss: () => void }) {
         </p>
         <h2 id="first-run-title">Welcome aboard OrbitLab</h2>
         <p className="first-run-copy">
-          Looks like this is your first time in the lab. One command from the repository root installs everything the
-          full mission stack needs:
+          Looks like this is your first time in the lab. One command from the repository root installs every dependency
+          and launches the full mission stack:
         </p>
         <div className="first-run-command">
           <code>{INSTALL_COMMAND}</code>

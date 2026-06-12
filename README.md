@@ -90,13 +90,13 @@ The repository includes deterministic UI captures generated from the mocked demo
 
 ## Quick Start
 
-One-shot setup (recommended — the app also points first-time users here with a welcome popup):
+One-shot setup and launch (recommended — the app also points first-time users here with a welcome popup):
 
 ```bash
-./install.sh
+scripts/start_all.sh
 ```
 
-It installs missing system packages, the Python environment with all extras, locked frontend packages, the TESS/Kepler/K2 model artifacts, the pinned DAVE ModShift vetting binary, Playwright browsers for e2e tests, and pre-pulls the Docker images so the first start is fast. It is idempotent, so re-running it is always safe.
+It installs missing system packages, the Python environment with all extras, locked frontend packages, the TESS/Kepler/K2 model artifacts, the pinned DAVE ModShift vetting binary, and Playwright browsers for e2e tests, then starts the Docker services, backend, and frontend. Re-running it is always safe. Use `BOOTSTRAP_ONLY=1 scripts/start_all.sh` to install dependencies (and pre-pull Docker images) without starting the stack.
 
 Manual setup, if you prefer the individual steps:
 

@@ -829,7 +829,7 @@ describe('App – first-run installer welcome', () => {
     const user = userEvent.setup();
     await renderApp();
     const welcome = await screen.findByTestId('first-run-welcome');
-    expect(welcome).toHaveTextContent('./install.sh');
+    expect(welcome).toHaveTextContent('scripts/start_all.sh');
     expect(welcome).toHaveTextContent('First launch detected');
     await user.click(within(welcome).getByRole('button', { name: /Start exploring/ }));
     expect(screen.queryByTestId('first-run-welcome')).not.toBeInTheDocument();
@@ -876,7 +876,7 @@ describe('App – first-run installer welcome', () => {
     const welcome = await screen.findByTestId('first-run-welcome');
     await user.click(within(welcome).getByRole('button', { name: 'Copy install command' }));
     expect(await within(welcome).findByText('Copied')).toBeInTheDocument();
-    expect(await window.navigator.clipboard.readText()).toBe('./install.sh');
+    expect(await window.navigator.clipboard.readText()).toBe('scripts/start_all.sh');
   });
 
   it('does not reopen the welcome once acknowledged', async () => {

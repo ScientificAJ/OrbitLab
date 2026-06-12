@@ -46,7 +46,6 @@ else
 fi
 
 log "shell syntax"
-bash -n install.sh
 bash -n scripts/start_all.sh
 bash -n scripts/preflight.sh
 

@@ -1,5 +1,12 @@
 # Task: First-run install welcome popup + install.sh
 
+> CORRECTION (2026-06-12): the user meant the EXISTING installer script —
+> `scripts/start_all.sh` (no install.sh ever existed in repo history). The
+> follow-up commit removes the new install.sh, folds the missing performance
+> dependencies (Playwright browsers; Docker warm-up in BOOTSTRAP_ONLY mode)
+> into `scripts/start_all.sh`, and repoints the popup, tests, and README at
+> `scripts/start_all.sh`.
+
 - Start: 2026-06-11
 - Cadence: task 3 of 3 — full appropriate suite due at the end of this task.
 - Goal:

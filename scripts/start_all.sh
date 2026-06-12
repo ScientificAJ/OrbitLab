@@ -162,6 +162,58 @@ sync_project_dependencies() {
   fi
 }
 
+provision_playwright_browsers() {
+  local chrome_bin="${PLAYWRIGHT_CHROME_EXECUTABLE_PATH:-/opt/google/chrome/chrome}"
+  if [[ "${SKIP_PLAYWRIGHT_BROWSERS:-0}" == "1" ]]; then
+    log "SKIP_PLAYWRIGHT_BROWSERS=1; skipping Playwright browser install"
+    return 0
+  fi
+  if [[ -x "$chrome_bin" ]]; then
+    log "system Chrome found at $chrome_bin; frontend e2e tests will use it directly"
+    return 0
+  fi
+
+  log "installing Playwright Chromium for frontend e2e tests"
+  if ! (cd "$ROOT/frontend" && npx playwright install chromium); then
+    log "warning: Playwright browser download failed; run 'npx playwright install chromium' in frontend/ before e2e tests"
+    return 0
+  fi
+
+  # Browser system libraries need root; try non-interactively and fall back to a hint.
+  if (cd "$ROOT/frontend" && npx playwright install-deps chromium >/dev/null 2>&1); then
+    return 0
+  fi
+  if have_cmd sudo && (cd "$ROOT/frontend" && sudo -n npx playwright install-deps chromium >/dev/null 2>&1); then
+    return 0
+  fi
+  log "note: if e2e browsers fail to launch, run 'sudo npx playwright install-deps chromium' in frontend/"
+}
+
+warm_docker_images_best_effort() {
+  if [[ "${SKIP_DOCKER_WARMUP:-0}" == "1" ]]; then
+    log "SKIP_DOCKER_WARMUP=1; skipping Docker image warm-up"
+    return 0
+  fi
+
+  local docker_cmd=()
+  if docker info >/dev/null 2>&1; then
+    docker_cmd=(docker)
+  elif have_cmd sudo && sudo -n docker info >/dev/null 2>&1; then
+    docker_cmd=(sudo docker)
+  else
+    log "Docker daemon not reachable right now; images will be pulled on first full start instead"
+    return 0
+  fi
+
+  log "pre-pulling Docker images (redis, postgres, Kepler TF runtime) for a fast first start"
+  "${docker_cmd[@]}" compose pull --quiet \
+    || log "warning: docker compose pull failed; the full start will retry"
+  if ! "${docker_cmd[@]}" image inspect "$TF_IMAGE" >/dev/null 2>&1; then
+    "${docker_cmd[@]}" pull "$TF_IMAGE" \
+      || log "warning: pull of $TF_IMAGE failed; the full start will retry"
+  fi
+}
+
 artifact_ready() {
   .venv/bin/python - "$1" <<'PY' >/dev/null 2>&1
 import sys
@@ -244,9 +296,11 @@ start_process() {
 install_system_dependencies
 verify_tool_versions
 sync_project_dependencies
+provision_playwright_browsers
 provision_science_dependencies
 
 if [[ "${BOOTSTRAP_ONLY:-0}" == "1" ]]; then
+  warm_docker_images_best_effort
   log "bootstrap complete"
   exit 0
 fi
