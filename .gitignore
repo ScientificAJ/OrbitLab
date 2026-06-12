@@ -60,3 +60,6 @@ orbitlab-modshift-*.gnu
 .DS_Store
 .idea/
 .vscode/
+
+# Brainstorm visual companion sessions
+.superpowers/
