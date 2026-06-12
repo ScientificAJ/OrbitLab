@@ -33,8 +33,8 @@ describe('classifyPlanet', () => {
     expect(classifyPlanet({ equilibrium_temperature_k: 310 })).toBe(PlanetClass.OCEAN);
   });
   it('ignores null fields gracefully', () => {
-    expect(
-      classifyPlanet({ equilibrium_temperature_k: null, radius_ratio: null, planet_radius_earth: null }),
-    ).toBe(PlanetClass.UNKNOWN);
+    expect(classifyPlanet({ equilibrium_temperature_k: null, radius_ratio: null, planet_radius_earth: null })).toBe(
+      PlanetClass.UNKNOWN,
+    );
   });
 });

@@ -40,7 +40,13 @@ export function OrbitSceneTheater({ children, onExit }: Props) {
   return createPortal(
     <>
       <div className="orbit-theater-backdrop" />
-      <div className="orbit-theater-container" role="dialog" aria-modal="true" aria-label="Orbit theater mode" data-testid="orbit-theater">
+      <div
+        className="orbit-theater-container"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Orbit theater mode"
+        data-testid="orbit-theater"
+      >
         <button
           type="button"
           ref={exitButtonRef}

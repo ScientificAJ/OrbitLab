@@ -6,6 +6,29 @@ import type { Candidate } from '../lib/api';
 
 vi.mock('three', () => threeMock);
 
+// vi.mock('three') does not intercept the examples/jsm module specifiers, and
+// the real passes need a GPU; point them at the lightweight stubs instead.
+vi.mock('three/examples/jsm/postprocessing/EffectComposer.js', async () => {
+  const { postprocessingMock } = await import('../test/threeMock');
+  return { EffectComposer: postprocessingMock.EffectComposer };
+});
+vi.mock('three/examples/jsm/postprocessing/RenderPass.js', async () => {
+  const { postprocessingMock } = await import('../test/threeMock');
+  return { RenderPass: postprocessingMock.RenderPass };
+});
+vi.mock('three/examples/jsm/postprocessing/UnrealBloomPass.js', async () => {
+  const { postprocessingMock } = await import('../test/threeMock');
+  return { UnrealBloomPass: postprocessingMock.UnrealBloomPass };
+});
+vi.mock('three/examples/jsm/postprocessing/ShaderPass.js', async () => {
+  const { postprocessingMock } = await import('../test/threeMock');
+  return { ShaderPass: postprocessingMock.ShaderPass };
+});
+vi.mock('three/examples/jsm/postprocessing/OutputPass.js', async () => {
+  const { postprocessingMock } = await import('../test/threeMock');
+  return { OutputPass: postprocessingMock.OutputPass };
+});
+
 import { OrbitScene } from './OrbitScene';
 
 const WebGLRendererMock = threeMock.__WebGLRenderer;
@@ -391,6 +414,21 @@ describe('OrbitScene theater mode', () => {
     // F again exits regardless of focus.
     await user.keyboard('F');
     expect(screen.queryByTestId('orbit-theater')).not.toBeInTheDocument();
+  });
+
+  it('shows the mission control overlay with class, confidence arc and science status', async () => {
+    const user = userEvent.setup();
+    render(<OrbitScene candidates={[readyHabitable]} selectedId="ready-hz" />);
+    await screen.findByTestId('orbit-canvas');
+    expect(screen.queryByTestId('orbit-mission-overlay')).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId('orbit-expand-btn'));
+    const overlay = await screen.findByTestId('orbit-mission-overlay');
+    expect(overlay).toHaveTextContent('ready-hz');
+    expect(overlay).toHaveTextContent('OCEAN'); // 288 K + HZ → ocean class
+    expect(overlay).toHaveTextContent('3.5000 d');
+    expect(overlay).toHaveTextContent('HABITABLE ZONE');
+    expect(overlay).toHaveTextContent('SNR: 28.0');
   });
 
   it('ignores F while typing in a form field', async () => {

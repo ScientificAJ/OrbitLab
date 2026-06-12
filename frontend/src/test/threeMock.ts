@@ -371,47 +371,6 @@ class ShaderMaterial {
   dispose = vi.fn();
 }
 
-class Matrix4 {
-  elements = new Float32Array(16);
-  identity() {
-    return this;
-  }
-  setPosition(_x: number, _y: number, _z: number) {
-    return this;
-  }
-  makeRotationY(_r: number) {
-    return this;
-  }
-  compose(_p: unknown, _q: unknown, _s: unknown) {
-    return this;
-  }
-}
-
-class Quaternion {
-  x = 0;
-  y = 0;
-  z = 0;
-  w = 1;
-  setFromAxisAngle(_axis: unknown, _angle: number) {
-    return this;
-  }
-}
-
-class InstancedMesh extends Object3D {
-  count: number;
-  instanceMatrix = { needsUpdate: false };
-  geometry: { dispose: () => void };
-  material: unknown;
-  constructor(geo: { dispose: () => void } | undefined, mat: unknown, count: number) {
-    super();
-    this.geometry = geo ?? { dispose: vi.fn() };
-    this.material = mat;
-    this.count = count;
-  }
-  setMatrixAt(_i: number, _m: unknown) {}
-  dispose = vi.fn();
-}
-
 // ---------------------------------------------------------------------------
 // Post-processing stubs. vi.mock('three') does NOT intercept the
 // 'three/examples/jsm/postprocessing/*' module specifiers, so test files mock
@@ -502,9 +461,6 @@ export const threeMock = {
   QuadraticBezierCurve3,
   Group,
   ShaderMaterial,
-  Matrix4,
-  Quaternion,
-  InstancedMesh,
   SRGBColorSpace: 'srgb',
   RepeatWrapping: 1000,
   AdditiveBlending: 2,
