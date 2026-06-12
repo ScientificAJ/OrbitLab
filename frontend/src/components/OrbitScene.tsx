@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { Candidate } from '../lib/api';
 import { OrbitSceneTheater } from './OrbitSceneTheater';
+import { starVertexShader, starFragmentShader, makeStarUniforms, inferSpectralType } from '../shaders/star';
 
 type Props = {
   candidates: Candidate[];
@@ -336,9 +337,23 @@ export function OrbitScene({
     renderer.domElement.setAttribute('role', 'img');
     mount.appendChild(renderer.domElement);
 
+    // [CREATIVE: spectral color follows the loaded system — HZ inner radius
+    // tells us how luminous the host star is, so an M dwarf renders ember-red
+    // while an F star renders white-hot]
+    const spectralType = inferSpectralType(
+      renderData.find((data) => data.candidate.physics?.habitable_zone_inner_au)?.candidate.physics
+        ?.habitable_zone_inner_au,
+    );
+    const starUniforms = automatedBrowser ? null : makeStarUniforms(spectralType);
     const star = new THREE.Mesh(
       new THREE.SphereGeometry(1.78, automatedBrowser ? 40 : 64, automatedBrowser ? 40 : 64),
-      makeStarMaterial(),
+      starUniforms
+        ? new THREE.ShaderMaterial({
+            vertexShader: starVertexShader,
+            fragmentShader: starFragmentShader,
+            uniforms: starUniforms,
+          })
+        : makeStarMaterial(),
     );
     scene.add(star);
 
@@ -603,6 +618,7 @@ export function OrbitScene({
       const speed = speedModes[speedMode] ?? 1;
       if (isPlaying) frame += speed;
       star.rotation.y += 0.0026 * speed;
+      if (starUniforms) starUniforms.uTime.value += 0.016 * speed;
       rim.rotation.y -= 0.0011 * speed;
       corona.material.rotation += 0.0008 * speed;
       starfield.rotation.y += 0.00012 * speed;
