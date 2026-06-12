@@ -51,6 +51,34 @@ class Vector3 {
     this.x = this.y = this.z = s;
     return this;
   }
+  clone() {
+    return new Vector3(this.x, this.y, this.z);
+  }
+  add(v: Vector3) {
+    this.x += v.x;
+    this.y += v.y;
+    this.z += v.z;
+    return this;
+  }
+  sub(v: Vector3) {
+    this.x -= v.x;
+    this.y -= v.y;
+    this.z -= v.z;
+    return this;
+  }
+  multiplyScalar(s: number) {
+    this.x *= s;
+    this.y *= s;
+    this.z *= s;
+    return this;
+  }
+  normalize() {
+    const l = this.length() || 1;
+    return this.multiplyScalar(1 / l);
+  }
+  length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+  }
 }
 
 class Euler {
@@ -73,8 +101,15 @@ class Euler {
 
 class Color {
   value: number;
+  r: number;
+  g: number;
+  b: number;
   constructor(value = 0xffffff) {
     this.value = value;
+    // Expose r/g/b channels so shader-uniform color plumbing can read them.
+    this.r = ((value >> 16) & 0xff) / 255;
+    this.g = ((value >> 8) & 0xff) / 255;
+    this.b = (value & 0xff) / 255;
   }
 }
 
@@ -180,19 +215,64 @@ class PointsMaterial {
   dispose = vi.fn();
 }
 
-class BufferGeometry {
-  setAttribute = vi.fn();
-  dispose = vi.fn();
-}
-function geometry() {
-  return { dispose: vi.fn() };
-}
-
 class BufferAttribute {
+  needsUpdate = false;
   constructor(
-    public array: ArrayLike<number>,
+    public array: number[] | Float32Array,
     public itemSize: number,
   ) {}
+  get count() {
+    return Math.floor(this.array.length / this.itemSize);
+  }
+  getX(i: number) {
+    return this.array[i * this.itemSize] ?? 0;
+  }
+  getY(i: number) {
+    return this.array[i * this.itemSize + 1] ?? 0;
+  }
+  getZ(i: number) {
+    return this.array[i * this.itemSize + 2] ?? 0;
+  }
+  setXYZ(i: number, x: number, y: number, z: number) {
+    const arr = this.array as Float32Array;
+    arr[i * this.itemSize] = x;
+    arr[i * this.itemSize + 1] = y;
+    arr[i * this.itemSize + 2] = z;
+    return this;
+  }
+}
+
+class BufferGeometry {
+  attributes: Record<string, BufferAttribute> = {};
+  dispose = vi.fn();
+  setAttribute(name: string, attribute: BufferAttribute) {
+    this.attributes[name] = attribute;
+    return this;
+  }
+}
+
+// Parameterised geometries the shader paths walk vertex-by-vertex: expose a
+// small deterministic position attribute so angle/alpha annotation loops run.
+function fakePositionAttribute(count = 16) {
+  const positions = new Float32Array(count * 3);
+  for (let i = 0; i < count; i += 1) {
+    const angle = (i / count) * Math.PI * 2;
+    positions[i * 3] = Math.cos(angle);
+    positions[i * 3 + 1] = Math.sin(angle);
+    positions[i * 3 + 2] = 0;
+  }
+  return new BufferAttribute(positions, 3);
+}
+
+class AnnotatableGeometry extends BufferGeometry {
+  constructor() {
+    super();
+    this.attributes.position = fakePositionAttribute();
+  }
+}
+
+function geometry() {
+  return { dispose: vi.fn() };
 }
 
 class GridHelper extends Object3D {
@@ -247,12 +327,135 @@ class CanvasTexture {
   constructor(public image?: unknown) {}
 }
 
-// Geometry constructors all return a disposable; OrbitScene only needs dispose().
+// Geometry constructors return disposables. Torus/Ring additionally carry a
+// deterministic position attribute because the trail/ring shader builders
+// annotate their vertices (angle attribute, per-vertex alpha).
 const SphereGeometry = vi.fn(geometry);
 const PlaneGeometry = vi.fn(geometry);
 const CircleGeometry = vi.fn(geometry);
-const RingGeometry = vi.fn(geometry);
-const TorusGeometry = vi.fn(geometry);
+class RingGeometry extends AnnotatableGeometry {}
+class TorusGeometry extends AnnotatableGeometry {}
+class TubeGeometry extends AnnotatableGeometry {}
+
+class CatmullRomCurve3 {
+  constructor(public points: Vector3[]) {}
+  getPoints(n: number) {
+    return Array.from({ length: n + 1 }, () => new Vector3());
+  }
+}
+class QuadraticBezierCurve3 {
+  constructor(
+    public v0: Vector3,
+    public v1: Vector3,
+    public v2: Vector3,
+  ) {}
+  getPoints(n: number) {
+    return Array.from({ length: n + 1 }, () => new Vector3());
+  }
+}
+
+class Group extends Object3D {}
+
+class ShaderMaterial {
+  uniforms: Record<string, { value: unknown }> = {};
+  vertexShader = '';
+  fragmentShader = '';
+  transparent = false;
+  depthWrite = true;
+  side = 0;
+  blending = 0;
+  opacity = 1;
+  constructor(params: Record<string, unknown> = {}) {
+    Object.assign(this, params);
+  }
+  dispose = vi.fn();
+}
+
+class Matrix4 {
+  elements = new Float32Array(16);
+  identity() {
+    return this;
+  }
+  setPosition(_x: number, _y: number, _z: number) {
+    return this;
+  }
+  makeRotationY(_r: number) {
+    return this;
+  }
+  compose(_p: unknown, _q: unknown, _s: unknown) {
+    return this;
+  }
+}
+
+class Quaternion {
+  x = 0;
+  y = 0;
+  z = 0;
+  w = 1;
+  setFromAxisAngle(_axis: unknown, _angle: number) {
+    return this;
+  }
+}
+
+class InstancedMesh extends Object3D {
+  count: number;
+  instanceMatrix = { needsUpdate: false };
+  geometry: { dispose: () => void };
+  material: unknown;
+  constructor(geo: { dispose: () => void } | undefined, mat: unknown, count: number) {
+    super();
+    this.geometry = geo ?? { dispose: vi.fn() };
+    this.material = mat;
+    this.count = count;
+  }
+  setMatrixAt(_i: number, _m: unknown) {}
+  dispose = vi.fn();
+}
+
+// ---------------------------------------------------------------------------
+// Post-processing stubs. vi.mock('three') does NOT intercept the
+// 'three/examples/jsm/postprocessing/*' module specifiers, so test files mock
+// those paths explicitly and point them at these classes.
+// ---------------------------------------------------------------------------
+class EffectComposer {
+  renderer: unknown;
+  passes: unknown[] = [];
+  constructor(renderer: unknown) {
+    this.renderer = renderer;
+  }
+  addPass(pass: unknown) {
+    this.passes.push(pass);
+  }
+  render = vi.fn();
+  setSize = vi.fn();
+  dispose = vi.fn();
+}
+class RenderPass {
+  constructor(
+    public scene: unknown,
+    public camera: unknown,
+  ) {}
+}
+class UnrealBloomPass {
+  threshold = 0;
+  strength = 0;
+  radius = 0;
+  constructor(_resolution: unknown, strength: number, radius: number, threshold: number) {
+    this.strength = strength;
+    this.radius = radius;
+    this.threshold = threshold;
+  }
+}
+class OutputPass {}
+class ShaderPass {
+  uniforms: Record<string, { value: unknown }> = {};
+  constructor(shader: { uniforms?: Record<string, { value: unknown }> } = {}) {
+    // Clone uniform slots like the real ShaderPass so per-pass tweaks work.
+    Object.entries(shader.uniforms ?? {}).forEach(([key, uniform]) => {
+      this.uniforms[key] = { value: uniform.value };
+    });
+  }
+}
 
 class FogExp2 {
   constructor(
@@ -294,10 +497,30 @@ export const threeMock = {
   CircleGeometry,
   RingGeometry,
   TorusGeometry,
+  TubeGeometry,
+  CatmullRomCurve3,
+  QuadraticBezierCurve3,
+  Group,
+  ShaderMaterial,
+  Matrix4,
+  Quaternion,
+  InstancedMesh,
   SRGBColorSpace: 'srgb',
   RepeatWrapping: 1000,
   AdditiveBlending: 2,
+  NormalBlending: 1,
   BackSide: 1,
   DoubleSide: 2,
+  FrontSide: 0,
   __WebGLRenderer: WebGLRenderer,
+};
+
+// Exported separately so test files can vi.mock the
+// 'three/examples/jsm/postprocessing/*' module paths with these stubs.
+export const postprocessingMock = {
+  EffectComposer,
+  RenderPass,
+  UnrealBloomPass,
+  OutputPass,
+  ShaderPass,
 };
