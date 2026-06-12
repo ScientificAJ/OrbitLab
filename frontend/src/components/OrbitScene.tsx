@@ -220,6 +220,79 @@ function makeStarMaterial() {
   });
 }
 
+// [CREATIVE: corona ray tint follows the star's spectral type so an M dwarf
+// gets deep ember streamers while an F star gets pale gold ones]
+const coronaTints: Record<string, number> = {
+  F: 0xfff0c0,
+  G: 0xffcc66,
+  K: 0xff9944,
+  M: 0xff6633,
+};
+
+function makeCoronaRays(scene: THREE.Scene, starRadius: number, spectralType: string): THREE.Mesh[] {
+  const rays: THREE.Mesh[] = [];
+  const rayCount = 14;
+  for (let i = 0; i < rayCount; i++) {
+    const angle = (i / rayCount) * Math.PI * 2;
+    const len = starRadius * (1.4 + Math.sin(i * 2.3) * 0.5);
+    const points = [];
+    for (let t = 0; t <= 1; t += 0.1) {
+      const r = starRadius * 1.02 + t * len;
+      const wobble = Math.sin(t * Math.PI * 3 + i) * starRadius * 0.08;
+      points.push(new THREE.Vector3(Math.cos(angle + wobble * 0.05) * r, Math.sin(angle + wobble * 0.05) * r * 0.22, 0));
+    }
+    const curve = new THREE.CatmullRomCurve3(points);
+    const geo = new THREE.TubeGeometry(curve, 10, 0.018 + Math.random() * 0.012, 4, false);
+    const mat = new THREE.MeshBasicMaterial({
+      color: coronaTints[spectralType] ?? coronaTints.G,
+      transparent: true,
+      opacity: 0.18 + Math.random() * 0.14,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const ray = new THREE.Mesh(geo, mat);
+    ray.userData.baseRotSpeed = 0.0004 + Math.random() * 0.0003;
+    ray.userData.rotOffset = angle;
+    scene.add(ray);
+    rays.push(ray);
+  }
+  return rays;
+}
+
+function makeProminences(scene: THREE.Scene, starRadius: number): THREE.Mesh[] {
+  const arcs: THREE.Mesh[] = [];
+  const arcDefs = [
+    { a1: 0.4, a2: 0.9, h: 0.7, color: 0xff8833 },
+    { a1: 2.2, a2: 2.7, h: 0.55, color: 0xff6622 },
+    { a1: 4.0, a2: 4.5, h: 0.48, color: 0xffaa44 },
+    { a1: 5.1, a2: 5.5, h: 0.38, color: 0xff7733 },
+  ];
+  arcDefs.forEach(({ a1, a2, h, color }, index) => {
+    const r = starRadius;
+    const p1 = new THREE.Vector3(Math.cos(a1) * r, 0, Math.sin(a1) * r);
+    const p2 = new THREE.Vector3(Math.cos(a2) * r, 0, Math.sin(a2) * r);
+    const mid = p1.clone().add(p2).multiplyScalar(0.5);
+    mid.y += r * h;
+    const curve = new THREE.QuadraticBezierCurve3(p1, mid, p2);
+    const geo = new THREE.TubeGeometry(curve, 20, 0.032, 4, false);
+    const mat = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.65,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const arc = new THREE.Mesh(geo, mat);
+    arc.userData.driftSpeed = 0.0002 + Math.random() * 0.0001;
+    // [CREATIVE: one prominence slowly erupts — it stretches up over ~90s,
+    // then settles back, like filament footage from SDO]
+    arc.userData.erupting = index === 0;
+    scene.add(arc);
+    arcs.push(arc);
+  });
+  return arcs;
+}
+
 function canCreateWebGLContext() {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
@@ -375,6 +448,9 @@ export function OrbitScene({
     );
     corona.scale.set(9.2, 9.2, 1);
     scene.add(corona);
+
+    const coronaRays = automatedBrowser ? [] : makeCoronaRays(scene, 1.78, spectralType);
+    const prominences = automatedBrowser ? [] : makeProminences(scene, 1.78);
 
     const rim = new THREE.Mesh(
       new THREE.SphereGeometry(2.04, automatedBrowser ? 40 : 64, automatedBrowser ? 40 : 64),
@@ -621,6 +697,18 @@ export function OrbitScene({
       if (starUniforms) starUniforms.uTime.value += 0.016 * speed;
       rim.rotation.y -= 0.0011 * speed;
       corona.material.rotation += 0.0008 * speed;
+      coronaRays.forEach((ray, i) => {
+        ray.rotation.y += (ray.userData.baseRotSpeed as number) * speed;
+        // [CREATIVE: each corona ray breathes on its own offset phase]
+        (ray.material as THREE.MeshBasicMaterial).opacity = 0.14 + Math.sin(frame * 0.018 + i * 0.8) * 0.06;
+      });
+      prominences.forEach((arc) => {
+        arc.rotation.y += (arc.userData.driftSpeed as number) * speed;
+        if (arc.userData.erupting) {
+          arc.scale.y = 1 + Math.max(0, Math.sin(frame * 0.0011)) * 0.85;
+          (arc.material as THREE.MeshBasicMaterial).opacity = 0.65 - Math.max(0, Math.sin(frame * 0.0011)) * 0.2;
+        }
+      });
       starfield.rotation.y += 0.00012 * speed;
       planeDisc.rotation.z += 0.00008 * speed;
 
