@@ -2,6 +2,13 @@
 
 Status: current for OrbitLab `v0.2.0`.
 
+## Active High-Priority Work
+
+### OrbitScene Performance And Lag Reduction
+
+- [ ] Reduce OrbitScene lag introduced by the AAA visual upgrade while preserving its visual direction. Follow `docs/ORBIT_SCENE_PERFORMANCE_AUDIT.md`: benchmark the real full-shader path, remove the 6,000-particle JavaScript frame loop, add adaptive quality tiers, pause hidden/offscreen rendering, reduce unnecessary scene rebuilds, and add a full-path performance regression check.
+- [ ] Meet the OrbitScene performance acceptance targets: at least 55 FPS in panel mode and 45 FPS in theater mode on the agreed reference machine, no interaction frame over 100 ms, and no continuous rendering while hidden or offscreen.
+
 ## Completed In Repo
 
 ### Submission Polish
