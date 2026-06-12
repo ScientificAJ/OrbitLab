@@ -7,7 +7,9 @@ export const FilmGrainShader = {
   uniforms: {
     tDiffuse: { value: null },
     uTime: { value: 0 },
-    uStrength: { value: 0.032 },
+    // Applied pre-OutputPass (linear space), where shadows amplify noise after
+    // the sRGB conversion — keep this well under the classic ~3% film value.
+    uStrength: { value: 0.014 },
   },
   vertexShader: /* glsl */ `
     varying vec2 vUv;

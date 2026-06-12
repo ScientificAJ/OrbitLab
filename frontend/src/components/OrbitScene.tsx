@@ -573,10 +573,22 @@ export function OrbitScene({
     let composer: EffectComposer | null = null;
     let filmGrainPass: ShaderPass | null = null;
     let chromaPass: ShaderPass | null = null;
+    // [CREATIVE: debug affordance — append ?orbitfx=off to the URL to bypass
+    // the post-processing chain when diagnosing rendering issues]
+    const fxDisabled = new URLSearchParams(window.location.search).get('orbitfx') === 'off';
+    const postFx = !automatedBrowser && !fxDisabled;
+    // The composer blends translucent overlays in linear space; a low alpha
+    // that read as subtle under direct sRGB blending displays several times
+    // stronger, so the big faint overlays get compensated down.
+    const overlayAlpha = (alpha: number) => (postFx ? alpha * 0.32 : alpha);
     // [CREATIVE: focus pull — theater entry starts slightly soft/fringed and
     // snaps sharp over ~0.8s, like a camera operator finding focus]
     let theaterFocusFrames = theaterMode ? 48 : 0;
-    if (!automatedBrowser) {
+    if (postFx) {
+      // The post-processing passes do not preserve the alpha channel, and the
+      // canvas composites with premultiplied alpha — without an opaque
+      // in-scene background the composer output displays nearly black.
+      scene.background = new THREE.Color(0x03080d);
       composer = new EffectComposer(renderer);
       composer.addPass(new RenderPass(scene, camera));
       const bloom = new UnrealBloomPass(
@@ -686,7 +698,7 @@ export function OrbitScene({
       new THREE.MeshBasicMaterial({
         color: 0x5fd8e8,
         transparent: true,
-        opacity: 0.055,
+        opacity: overlayAlpha(0.055),
         side: THREE.DoubleSide,
         depthWrite: false,
       }),
@@ -699,11 +711,11 @@ export function OrbitScene({
     if (Array.isArray(gridMaterial)) {
       gridMaterial.forEach((material) => {
         material.transparent = true;
-        material.opacity = 0.2;
+        material.opacity = overlayAlpha(0.2);
       });
     } else {
       gridMaterial.transparent = true;
-      gridMaterial.opacity = 0.2;
+      gridMaterial.opacity = overlayAlpha(0.2);
     }
     scene.add(planeGrid);
 
@@ -725,7 +737,7 @@ export function OrbitScene({
         new THREE.MeshBasicMaterial({
           color: 0x7ff0ac,
           transparent: true,
-          opacity: 0.105,
+          opacity: overlayAlpha(0.105),
           side: THREE.DoubleSide,
           depthWrite: false,
         }),
@@ -736,7 +748,7 @@ export function OrbitScene({
       [innerRadius, outerRadius].forEach((radius) => {
         const boundary = new THREE.Mesh(
           new THREE.TorusGeometry(radius, 0.016, 8, automatedBrowser ? 96 : 160),
-          new THREE.MeshBasicMaterial({ color: 0x9df5bd, transparent: true, opacity: 0.28 }),
+          new THREE.MeshBasicMaterial({ color: 0x9df5bd, transparent: true, opacity: overlayAlpha(0.28) }),
         );
         boundary.rotation.x = Math.PI / 2;
         scene.add(boundary);
@@ -1238,7 +1250,9 @@ export function OrbitScene({
         // [CREATIVE: HZ heartbeat — while a habitable-zone candidate is
         // selected, the green ring breathes on a slow pulse]
         if (hzMesh && selectedPlanet.isHabitable) {
-          (hzMesh.material as THREE.MeshBasicMaterial).opacity = 0.105 + Math.max(0, Math.sin(frame * 0.008)) * 0.05;
+          (hzMesh.material as THREE.MeshBasicMaterial).opacity = overlayAlpha(
+            0.105 + Math.max(0, Math.sin(frame * 0.008)) * 0.05,
+          );
         }
         const frontFactor = clamp((Math.cos(selectedAngle) - 0.08) / 0.72, 0, 1);
         const shadowScale = clamp(selectedPlanet.planetRadius * 1.55, 0.16, 0.55);
