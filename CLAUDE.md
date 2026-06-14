@@ -233,6 +233,20 @@ kindness in all user-facing and collaborator-facing behavior.
   before introducing new systems.
 - Deployment work must protect the live app and verify behavior after changes.
 
+## Verbosity Requirement
+
+- Use the highest useful verbosity by default in user-facing communication,
+  progress updates, plans, reviews, reports, handoffs, and explanations.
+- Be comprehensive and explicit about inspected evidence, reasoning summaries,
+  decisions, changes, verification, failures, skipped work, risks, and remaining
+  uncertainty so another collaborator can understand and resume the work without
+  guessing.
+- Highest verbosity means maximum relevant detail, not repetition, filler, or
+  disclosure of private chain-of-thought. Keep the response readable and
+  well-structured while preserving important technical and product context.
+- Only reduce verbosity when the user explicitly asks for a shorter or more
+  concise response.
+
 ## Output Format
 
 When reporting fixes, use this structure:
